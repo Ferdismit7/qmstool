@@ -1,0 +1,64 @@
+{
+  // tsconfig.json
+  // This file configures TypeScript for the project.
+  // It specifies compiler options, file inclusions, and type checking rules.
+  "compilerOptions": {
+    // Target JavaScript version
+    "target": "esnext",
+    // Module system
+    "module": "esnext",
+    // Allow JSX in .tsx files
+    "jsx": "preserve",
+    // Output directory for compiled files (not used in Next.js)
+    "outDir": "./dist",
+    // Enable strict type checking
+    "strict": true,
+    // Allow default imports from modules with no default export
+    "allowSyntheticDefaultImports": true,
+    // Module resolution strategy
+    "moduleResolution": "node",
+    // Support for ES module interop
+    "esModuleInterop": true,
+    // Skip type checking of declaration files
+    "skipLibCheck": true,
+    // Resolve JSON modules
+    "resolveJsonModule": true,
+    // Base directory for non-relative module names
+    "baseUrl": ".",
+    // Paths for module resolution
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    // Types to include
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "noEmit": true,
+    "incremental": true,
+    "isolatedModules": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  // Files and directories to include in the project
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  // Files and directories to exclude from the project
+  "exclude": [
+    "node_modules"
+  ]
+}

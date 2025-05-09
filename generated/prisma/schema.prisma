@@ -1,0 +1,33 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model BusinessProcess {
+  id               String    @id @default(uuid())
+  businessArea     String
+  subBusinessArea  String
+  processName      String
+  documentName     String
+  version          String
+  progress         String
+  status           String
+  statusPercentage Int
+  priority         String
+  targetDate       DateTime
+  processOwner     String
+  updateDate       DateTime
+  remarks          String?
+  reviewDate       DateTime?
+}

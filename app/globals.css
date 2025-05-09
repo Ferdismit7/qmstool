@@ -1,0 +1,8 @@
+/*
+  This file contains the global CSS for the application.
+  It imports Tailwind's base, components, and utilities layers.
+  You can add any global styles here if needed.
+*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities; 
