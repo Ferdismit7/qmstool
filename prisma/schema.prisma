@@ -31,3 +31,24 @@ model BusinessProcess {
   remarks         String?
   reviewDate      DateTime?
 }
+
+model BusinessDocument {
+  id                String    @id @default(uuid())
+  businessArea      String
+  subBusinessArea   String
+  nameAndNumbering  String
+  documentName      String
+  documentType      String
+  version           String
+  progress          String    @default("Not started")
+  status            String
+  statusPercentage  Int
+  priority          String
+  targetDate        DateTime
+  documentOwner     String
+  updateDate        DateTime  @default(now())
+  remarks           String?
+  reviewDate        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}

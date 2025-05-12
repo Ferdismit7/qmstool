@@ -101,7 +101,7 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-br from-brand-gray1 via-brand-gray1 to-brand-gray1">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-brand-white"></h1>
+          <h1 className="text-2xl font-bold text-brand-white">Business Process Registry</h1>
           <button
             onClick={handleAdd}
             className="bg-brand-primary text-white px-4 py-2 rounded-md hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2"
