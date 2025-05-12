@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { BusinessDocument } from '../types/businessDocument';
 
 interface BusinessDocumentFormProps {
-  onAdd: (document: any) => void;
+  onAdd: (document: BusinessDocument) => void;
   onClose?: () => void;
-  editData?: any;
+  editData?: BusinessDocument;
 }
 
 export default function BusinessDocumentForm({ onAdd, onClose, editData }: BusinessDocumentFormProps) {
@@ -16,7 +17,7 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     documentName: editData?.documentName || '',
     documentType: editData?.documentType || '',
     version: editData?.version || '',
-    progress: editData?.status || '',
+    progress: editData?.progress || '',
     status: editData?.status || '',
     statusPercentage: editData?.statusPercentage || 0,
     priority: editData?.priority || 'Low',
@@ -35,7 +36,7 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
         documentName: editData.documentName || '',
         documentType: editData.documentType || '',
         version: editData.version || '',
-        progress: editData.status || '',
+        progress: editData.progress || '',
         status: editData.status || '',
         statusPercentage: editData.statusPercentage || 0,
         priority: editData.priority || 'Low',
@@ -50,6 +51,7 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const dataWithDate = {
+      id: editData?.id || crypto.randomUUID(),
       businessArea: formData.businessArea,
       subBusinessArea: formData.subBusinessArea,
       nameAndNumbering: formData.nameAndNumbering,

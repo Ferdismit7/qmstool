@@ -31,7 +31,8 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
 
   // Delete process
-  const deleteProcess = async (id: string) => {
+  const deleteProcess = async (id: string, documentName: string) => {
+    if (!window.confirm(`Are you sure you want to delete this ${documentName}?`)) return;
     try {
       const response = await fetch(`/api/business-processes?id=${id}`, {
         method: 'DELETE',
@@ -91,22 +92,25 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
   return (
     <div className="overflow-x-auto pl-0 rounded-lg border border-brand-dark/20 shadow-lg bg-gray-800/40 backdrop-blur-sm" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4B5563 #1F2937' }}>
       <style jsx global>{`
-        td.expanded {
-          width: auto !important;
-          min-width: 300px;
-          transition: all 0.3s ease;
+        .cell-content {
           position: relative;
-          z-index: 1;
-          background: rgba(43, 48, 56, 0.95);
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-          border-radius: 0.375rem;
-          border: 1px solid rgba(75, 85, 99, 0.2);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 100px;
+          min-width: 80px;
+          transition: all 0.2s;
         }
         td.expanded .cell-content {
           white-space: normal;
-          padding: 0.75rem;
-          background: rgba(31, 41, 55, 0.95);
-          border-radius: 0.375rem;
+          max-width: 500px;
+          min-width: 300px;
+          overflow-x: auto;
+          background: #1a1a1a;
+          border: 1px solid #3b82f6;
+          border-radius: 0.5rem;
+          z-index: 10;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
         th {
           white-space: nowrap;
@@ -129,15 +133,12 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
         ::-webkit-scrollbar-thumb:hover {
           background: #6B7280;
         }
-        /* Prevent text selection during scroll */
         .overflow-x-auto {
           user-select: none;
         }
-        /* Add hover effect to rows */
         tbody tr:hover {
           background: rgba(75, 85, 99, 0.1);
         }
-        /* Add subtle border between rows */
         tbody tr {
           border-bottom: 1px solid rgba(75, 85, 99, 0.1);
         }
@@ -170,7 +171,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
             <tr key={process.id} className="hover:bg-brand-gray1/10 transition-colors">
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-businessArea`}>
                 <div 
-                  className="truncate cursor-pointer cell-content text-xs px-2 text-center"
+                  className="cell-content text-xs px-2 text-center font-medium cursor-pointer"
                   onClick={(e) => handleCellClick(`cell-${process.id}-businessArea`, e)}
                 >
                   {process.businessArea}
@@ -178,7 +179,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-subBusinessArea`}>
                 <div 
-                  className="truncate cursor-pointer cell-content text-xs px-2 text-center"
+                  className="cell-content text-xs px-2 text-center font-medium cursor-pointer"
                   onClick={(e) => handleCellClick(`cell-${process.id}-subBusinessArea`, e)}
                 >
                   {process.subBusinessArea}
@@ -186,7 +187,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-processName`}>
                 <div 
-                  className="truncate cursor-pointer cell-content text-xs px-2 text-center"
+                  className="cell-content text-xs px-2 text-center font-medium cursor-pointer"
                   onClick={(e) => handleCellClick(`cell-${process.id}-processName`, e)}
                 >
                   {process.processName}
@@ -194,7 +195,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-documentName`}>
                 <div 
-                  className="truncate cursor-pointer cell-content text-xs px-2 text-center"
+                  className="cell-content text-xs px-2 text-center font-medium cursor-pointer"
                   onClick={(e) => handleCellClick(`cell-${process.id}-documentName`, e)}
                 >
                   {process.documentName}
@@ -202,7 +203,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-version`}>
                 <div 
-                  className="truncate cursor-pointer cell-content text-xs px-2 text-center"
+                  className="cell-content text-xs px-2 text-center font-medium cursor-pointer"
                   onClick={(e) => handleCellClick(`cell-${process.id}-version`, e)}
                 >
                   {process.version}
@@ -210,7 +211,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-progress`}>
                 <div 
-                  className={`truncate cursor-pointer cell-content text-xs px-2 text-center font-medium ${
+                  className={`cell-content text-xs px-2 text-center font-medium cursor-pointer ${
                     process.progress === 'Completed' ? 'text-blue-500' :
                     process.progress === 'On-Track' ? 'text-emerald-500' :
                     process.progress === 'Minor Challenges' ? 'text-amber-500' :
@@ -224,13 +225,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-status`}>
                 <div 
-                  className={`truncate cursor-pointer cell-content text-xs px-2 text-center font-medium ${
-                    process.status === 'Completed' ? 'text-green-500' :
-                    process.status === 'In progress' ? 'text-orange-400' :
-                    process.status === 'New' ? 'text-cyan-400' :
-                    process.status === 'To be reviewed' ? 'text-blue-300' :
-                    'text-brand-white'
-                  }`}
+                  className="cell-content text-xs px-2 text-center font-medium cursor-pointer"
                   onClick={(e) => handleCellClick(`cell-${process.id}-status`, e)}
                 >
                   {process.status}
@@ -238,7 +233,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-statusPercentage`}>
                 <div 
-                  className={`truncate cursor-pointer cell-content text-xs px-2 text-center font-medium ${
+                  className={`cell-content text-xs px-2 text-center font-medium cursor-pointer ${
                     process.status === 'Completed' ? 'text-green-500' :
                     process.status === 'In progress' ? 'text-orange-400' :
                     process.status === 'New' ? 'text-cyan-400' :
@@ -252,7 +247,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-priority`}>
                 <div 
-                  className={`truncate cursor-pointer cell-content text-xs px-2 text-center ${
+                  className={`cell-content text-xs px-2 text-center font-medium cursor-pointer ${
                     process.priority === 'Critical' ? 'text-red-500' :
                     process.priority === 'High' ? 'text-orange-400' :
                     process.priority === 'Medium' ? 'text-yellow-400' :
@@ -266,7 +261,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-targetDate`}>
                 <div 
-                  className="truncate cursor-pointer cell-content text-xs px-2 text-center"
+                  className="cell-content text-xs px-2 text-center font-medium cursor-pointer"
                   onClick={(e) => handleCellClick(`cell-${process.id}-targetDate`, e)}
                 >
                   {new Date(process.targetDate).toLocaleDateString('en-GB')}
@@ -274,7 +269,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-processOwner`}>
                 <div 
-                  className="truncate cursor-pointer cell-content text-xs px-2 text-center"
+                  className="cell-content text-xs px-2 text-center font-medium cursor-pointer"
                   onClick={(e) => handleCellClick(`cell-${process.id}-processOwner`, e)}
                 >
                   {process.processOwner}
@@ -282,7 +277,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-updateDate`}>
                 <div 
-                  className="truncate cursor-pointer cell-content text-xs px-2 text-center"
+                  className="cell-content text-xs px-2 text-center font-medium cursor-pointer"
                   onClick={(e) => handleCellClick(`cell-${process.id}-updateDate`, e)}
                 >
                   {new Date(process.updateDate).toLocaleDateString('en-GB')}
@@ -290,7 +285,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-remarks`}>
                 <div 
-                  className="truncate cursor-pointer cell-content text-xs px-2 text-center"
+                  className="cell-content text-xs px-2 text-center font-medium cursor-pointer"
                   onClick={(e) => handleCellClick(`cell-${process.id}-remarks`, e)}
                 >
                   {process.remarks}
@@ -298,13 +293,13 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               </td>
               <td className="py-2 text-brand-white group relative w-[120px]" data-cell-id={`cell-${process.id}-reviewDate`}>
                 <div 
-                  className="truncate cursor-pointer cell-content text-xs px-2 text-center"
+                  className="cell-content text-xs px-2 text-center font-medium cursor-pointer"
                   onClick={(e) => handleCellClick(`cell-${process.id}-reviewDate`, e)}
                 >
                   {process.reviewDate ? new Date(process.reviewDate).toLocaleDateString('en-GB') : '-'}
                 </div>
               </td>
-              <td className="py-2 text-brand-white w-[80px]">
+              <td className="py-2 text-brand-white group relative w-[120px]">
                 <div className="flex justify-center space-x-2">
                   <button
                     onClick={(e) => {
@@ -318,7 +313,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteProcess(process.id);
+                      deleteProcess(process.id, process.documentName);
                     }}
                     className="text-red-400 hover:text-red-300 text-xs"
                   >
