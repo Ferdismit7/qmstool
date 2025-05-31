@@ -1,18 +1,18 @@
 export interface BusinessDocument {
-  id: string;
-  documentName: string;
-  documentType: string;
+  id: number;
+  business_area: string;
+  sub_business_area: string;
+  document_name: string;
+  name_and_numbering: string;
+  document_type: string;
   version: string;
   progress: string;
   status: string;
-  statusPercentage: number;
+  status_percentage: number;
   priority: 'Low' | 'Medium' | 'High' | 'Critical';
-  targetDate: string;
-  documentOwner: string;
-  updateDate: string;
+  target_date: string | null;
+  document_owner: string;
+  update_date: string;
   remarks: string | null;
-  reviewDate: string | null;
-  businessArea: string;
-  subBusinessArea: string;
-  nameAndNumbering: string;
+  review_date: string | null;
 } 

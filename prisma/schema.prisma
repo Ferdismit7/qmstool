@@ -1,12 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
 }
 
 datasource db {
@@ -14,41 +8,44 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model BusinessProcess {
-  id              String   @id @default(uuid())
-  businessArea    String
-  subBusinessArea String
-  processName     String
-  documentName    String
-  version         String
-  progress        String
-  status          String
-  statusPercentage Int
-  priority        String
-  targetDate      DateTime
-  processOwner    String
-  updateDate      DateTime
-  remarks         String?
-  reviewDate      DateTime?
+/// The main business process register model
+model BusinessProcessRegister {
+  id                Int       @id @default(autoincrement())
+  business_area     String?   @db.VarChar(100)
+  sub_business_area String?   @db.VarChar(100)
+  process_name      String?   @db.VarChar(100)
+  document_name     String?   @db.VarChar(100)
+  version           String?   @db.VarChar(20)
+  progress          String?   @db.VarChar(20)
+  doc_status        String?   @db.VarChar(20)
+  status_precentage Decimal?  @db.Decimal(5, 2)
+  priority          String?   @db.VarChar(20)
+  target_date       DateTime? @db.Date
+  process_owner     String?   @db.VarChar(20)
+  update_date       DateTime? @db.Date
+  remarks           String?   @db.Text
+  review_date       DateTime? @db.Date
+
+  @@map("businessprocessregister")
 }
 
-model BusinessDocument {
-  id                String    @id @default(uuid())
-  businessArea      String
-  subBusinessArea   String
-  nameAndNumbering  String
-  documentName      String
-  documentType      String
-  version           String
-  progress          String    @default("Not started")
-  status            String
-  statusPercentage  Int
-  priority          String
-  targetDate        DateTime
-  documentOwner     String
-  updateDate        DateTime  @default(now())
-  remarks           String?
-  reviewDate        DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+/// The business quality objectives model
+model BusinessQualityObjective {
+  id                      Int       @id @default(autoincrement())
+  category               String?   @db.VarChar(100)
+  business_area          String?   @db.VarChar(100)
+  sub_business_area      String?   @db.VarChar(100)
+  qms_main_objectives    String?   @db.Text
+  qms_objective_description String? @db.Text
+  kpi_or_sla_targets     String?   @db.Text
+  performance_monitoring String?   @db.Text
+  proof_of_measuring     String?   @db.VarChar(20)
+  proof_of_reporting     String?   @db.VarChar(20)
+  frequency              String?   @db.VarChar(20)
+  responsible_person_team String?   @db.VarChar(100)
+  review_date            DateTime? @db.Date
+  progress                 String?   @db.VarChar(20)
+  status_percentage      Int?      @db.Int
+
+  @@map("businessqualityobjectives")
 }

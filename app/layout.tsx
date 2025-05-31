@@ -1,9 +1,12 @@
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
-import React from 'react';
-import SidebarNav from './components/SidebarNav';
+import Layout from './components/Layout';
+
+const inter = Inter({ subsets: ['latin'] });
 
 // Set the app's metadata, including the browser tab title
-export const metadata = {
+export const metadata: Metadata = {
   title: 'QMS Tool', // This will show in the browser tab
   description: 'Business Process Registry and QMS Management Tool',
 }
@@ -15,17 +18,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <div className="flex min-h-screen bg-gradient-to-br from-brand-dark via-brand-gray1 to-brand-primary text-brand-white">
-          {/* Sidebar */}
-          <SidebarNav />
-          {/* Main Content */}
-          <main className="flex-1 min-h-screen p-0 bg-gradient-to-br from-brand-black1/50 to-brand-black1/80">
-            <div className="max-w-[2000px] mx-auto py-10 px-2 lg:px-6">
-              {children}
-            </div>
-          </main>
-        </div>
+      <body className={inter.className}>
+        <Layout>{children}</Layout>
       </body>
     </html>
   )
