@@ -1,26 +1,26 @@
-import { NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { getCurrentUserBusinessArea } from '@/lib/auth';
 
+// GET a single business quality objective
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const objectives = await query(
-      'SELECT * FROM businessqualityobjectives WHERE id = ?',
-      [params.id]
-    );
-    
-    if (objectives.length === 0) {
-      return NextResponse.json(
-        { error: 'Business quality objective not found' },
-        { status: 404 }
-      );
+    const userBusinessArea = getCurrentUserBusinessArea(request);
+    if (!userBusinessArea) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    return NextResponse.json(objectives[0]);
+    const objective = await prisma.businessQualityObjective.findUnique({
+      where: { id: parseInt(params.id) }
+    });
+    if (!objective || objective.business_area !== userBusinessArea) {
+      return NextResponse.json({ error: 'Business quality objective not found' }, { status: 404 });
+    }
+    return NextResponse.json(objective);
   } catch (error) {
-    console.error('Database Error:', error);
+    console.error('Error fetching business quality objective:', error);
     return NextResponse.json(
       { error: 'Failed to fetch business quality objective' },
       { status: 500 }
@@ -28,75 +28,48 @@ export async function GET(
   }
 }
 
+// PUT (update) a business quality objective
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await request.json();
-    const {
-      category,
-      business_area,
-      sub_business_area,
-      qms_main_objectives,
-      qms_objective_description,
-      kpi_or_sla_targets,
-      performance_monitoring,
-      proof_of_measuring,
-      proof_of_reporting,
-      frequency,
-      responsible_person_team,
-      review_date,
-      progress,
-      status_percentage
-    } = body;
-
-    const result = await query(`
-      UPDATE businessqualityobjectives
-      SET
-        category = ?,
-        business_area = ?,
-        sub_business_area = ?,
-        qms_main_objectives = ?,
-        qms_objective_description = ?,
-        kpi_or_sla_targets = ?,
-        performance_monitoring = ?,
-        proof_of_measuring = ?,
-        proof_of_reporting = ?,
-        frequency = ?,
-        responsible_person_team = ?,
-        review_date = ?,
-        progress = ?,
-        status_percentage = ?
-      WHERE id = ?
-    `, [
-      category,
-      business_area,
-      sub_business_area,
-      qms_main_objectives,
-      qms_objective_description,
-      kpi_or_sla_targets,
-      performance_monitoring,
-      proof_of_measuring,
-      proof_of_reporting,
-      frequency,
-      responsible_person_team,
-      review_date,
-      progress,
-      status_percentage,
-      params.id
-    ]);
-
-    if (result.affectedRows === 0) {
-      return NextResponse.json(
-        { error: 'Business quality objective not found' },
-        { status: 404 }
-      );
+    const userBusinessArea = getCurrentUserBusinessArea(request);
+    if (!userBusinessArea) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    return NextResponse.json({ message: 'Business quality objective updated successfully' });
+    // Check if objective exists and user has access
+    const existingObjective = await prisma.businessQualityObjective.findUnique({
+      where: { id: parseInt(params.id) }
+    });
+
+    if (!existingObjective || existingObjective.business_area !== userBusinessArea) {
+      return NextResponse.json({ error: 'Business quality objective not found' }, { status: 404 });
+    }
+
+    const data = await request.json();
+    const { id, business_area, target_date, ...updateData } = data;
+
+    // Ensure user can't change business area
+    if (business_area && business_area !== userBusinessArea) {
+      return NextResponse.json({ error: 'Unauthorized to modify business area' }, { status: 403 });
+    }
+
+    const objective = await prisma.businessQualityObjective.update({
+      where: { id: parseInt(params.id) },
+      data: {
+        ...updateData,
+        business_area: userBusinessArea, // Force business area to user's area
+        businessareas: {
+          connect: { business_area: userBusinessArea }
+        },
+        review_date: updateData.review_date ? new Date(updateData.review_date) : null
+      }
+    });
+    return NextResponse.json(objective);
   } catch (error) {
-    console.error('Database Error:', error);
+    console.error('Error updating business quality objective:', error);
     return NextResponse.json(
       { error: 'Failed to update business quality objective' },
       { status: 500 }
@@ -104,26 +77,35 @@ export async function PUT(
   }
 }
 
+// DELETE a business quality objective
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const result = await query(
-      'DELETE FROM businessqualityobjectives WHERE id = ?',
-      [params.id]
-    );
-
-    if (result.affectedRows === 0) {
-      return NextResponse.json(
-        { error: 'Business quality objective not found' },
-        { status: 404 }
-      );
+    const userBusinessArea = getCurrentUserBusinessArea(request);
+    if (!userBusinessArea) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    return NextResponse.json({ message: 'Business quality objective deleted successfully' });
+    // Check if objective exists and user has access
+    const existingObjective = await prisma.businessQualityObjective.findUnique({
+      where: { id: parseInt(params.id) }
+    });
+
+    if (!existingObjective || existingObjective.business_area !== userBusinessArea) {
+      return NextResponse.json({ error: 'Business quality objective not found' }, { status: 404 });
+    }
+
+    await prisma.businessQualityObjective.delete({
+      where: { id: parseInt(params.id) }
+    });
+    return NextResponse.json(
+      { message: 'Business quality objective deleted successfully' },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('Database Error:', error);
+    console.error('Error deleting business quality objective:', error);
     return NextResponse.json(
       { error: 'Failed to delete business quality objective' },
       { status: 500 }

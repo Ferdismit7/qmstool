@@ -3,12 +3,53 @@
 import { useState, useEffect } from 'react';
 import { BusinessDocument } from '../types/businessDocument';
 
+/**
+ * Props for the BusinessDocumentForm component
+ * @interface BusinessDocumentFormProps
+ */
 interface BusinessDocumentFormProps {
+  /** Callback function when a document is added or updated */
   onAdd: (document: BusinessDocument) => void;
+  /** Optional callback function to close the form */
   onClose?: () => void;
+  /** Optional existing document data for editing mode */
   editData?: BusinessDocument;
 }
 
+/**
+ * BusinessDocumentForm Component
+ * 
+ * A form component for creating and editing business documents.
+ * Features include:
+ * - Form validation with error messages
+ * - Dynamic form state management
+ * - Date formatting and handling
+ * - Progress tracking
+ * - Priority management
+ * - Status monitoring
+ * - Responsive design
+ * - Accessibility features
+ * 
+ * @component
+ * @param {BusinessDocumentFormProps} props - Component props
+ * @example
+ * ```tsx
+ * // Create mode
+ * <BusinessDocumentForm 
+ *   onAdd={handleAddDocument}
+ *   onClose={handleClose}
+ * />
+ * 
+ * // Edit mode
+ * <BusinessDocumentForm 
+ *   onAdd={handleUpdateDocument}
+ *   onClose={handleClose}
+ *   editData={existingDocument}
+ * />
+ * ```
+ * 
+ *
+ */
 export default function BusinessDocumentForm({ onAdd, onClose, editData }: BusinessDocumentFormProps) {
   const [formData, setFormData] = useState({
     business_area: '',
@@ -18,7 +59,7 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     document_type: '',
     version: '',
     progress: '',
-    status: '',
+    doc_status: '',
     status_percentage: 0,
     priority: 'Low' as 'Low' | 'Medium' | 'High' | 'Critical',
     target_date: '',
@@ -28,7 +69,11 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [userBusinessAreas, setUserBusinessAreas] = useState<string[]>([]);
 
+  /**
+   * Effect to populate form data when editing an existing document
+   */
   useEffect(() => {
     if (editData) {
       setFormData(prev => ({
@@ -41,6 +86,49 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     }
   }, [editData]);
 
+  /**
+   * Fetch user's business areas on component mount
+   */
+  useEffect(() => {
+    const fetchUserBusinessAreas = async () => {
+      try {
+        // Get the token from localStorage or sessionStorage
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        
+        const response = await fetch('/api/auth/user-business-areas', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUserBusinessAreas(userData.businessAreas || []);
+          
+          // If creating a new document, pre-populate with user's first business area
+          if (!editData && userData.businessAreas.length > 0) {
+            setFormData(prev => ({
+              ...prev,
+              business_area: userData.businessAreas[0]
+            }));
+          }
+        } else {
+          console.error('Failed to fetch user business areas:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching user business areas:', error);
+      }
+    };
+
+    fetchUserBusinessAreas();
+  }, [editData]);
+
+  /**
+   * Validates the form data and sets error messages
+   * @returns {boolean} True if the form is valid, false otherwise
+   */
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
@@ -50,7 +138,7 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     if (!formData.document_type) newErrors.document_type = 'Document Type is required';
     if (!formData.version.trim()) newErrors.version = 'Version is required';
     if (!formData.progress) newErrors.progress = 'Progress is required';
-    if (!formData.status) newErrors.status = 'Status is required';
+    if (!formData.doc_status) newErrors.doc_status = 'Status is required';
     if (formData.status_percentage < 0 || formData.status_percentage > 100) {
       newErrors.status_percentage = 'Status percentage must be between 0 and 100';
     }
@@ -62,6 +150,10 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Handles form submission
+   * @param {React.FormEvent} e - The form submission event
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -72,6 +164,7 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     const dataWithDate = {
       id: editData?.id || 0,
       ...formData,
+      status: formData.doc_status,
       update_date: new Date().toISOString().split('T')[0],
       target_date: formData.target_date || null,
       review_date: formData.review_date || null,
@@ -79,25 +172,25 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     };
 
     try {
-    onAdd(dataWithDate);
+      onAdd(dataWithDate);
       if (!editData) {
         // Only reset form if it's a new document
-    setFormData({
+        setFormData({
           business_area: '',
           sub_business_area: '',
           name_and_numbering: '',
           document_name: '',
           document_type: '',
-      version: '',
-      progress: '',
-      status: '',
+          version: '',
+          progress: '',
+          doc_status: '',
           status_percentage: 0,
           priority: 'Low' as 'Low' | 'Medium' | 'High' | 'Critical',
           target_date: '',
           document_owner: '',
-      remarks: '',
+          remarks: '',
           review_date: '',
-    });
+        });
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -108,6 +201,10 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     }
   };
 
+  /**
+   * Handles form input changes
+   * @param {React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>} e - The change event
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -134,16 +231,19 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div>
           <label htmlFor="business_area" className="block text-sm font-semibold text-brand-white mb-1">Business Area</label>
-          <input
+          <select
             id="business_area"
             name="business_area"
-            type="text"
             value={formData.business_area}
             onChange={handleChange}
-            placeholder="Enter business area"
-            className={`w-full rounded-md border ${errors.business_area ? 'border-red-500' : 'border-brand-gray2'} bg-brand-dark/60 text-brand-white placeholder-brand-gray3 px-4 py-2 focus:border-blue-500 focus:ring-blue-500 outline-none`}
+            className={`w-full rounded-md border ${errors.business_area ? 'border-red-500' : 'border-brand-gray2'} bg-brand-dark/60 text-brand-white px-4 py-2 focus:border-blue-500 focus:ring-blue-500 outline-none`}
             required
-          />
+          >
+            <option value="">Select Business Area</option>
+            {userBusinessAreas.map(area => (
+              <option key={area} value={area}>{area}</option>
+            ))}
+          </select>
           {errors.business_area && (
             <p className="mt-1 text-sm text-red-500">{errors.business_area}</p>
           )}
@@ -256,13 +356,13 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
           )}
         </div>
         <div>
-          <label htmlFor="status" className="block text-sm font-semibold text-brand-white mb-1">Status</label>
+          <label htmlFor="doc_status" className="block text-sm font-semibold text-brand-white mb-1">Status</label>
           <select
-            id="status"
-            name="status"
-            value={formData.status}
+            id="doc_status"
+            name="doc_status"
+            value={formData.doc_status}
             onChange={handleChange}
-            className={`w-full rounded-md border ${errors.status ? 'border-red-500' : 'border-brand-gray2'} bg-brand-dark/60 text-brand-white px-4 py-2 focus:border-blue-500 focus:ring-blue-500 outline-none`}
+            className={`w-full rounded-md border ${errors.doc_status ? 'border-red-500' : 'border-brand-gray2'} bg-brand-dark/60 text-brand-white px-4 py-2 focus:border-blue-500 focus:ring-blue-500 outline-none`}
             required
           >
             <option value="">Select status</option>
@@ -271,8 +371,8 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
             <option value="New">New</option>
             <option value="Completed">Completed</option>
           </select>
-          {errors.status && (
-            <p className="mt-1 text-sm text-red-500">{errors.status}</p>
+          {errors.doc_status && (
+            <p className="mt-1 text-sm text-red-500">{errors.doc_status}</p>
           )}
         </div>
         <div>

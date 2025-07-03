@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { BusinessDocument } from '../types/businessDocument';
 import { useRouter } from 'next/navigation';
+import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
 
 interface BusinessDocumentTableProps {
   documents: BusinessDocument[];
@@ -56,7 +57,7 @@ export default function BusinessDocumentTable({ documents, loading, onEdit, onDe
   };
 
   if (loading) {
-    return <div className="text-center py-4">Loading...</div>;
+    return <CenteredLoadingSpinner />;
   }
 
   // Add color maps for badge fields
@@ -117,7 +118,7 @@ export default function BusinessDocumentTable({ documents, loading, onEdit, onDe
       `}</style>
       <table className="w-full bg-transparent">
         <thead>
-          <tr className="bg-brand-primary sticky top-0">
+          <tr className="bg-brand-dark sticky top-0">
             <th className="py-1 text-brand-white font-medium text-xs uppercase tracking-wider w-[120px] text-left align-top">Business Area</th>
             <th className="py-1 text-brand-white font-medium text-xs uppercase tracking-wider w-[120px] text-left align-top">Sub Business Area</th>
             <th className="py-1 text-brand-white font-medium text-xs uppercase tracking-wider w-[120px] text-left align-top">Document Name</th>
@@ -213,14 +214,14 @@ export default function BusinessDocumentTable({ documents, loading, onEdit, onDe
                   {document.progress}
                 </div>
               </td>
-              <td className={`py-2 px-0 text-brand-white group relative${expandedCell === `cell-${document.id}-status` ? ' expanded' : ''}`} 
-                  data-cell-id={`cell-${document.id}-status`}
-                  style={expandedCell === `cell-${document.id}-status` ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}>
+              <td className={`py-2 px-0 text-brand-white group relative${expandedCell === `cell-${document.id}-doc_status` ? ' expanded' : ''}`} 
+                  data-cell-id={`cell-${document.id}-doc_status`}
+                  style={expandedCell === `cell-${document.id}-doc_status` ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}>
                 <div
-                  className="cell-content"
-                  onClick={() => handleCellClick(`cell-${document.id}-status`)}
+                  className={`inline-block px-3 text-xs py-1 rounded-full font-medium text-white ${progressColor[document.doc_status] || 'bg-gray-500'}`}
+                  onClick={() => handleCellClick(`cell-${document.id}-doc_status`)}
                 >
-                  {document.status}
+                  {document.doc_status}
                 </div>
               </td>
               <td className={`py-2 px-0 text-brand-white group relative${expandedCell === `cell-${document.id}-status_percentage` ? ' expanded' : ''}`} 

@@ -1,82 +1,61 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/app/lib/db';
+import { getCurrentUserBusinessAreas } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const objectives = await query(`
-      SELECT * FROM businessqualityobjectives
-      ORDER BY id DESC
-    `);
-    return NextResponse.json(objectives);
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    if (userBusinessAreas.length === 0) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Create placeholders for IN clause
+    const placeholders = userBusinessAreas.map(() => '?').join(',');
+    
+    const objectives = await query(
+      `SELECT * FROM businessqualityobjectives WHERE business_area IN (${placeholders}) ORDER BY id DESC`,
+      userBusinessAreas
+    );
+    return NextResponse.json({ success: true, data: objectives });
   } catch (error) {
     console.error('Database Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch business quality objectives' },
+      { success: false, error: 'Failed to fetch business quality objectives' },
       { status: 500 }
     );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    if (userBusinessAreas.length === 0) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
-    const {
-      category,
-      business_area,
-      sub_business_area,
-      qms_main_objectives,
-      qms_objective_description,
-      kpi_or_sla_targets,
-      performance_monitoring,
-      proof_of_measuring,
-      proof_of_reporting,
-      frequency,
-      responsible_person_team,
-      review_date,
-      progress,
-      status_percentage
-    } = body;
+    const { name, description, target, current_value, unit, target_date, status } = body;
 
-    const result = await query(`
-      INSERT INTO businessqualityobjectives (
-        category,
-        business_area,
-        sub_business_area,
-        qms_main_objectives,
-        qms_objective_description,
-        kpi_or_sla_targets,
-        performance_monitoring,
-        proof_of_measuring,
-        proof_of_reporting,
-        frequency,
-        responsible_person_team,
-        review_date,
-        progress,
-        status_percentage
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      category,
-      business_area,
-      sub_business_area,
-      qms_main_objectives,
-      qms_objective_description,
-      kpi_or_sla_targets,
-      performance_monitoring,
-      proof_of_measuring,
-      proof_of_reporting,
-      frequency,
-      responsible_person_team,
-      review_date,
-      progress,
-      status_percentage
-    ]);
+    // Use the first business area for new records
+    const userBusinessArea = userBusinessAreas[0];
 
-    return NextResponse.json(result);
+    const result = await query(
+      `INSERT INTO businessqualityobjectives 
+      (name, description, target, current_value, unit, target_date, status, business_area)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, description, target, current_value, unit, target_date, status, userBusinessArea]
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: { id: result.insertId },
+      message: 'Business quality objective created successfully'
+    });
   } catch (error) {
     console.error('Database Error:', error);
     return NextResponse.json(
-      { error: 'Failed to create business quality objective' },
+      { success: false, error: 'Failed to create business quality objective' },
       { status: 500 }
     );
   }
-} 
+}

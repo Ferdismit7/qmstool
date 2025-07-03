@@ -3,15 +3,16 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PerformanceMonitoringForm from '@/app/components/PerformanceMonitoringForm';
+import { FullScreenLoadingSpinner } from '@/app/components/ui/LoadingSpinner';
 
 interface PerformanceMonitoringControl {
   id: number;
   business_area: string;
   sub_business_area: string;
   Name_reports: string;
-  type: string;
+  doc_type: string;
   priority: string;
-  status: string;
+  doc_status: string;
   progress: string;
   status_percentage: number;
   target_date: string;
@@ -48,7 +49,7 @@ export default function EditPerformanceMonitoringPage({
     fetchControl();
   }, [params.id]);
 
-  if (loading) return <div className="text-center py-4">Loading...</div>;
+  if (loading) return <FullScreenLoadingSpinner />;
   if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
   if (!control) return <div className="text-center py-4">Control not found</div>;
 
@@ -56,7 +57,7 @@ export default function EditPerformanceMonitoringPage({
     <div className="w-full px-2 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-brand-white mb-2">Edit Performance Monitoring Control</h1>
-        <p className="text-brand-gray2">Update the performance monitoring control details</p>
+        <p className="text-brand-gray3">Update the performance monitoring control details</p>
       </div>
       <PerformanceMonitoringForm mode="edit" control={control} />
     </div>

@@ -10,7 +10,7 @@ export const toBusinessProcessRegister = (process: BusinessProcess): BusinessPro
   version: process.version,
   progress: process.progress,
   docStatus: process.status,
-  statusPrecentage: process.statusPrecentage,
+  statusPercentage: process.statusPercentage,
   priority: process.priority,
   targetDate: new Date(process.targetDate),
   processOwner: process.processOwner,
@@ -28,7 +28,7 @@ export const toBusinessProcess = (savedProcess: any, processesLength: number): B
   version: savedProcess.version || '',
   progress: savedProcess.progress || '',
   status: savedProcess.status || savedProcess.docStatus || '',
-  statusPrecentage: savedProcess.statusPrecentage ?? savedProcess.statusPercentage ?? 0,
+  statusPercentage: savedProcess.statusPercentage ?? 0,
   priority: savedProcess.priority || 'Low',
   targetDate: savedProcess.targetDate instanceof Date
     ? savedProcess.targetDate.toISOString().split('T')[0]
@@ -65,7 +65,7 @@ export const calculateMetrics = (processes: BusinessProcess[]) => {
     inProgressProcesses: processes.filter(p => p.status === DOC_STATUS.IN_PROGRESS).length,
     highPriorityProcesses: processes.filter(p => p.priority === 'High').length,
     overallProgress: processes.length > 0
-      ? Math.round(processes.reduce((sum, p) => sum + (typeof p.statusPrecentage === 'number' ? p.statusPrecentage : 0), 0) / processes.length)
+      ? Math.round(processes.reduce((sum, p) => sum + (typeof p.statusPercentage === 'number' ? p.statusPercentage : 0), 0) / processes.length)
       : 0,
     statusCounts,
     progressCounts,

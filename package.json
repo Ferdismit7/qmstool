@@ -11,15 +11,20 @@
   "dependencies": {
     "@prisma/client": "^6.8.2",
     "@supabase/supabase-js": "^2.49.8",
+    "@types/bcrypt": "^5.0.2",
     "@vercel/postgres": "^0.10.0",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "jose": "^6.0.11",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "mysql2": "^3.14.1",
     "next": "14.1.0",
     "prisma": "^6.8.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.58.1",
     "react-icons": "^5.0.1"
   },
   "devDependencies": {

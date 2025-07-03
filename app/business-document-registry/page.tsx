@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import BusinessDocumentForm from '../components/BusinessDocumentForm';
 import BusinessDocumentTable from '../components/BusinessDocumentTable';
 import { BusinessDocument } from '../types/businessDocument';
+import { FaPlus } from 'react-icons/fa';
 
 export default function BusinessDocumentRegistry() {
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
@@ -100,17 +101,17 @@ export default function BusinessDocumentRegistry() {
   };
 
   return (
-    <div className="w-screen px-0 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-brand-white">Business Document Registry</h1>
+    <div className="w-full px-2 py-8">
+      <div className="flex justify-between items-center mb-2">
+        <h1 className="text-3xl font-bold text-brand-white">Business Document Registry</h1>
         <button
           onClick={() => {
             setEditingDocument(undefined);
             setShowForm(true);
           }}
-          className="px-4 py-2 bg-brand-primary text-white rounded hover:bg-brand-primary/80"
+          className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
         >
-          Add New Document
+          Add Document
         </button>
       </div>
 

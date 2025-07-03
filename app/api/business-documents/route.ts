@@ -1,90 +1,123 @@
-import { NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { NextRequest, NextResponse } from 'next/server';
+import { query } from '@/app/lib/db';
+import { getCurrentUserBusinessAreas } from '@/lib/auth';
 
-// Database connection configuration
-const dbConfig = {
-  host: process.env.MYSQL_HOST,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE,
-};
-
-// Helper function to create database connection
-async function createConnection() {
-  return await mysql.createConnection(dbConfig);
-}
-
-// GET all business documents
-export async function GET() {
-  let connection;
+// GET all business documents for user's business areas
+export async function GET(request: NextRequest) {
   try {
-    connection = await createConnection();
-    const [rows] = await connection.execute('SELECT * FROM businessdocumentregister ORDER BY update_date DESC');
-    return NextResponse.json(rows);
-  } catch (error: any) {
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    
+    if (userBusinessAreas.length === 0) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No business area access' },
+        { status: 401 }
+      );
+    }
+
+    // Create placeholders for IN clause
+    const placeholders = userBusinessAreas.map(() => '?').join(',');
+    
+    const documents = await query(`
+      SELECT bdr.*, ba.business_area 
+      FROM businessdocumentregister bdr
+      LEFT JOIN businessareas ba ON bdr.business_area = ba.business_area
+      WHERE bdr.business_area IN (${placeholders})
+      ORDER BY bdr.update_date DESC
+    `, userBusinessAreas);
+
+    return NextResponse.json(documents);
+  } catch (error) {
     console.error('Error in GET /api/business-documents:', error);
     return NextResponse.json({ 
       error: 'Failed to fetch documents',
-      details: error?.message 
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
   }
 }
 
-// POST (create) a new business document
-export async function POST(request: Request) {
-  let connection;
+// POST new business document
+export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    connection = await createConnection();
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
-    const [result] = await connection.execute(
-      `INSERT INTO businessdocumentregister (
-        business_area, sub_business_area, document_name, name_and_numbering,
-        document_type, version, progress, status, status_percentage,
-        priority, target_date, document_owner, update_date, remarks, review_date
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        data.business_area,
-        data.sub_business_area,
-        data.document_name,
-        data.name_and_numbering,
-        data.document_type,
-        data.version,
-        data.progress,
-        data.status,
-        data.status_percentage,
-        data.priority,
-        data.target_date,
-        data.document_owner,
-        new Date().toISOString().split('T')[0], // update_date
-        data.remarks,
-        data.review_date
-      ]
-    );
+    if (userBusinessAreas.length === 0) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No business area access' },
+        { status: 401 }
+      );
+    }
 
-    const insertResult = result as mysql.ResultSetHeader;
-    return NextResponse.json({ 
-      message: 'Document created successfully',
-      id: insertResult.insertId,
-      ...data 
-    });
+    const data = await request.json();
+    const {
+      sub_business_area,
+      document_name,
+      name_and_numbering,
+      document_type,
+      version,
+      progress,
+      doc_status,
+      status_percentage,
+      priority,
+      target_date,
+      document_owner,
+      remarks,
+      review_date,
+    } = data;
+
+    // Validate required fields
+    if (!document_name) {
+      return NextResponse.json(
+        { error: 'Document name is required' },
+        { status: 400 }
+      );
+    }
+
+    // Use the first business area for new records
+    const userBusinessArea = userBusinessAreas[0];
+
+    const result = await query(`
+      INSERT INTO businessdocumentregister (
+        business_area, sub_business_area, document_name, name_and_numbering,
+        document_type, version, progress, doc_status, status_percentage, priority,
+        target_date, document_owner, update_date, remarks, review_date
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)
+    `, [
+      userBusinessArea, sub_business_area, document_name, name_and_numbering,
+      document_type, version || '1.0', progress || 'NOT_STARTED', doc_status || 'DRAFT',
+      status_percentage, priority, target_date ? new Date(target_date) : null,
+      document_owner, remarks, review_date ? new Date(review_date) : null
+    ]);
+
+    // Fetch the created record
+    const [document] = await query(`
+      SELECT bdr.*, ba.business_area 
+      FROM businessdocumentregister bdr
+      LEFT JOIN businessareas ba ON bdr.business_area = ba.business_area
+      WHERE bdr.id = ?
+    `, [result.insertId]);
+
+    return NextResponse.json(document, { status: 201 });
   } catch (error) {
-    console.error('Error creating document:', error);
+    console.error('Error in POST /api/business-documents:', error);
     return NextResponse.json({ 
       error: 'Failed to create document',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
   }
 }
 
 // PUT (update) a business document
-export async function PUT(request: Request) {
-  let connection;
+export async function PUT(request: NextRequest) {
   try {
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    
+    if (userBusinessAreas.length === 0) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No business area access' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) {
@@ -92,74 +125,91 @@ export async function PUT(request: Request) {
     }
 
     const data = await request.json();
-    connection = await createConnection();
-    
-    await connection.execute(
-      `UPDATE businessdocumentregister SET
-        business_area = ?,
-        sub_business_area = ?,
-        document_name = ?,
-        name_and_numbering = ?,
-        document_type = ?,
-        version = ?,
-        progress = ?,
-        status = ?,
-        status_percentage = ?,
-        priority = ?,
-        target_date = ?,
-        document_owner = ?,
-        update_date = NOW(),
-        remarks = ?,
-        review_date = ?
-      WHERE id = ?`,
-      [
-        data.business_area,
-        data.sub_business_area,
-        data.document_name,
-        data.name_and_numbering,
-        data.document_type,
-        data.version,
-        data.progress,
-        data.status,
-        data.status_percentage,
-        data.priority,
-        data.target_date,
-        data.document_owner,
-        // update_date is set by SQL NOW()
-        data.remarks,
-        data.review_date,
-        id
-      ]
-    );
+    const {
+      sub_business_area,
+      document_name,
+      name_and_numbering,
+      document_type,
+      version,
+      progress,
+      doc_status,
+      status_percentage,
+      priority,
+      target_date,
+      document_owner,
+      remarks,
+      review_date,
+    } = data;
 
-    return NextResponse.json({ 
-      message: 'Document updated successfully',
-      id,
-      ...data 
-    });
+    // Create placeholders for IN clause
+    const placeholders = userBusinessAreas.map(() => '?').join(',');
+    const queryParams = [...userBusinessAreas, Number(id)];
+
+    const result = await query(`
+      UPDATE businessdocumentregister SET
+        sub_business_area = ?, document_name = ?, name_and_numbering = ?,
+        document_type = ?, version = ?, progress = ?, doc_status = ?, status_percentage = ?,
+        priority = ?, target_date = ?, document_owner = ?, update_date = NOW(),
+        remarks = ?, review_date = ?
+      WHERE id = ? AND business_area IN (${placeholders})
+    `, [
+      sub_business_area, document_name, name_and_numbering, document_type,
+      version, progress, doc_status, status_percentage, priority,
+      target_date ? new Date(target_date) : null, document_owner, remarks,
+      review_date ? new Date(review_date) : null, ...queryParams
+    ]);
+
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+
+    // Fetch the updated record
+    const [document] = await query(`
+      SELECT bdr.*, ba.business_area 
+      FROM businessdocumentregister bdr
+      LEFT JOIN businessareas ba ON bdr.business_area = ba.business_area
+      WHERE bdr.id = ? AND bdr.business_area IN (${placeholders})
+    `, [Number(id), ...userBusinessAreas]);
+
+    return NextResponse.json(document);
   } catch (error) {
     console.error('Error updating document:', error);
     return NextResponse.json({ 
       error: 'Failed to update document',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
   }
 }
 
 // DELETE a business document
-export async function DELETE(request: Request) {
-  let connection;
+export async function DELETE(request: NextRequest) {
   try {
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    
+    if (userBusinessAreas.length === 0) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No business area access' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    connection = await createConnection();
-    await connection.execute('DELETE FROM businessdocumentregister WHERE id = ?', [id]);
+    // Create placeholders for IN clause
+    const placeholders = userBusinessAreas.map(() => '?').join(',');
+    const queryParams = [...userBusinessAreas, Number(id)];
+
+    const result = await query(`
+      DELETE FROM businessdocumentregister WHERE id = ? AND business_area IN (${placeholders})
+    `, queryParams);
+
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
     
     return NextResponse.json({ message: 'Document deleted successfully' });
   } catch (error) {
@@ -168,7 +218,5 @@ export async function DELETE(request: Request) {
       error: 'Failed to delete document',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
-  } finally {
-    if (connection) await connection.end();
   }
 } 

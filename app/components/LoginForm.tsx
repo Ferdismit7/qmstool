@@ -50,6 +50,9 @@ const LoginForm = ({ onToggleForm }: LoginFormProps) => {
       // Set the token in cookies for middleware
       document.cookie = `authToken=${data.token}; path=/`;
 
+      // Dispatch custom event to notify Layout component of user change
+      window.dispatchEvent(new Event('tokenChange'));
+
       console.log('Login successful, redirecting...');
       router.push('/dashboard');
     } catch (err) {
@@ -61,7 +64,7 @@ const LoginForm = ({ onToggleForm }: LoginFormProps) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-dark/20">
+    <div className="min-h-full flex items-center justify-center bg-brand-dark/20">
       <div className="bg-brand-dark p-8 rounded-lg shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold text-brand-white mb-6 text-center">Login</h2>
         

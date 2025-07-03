@@ -1,56 +1,144 @@
+'use client';
+
 import React from 'react';
+import { useMetrics } from '@/app/lib/hooks/useMetrics';
+import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
 
-interface DashboardMetricsProps {
-  totalProcesses: number;
-  completedProcesses: number;
-  inProgressProcesses: number;
-  highPriorityProcesses: number;
-  overallProgress: number;
-}
+export default function DashboardMetrics() {
+  const { metrics, loading, error } = useMetrics();
 
-const DashboardMetrics: React.FC<DashboardMetricsProps> = ({
-  totalProcesses,
-  completedProcesses,
-  inProgressProcesses,
-  highPriorityProcesses,
-  overallProgress
-}) => {
+  if (loading) return <CenteredLoadingSpinner />;
+  if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
+  if (!metrics) return null;
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-      <div className="bg-brand-dark/40 p-4 rounded-lg backdrop-blur-sm border border-brand-dark/20">
-        <h3 className="text-sm font-medium text-gray-400">Total Processes</h3>
-        <p className="text-2xl font-semibold text-brand-white mt-1">{totalProcesses}</p>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Business Quality Objectives Metrics */}
+      <div className="bg-gray-800/40 backdrop-blur-sm p-6 rounded-lg border border-brand-dark/20">
+        <h3 className="text-lg font-semibold text-brand-white mb-4">Business Quality Objectives</h3>
+        <div className="space-y-4">
+          <div>
+            <p className="text-brand-gray2">Total Objectives</p>
+            <p className="text-2xl font-bold text-brand-white">{metrics.businessQuality.totalObjectives}</p>
+          </div>
+          <div>
+            <p className="text-brand-gray2">Overall Progress</p>
+            <div className="w-full bg-gray-700 rounded-full h-2.5">
+              <div 
+                className="bg-blue-500 h-2.5 rounded-full" 
+                style={{ width: `${metrics.businessQuality.overallProgress}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-brand-white mt-1">{metrics.businessQuality.overallProgress}%</p>
+          </div>
+          <div>
+            <p className="text-brand-gray2">KPI Status</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-sm text-brand-white">Completed</p>
+                <p className="text-lg font-semibold text-green-500">{metrics.businessQuality.kpiMetrics.completedKPIs}</p>
+              </div>
+              <div>
+                <p className="text-sm text-brand-white">In Progress</p>
+                <p className="text-lg font-semibold text-blue-500">{metrics.businessQuality.kpiMetrics.inProgressKPIs}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <div className="bg-brand-dark/40 p-4 rounded-lg backdrop-blur-sm border border-brand-dark/20">
-        <h3 className="text-sm font-medium text-gray-400">Completed</h3>
-        <p className="text-2xl font-semibold text-green-500 mt-1">{completedProcesses}</p>
+
+      {/* Performance Monitoring Metrics */}
+      <div className="bg-gray-800/40 backdrop-blur-sm p-6 rounded-lg border border-brand-dark/20">
+        <h3 className="text-lg font-semibold text-brand-white mb-4">Performance Monitoring</h3>
+        <div className="space-y-4">
+          <div>
+            <p className="text-brand-gray2">Total Reports</p>
+            <p className="text-2xl font-bold text-brand-white">{metrics.performance.totalReports}</p>
+          </div>
+          <div>
+            <p className="text-brand-gray2">Compliance Rate</p>
+            <div className="w-full bg-gray-700 rounded-full h-2.5">
+              <div 
+                className="bg-green-500 h-2.5 rounded-full" 
+                style={{ width: `${metrics.performance.complianceMetrics.complianceRate}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-brand-white mt-1">{metrics.performance.complianceMetrics.complianceRate}%</p>
+          </div>
+          <div>
+            <p className="text-brand-gray2">Status Distribution</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-sm text-brand-white">Compliant</p>
+                <p className="text-lg font-semibold text-green-500">{metrics.performance.complianceMetrics.compliant}</p>
+              </div>
+              <div>
+                <p className="text-sm text-brand-white">Non-Compliant</p>
+                <p className="text-lg font-semibold text-red-500">{metrics.performance.complianceMetrics.nonCompliant}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <div className="bg-brand-dark/40 p-4 rounded-lg backdrop-blur-sm border border-brand-dark/20">
-        <h3 className="text-sm font-medium text-gray-400">In Progress</h3>
-        <p className="text-2xl font-semibold text-blue-400 mt-1">{inProgressProcesses}</p>
-      </div>
-      
-      <div className="bg-brand-dark p-4 rounded-lg backdrop-blur-sm">
-        <h3 className="text-sm font-medium text-gray-400">Priority</h3>
-        <p className="text-2xl font-semibold text-red-500 mt-1">{highPriorityProcesses}</p>
-      </div>
-      
-      <div className="bg-brand-dark/40 p-4 rounded-lg backdrop-blur-sm border border-brand-dark/20">
-        <h3 className="text-sm font-medium text-gray-400">Overall Progress</h3>
-        <div className="flex items-center mt-1">
-          <p className="text-2xl font-semibold text-brand-white">{overallProgress}%</p>
-          <div className="flex-1 ml-3 bg-gray-700 rounded-full h-2">
-            <div 
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${overallProgress}%` }}
-            />
+
+      {/* Risk Management Metrics */}
+      <div className="bg-gray-800/40 backdrop-blur-sm p-6 rounded-lg border border-brand-dark/20">
+        <h3 className="text-lg font-semibold text-brand-white mb-4">Risk Management</h3>
+        <div className="space-y-4">
+          <div>
+            <p className="text-brand-gray2">Total Risks</p>
+            <p className="text-2xl font-bold text-brand-white">{metrics.risk.totalRisks}</p>
+          </div>
+          <div>
+            <p className="text-brand-gray2">Risk Distribution</p>
+            <div className="space-y-2">
+              <div>
+                <p className="text-sm text-brand-white">High Risk</p>
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-red-500 h-2 rounded-full" 
+                    style={{ width: `${(metrics.risk.riskMetrics.highRisk / metrics.risk.totalRisks) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-brand-white mt-1">{metrics.risk.riskMetrics.highRisk}</p>
+              </div>
+              <div>
+                <p className="text-sm text-brand-white">Medium Risk</p>
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-yellow-500 h-2 rounded-full" 
+                    style={{ width: `${(metrics.risk.riskMetrics.mediumRisk / metrics.risk.totalRisks) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-brand-white mt-1">{metrics.risk.riskMetrics.mediumRisk}</p>
+              </div>
+              <div>
+                <p className="text-sm text-brand-white">Low Risk</p>
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-green-500 h-2 rounded-full" 
+                    style={{ width: `${(metrics.risk.riskMetrics.lowRisk / metrics.risk.totalRisks) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-brand-white mt-1">{metrics.risk.riskMetrics.lowRisk}</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-brand-gray2">Mitigation Status</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-sm text-brand-white">Mitigated</p>
+                <p className="text-lg font-semibold text-green-500">{metrics.risk.riskMetrics.mitigated}</p>
+              </div>
+              <div>
+                <p className="text-sm text-brand-white">In Progress</p>
+                <p className="text-lg font-semibold text-blue-500">{metrics.risk.riskMetrics.inProgress}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-}
-
-export default DashboardMetrics; 
+} 

@@ -2,15 +2,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { FiEdit2, FiRefreshCw } from 'react-icons/fi';
+import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
 
 interface PerformanceMonitoringControl {
   id: number;
   business_area: string;
   sub_business_area: string;
   Name_reports: string;
-  type: string;
+  doc_type: string;
   priority: string;
-  status: string;
+  doc_status: string;
   progress: string;
   status_percentage: number;
   target_date: string;
@@ -39,9 +40,9 @@ const columns = [
   { key: 'business_area', label: 'Business Area' },
   { key: 'sub_business_area', label: 'Sub Business Area' },
   { key: 'Name_reports', label: 'Report Name' },
-  { key: 'type', label: 'Type' },
+  { key: 'doc_type', label: 'Type' },
   { key: 'priority', label: 'Priority' },
-  { key: 'status', label: 'Status' },
+  { key: 'doc_status', label: 'Status' },
   { key: 'progress', label: 'Progress' },
   { key: 'status_percentage', label: 'Status %' },
   { key: 'target_date', label: 'Target Date' },
@@ -85,7 +86,7 @@ export default function PerformanceMonitoringTable({ controls, loading, onEdit, 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [expandedCell]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <CenteredLoadingSpinner />;
   if (!controls) return <div>No data.</div>;
 
   return (
@@ -123,7 +124,7 @@ export default function PerformanceMonitoringTable({ controls, loading, onEdit, 
       `}</style>
       <table className="w-full bg-transparent">
         <thead>
-          <tr className="bg-brand-primary sticky top-0">
+          <tr className="bg-brand-dark sticky top-0">
             {columns.map(col => (
               <th
                 key={col.key}

@@ -7,7 +7,7 @@ export interface BusinessProcessRegister {
   version: string;
   progress: string;
   docStatus: string;
-  statusPrecentage: number;
+  statusPercentage: number;
   priority: string;
   targetDate: Date;
   processOwner: string;
@@ -16,4 +16,24 @@ export interface BusinessProcessRegister {
   reviewDate: Date;
 }
 
-export type BusinessProcessRegisterInput = Omit<BusinessProcessRegister, 'id'>; 
+export type BusinessProcessRegisterInput = Omit<BusinessProcessRegister, 'id'>;
+
+export const PROGRESS_STATUS = {
+  COMPLETED: 'Completed',
+  ON_TRACK: 'On-Track',
+  MINOR_CHALLENGES: 'Minor Challenges',
+  MAJOR_CHALLENGES: 'Major Challenges',
+} as const;
+
+export const DOC_STATUS = {
+  COMPLETED: 'Completed',
+  IN_PROGRESS: 'In progress',
+  NEW: 'New',
+  TO_BE_REVIEWED: 'To be reviewed',
+} as const;
+
+export const PRIORITY = {
+  LOW: 'Low',
+  MEDIUM: 'Medium',
+  HIGH: 'High',
+} as const; 

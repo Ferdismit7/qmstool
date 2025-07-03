@@ -1,32 +1,62 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface PerformanceMonitoringControl {
-  id?: number;
+type BusinessArea = {
   business_area: string;
+}
+
+/**
+ * Interface representing a Performance Monitoring Control
+ */
+type PerformanceMonitoringControl = {
+  /** Unique identifier for the control (optional for new controls) */
+  id?: number;
+  /** Main business area the control is associated with */
+  business_area: string;
+  /** Specific sub-area within the business area */
   sub_business_area: string;
+  /** Name of the report or monitoring item */
   Name_reports: string;
-  type: string;
+  /** Type of monitoring control */
+  doc_type: string;
+  /** Priority level of the control */
   priority: string;
-  status: string;
+  /** Current status of the control */
+  doc_status: string;
+  /** Progress status of the control */
   progress: string;
+  /** Percentage completion of the control (0-100) */
   status_percentage: number;
+  /** Target date for completion */
   target_date: string;
+  /** Evidence or proof of monitoring */
   proof: string;
+  /** How often the control is monitored */
   frequency: string;
+  /** Person(s) responsible for the control */
   responsible_persons: string;
+  /** Additional remarks or notes */
   remarks: string;
 }
 
-interface Props {
+/**
+ * Props for the PerformanceMonitoringForm component
+ */
+type Props = {
+  /** Form mode - either creating a new control or editing an existing one */
   mode: 'create' | 'edit';
+  /** Optional existing control data for editing mode */
   control?: PerformanceMonitoringControl;
 }
 
-// Helper to safely format date for input
-const getDateInputValue = (date: string | null | undefined) => {
+/**
+ * Helper function to safely format date for input fields
+ * @param {string | null | undefined} date - The date to format
+ * @returns {string} Formatted date string in YYYY-MM-DD format
+ */
+const getDateInputValue = (date: string | null | undefined): string => {
   if (!date) return '';
   if (typeof date === 'string') {
     // If already in YYYY-MM-DD format, return as is
@@ -44,9 +74,40 @@ const getDateInputValue = (date: string | null | undefined) => {
   return '';
 };
 
+/**
+ * PerformanceMonitoringForm Component
+ * 
+ * A form component for creating and editing performance monitoring controls.
+ * Features include:
+ * - Form validation
+ * - Dynamic form state management
+ * - Date formatting and handling
+ * - Progress tracking
+ * - Priority management
+ * - Status monitoring
+ * - Responsive design
+ * - Accessibility features
+ * 
+ * @component
+ * @param {Props} props - Component props
+ * @example
+ * ```tsx
+ * // Create mode
+ * <PerformanceMonitoringForm mode="create" />
+ * 
+ * // Edit mode
+ * <PerformanceMonitoringForm 
+ *   mode="edit"
+ *   control={existingControl}
+ * />
+ * ```
+ * 
+ *
+ */
 export default function PerformanceMonitoringForm({ mode, control }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [userBusinessAreas, setUserBusinessAreas] = useState<string[]>([]);
   const [formData, setFormData] = useState<PerformanceMonitoringControl>(
     control ? {
       ...control,
@@ -55,9 +116,9 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
       business_area: '',
       sub_business_area: '',
       Name_reports: '',
-      type: '',
+      doc_type: '',
       priority: '',
-      status: '',
+      doc_status: '',
       progress: '',
       status_percentage: 0,
       target_date: '',
@@ -68,6 +129,49 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
     }
   );
 
+  /**
+   * Fetch user's business areas on component mount
+   */
+  useEffect(() => {
+    const fetchUserBusinessAreas = async () => {
+      try {
+        // Get the token from localStorage or sessionStorage
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        
+        const response = await fetch('/api/auth/user-business-areas', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUserBusinessAreas(userData.businessAreas || []);
+          
+          // If creating a new control, pre-populate with user's first business area
+          if (mode === 'create' && userData.businessAreas.length > 0) {
+            setFormData(prev => ({
+              ...prev,
+              business_area: userData.businessAreas[0]
+            }));
+          }
+        } else {
+          console.error('Failed to fetch user business areas:', response.status);
+        }
+      } catch (error) {
+        console.error('Error fetching user business areas:', error);
+      }
+    };
+
+    fetchUserBusinessAreas();
+  }, [mode]);
+
+  /**
+   * Handles form submission
+   * @param {React.FormEvent} e - The form submission event
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -101,6 +205,10 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
     }
   };
 
+  /**
+   * Handles form input changes
+   * @param {React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>} e - The change event
+   */
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -117,14 +225,14 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-6 py-2 rounded-lg border border-brand-gray3 text-brand-white hover:bg-brand-gray3 transition-colors"
+          className="px-6 py-2 rounded-lg border border-brand-gray3/50 bg-brand-dark/50 text-brand-white hover:bg-brand-white/40 transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 rounded-lg bg-brand-blue text-white hover:bg-brand-blue/90 transition-colors disabled:opacity-50"
+          className="px-6 py-2 rounded-lg border border-brand-gray3/50 bg-brand-dark/50 text-white hover:bg-brand-white/40 transition-colors disabled:opacity-50"
         >
           {loading ? 'Saving...' : mode === 'create' ? 'Create' : 'Update'}
         </button>
@@ -132,71 +240,82 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="business_area" className="block text-sm font-medium text-brand-gray3 mb-2">
             Business Area
           </label>
-          <input
-            type="text"
+          <select
+            id="business_area"
             name="business_area"
             value={formData.business_area}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
-          />
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+          >
+            <option value="">Select Business Area</option>
+            {userBusinessAreas.map((area) => (
+              <option key={area} value={area}>
+                {area}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="sub_business_area" className="block text-sm font-medium text-brand-gray3 mb-2">
             Sub Business Area
           </label>
           <input
             type="text"
+            id="sub_business_area"
             name="sub_business_area"
             value={formData.sub_business_area}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="Name_reports" className="block text-sm font-medium text-brand-gray3 mb-2">
             Report Name
           </label>
           <input
             type="text"
+            id="Name_reports"
             name="Name_reports"
             value={formData.Name_reports}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="doc_type" className="block text-sm font-medium text-brand-gray3 mb-2">
             Type
           </label>
           <input
             type="text"
-            name="type"
-            value={formData.type}
+            id="doc_type"
+            name="doc_type"
+            value={formData.doc_type}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="priority" className="block text-sm font-medium text-brand-gray3 mb-2">
             Priority
           </label>
           <select
+            id="priority"
             name="priority"
             value={formData.priority}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           >
             <option value="">Select Priority</option>
             <option value="High">High</option>
@@ -206,15 +325,16 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="doc_status" className="block text-sm font-medium text-brand-gray3 mb-2">
             Status
           </label>
           <select
-            name="status"
-            value={formData.status}
+            id="doc_status"
+            name="doc_status"
+            value={formData.doc_status}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           >
             <option value="">Select Status</option>
             <option value="Active">Active</option>
@@ -224,15 +344,16 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="progress" className="block text-sm font-medium text-brand-gray3 mb-2">
             Progress
           </label>
           <select
+            id="progress"
             name="progress"
             value={formData.progress}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           >
             <option value="">Select Progress</option>
             <option value="Not Started">Not Started</option>
@@ -242,59 +363,63 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="status_percentage" className="block text-sm font-medium text-brand-gray3 mb-2">
             Status Percentage
           </label>
           <input
             type="number"
+            id="status_percentage"
             name="status_percentage"
             value={formData.status_percentage}
             onChange={handleChange}
             min="0"
             max="100"
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="target_date" className="block text-sm font-medium text-brand-gray3 mb-2">
             Target Date
           </label>
           <input
             type="date"
+            id="target_date"
             name="target_date"
             value={formData.target_date}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="proof" className="block text-sm font-medium text-brand-gray3 mb-2">
             Proof
           </label>
           <input
             type="text"
+            id="proof"
             name="proof"
             value={formData.proof}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="frequency" className="block text-sm font-medium text-brand-gray3 mb-2">
             Frequency
           </label>
           <select
+            id="frequency"
             name="frequency"
             value={formData.frequency}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           >
             <option value="">Select Frequency</option>
             <option value="Daily">Daily</option>
@@ -306,31 +431,33 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-brand-gray2 mb-2">
+          <label htmlFor="responsible_persons" className="block text-sm font-medium text-brand-gray3 mb-2">
             Responsible Persons
           </label>
           <input
             type="text"
+            id="responsible_persons"
             name="responsible_persons"
             value={formData.responsible_persons}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
           />
         </div>
-      </div>
 
-      <div>
-        <label className="block text-sm font-medium text-brand-gray2 mb-2">
-          Remarks
-        </label>
-        <textarea
-          name="remarks"
-          value={formData.remarks}
-          onChange={handleChange}
-          rows={4}
-          className="w-full px-4 py-2 rounded-lg border border-brand-gray1 bg-brand-gray1/50 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
-        />
+        <div className="md:col-span-2">
+          <label htmlFor="remarks" className="block text-sm font-medium text-brand-gray3 mb-2">
+            Remarks
+          </label>
+          <textarea
+            id="remarks"
+            name="remarks"
+            value={formData.remarks}
+            onChange={handleChange}
+            rows={3}
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
+          />
+        </div>
       </div>
     </form>
   );

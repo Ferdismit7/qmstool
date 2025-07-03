@@ -10,42 +10,228 @@ datasource db {
 
 /// The main business process register model
 model BusinessProcessRegister {
-  id                Int       @id @default(autoincrement())
-  business_area     String?   @db.VarChar(100)
-  sub_business_area String?   @db.VarChar(100)
-  process_name      String?   @db.VarChar(100)
-  document_name     String?   @db.VarChar(100)
-  version           String?   @db.VarChar(20)
-  progress          String?   @db.VarChar(20)
-  doc_status        String?   @db.VarChar(20)
-  status_precentage Decimal?  @db.Decimal(5, 2)
-  priority          String?   @db.VarChar(20)
-  target_date       DateTime? @db.Date
-  process_owner     String?   @db.VarChar(20)
-  update_date       DateTime? @db.Date
-  remarks           String?   @db.Text
-  review_date       DateTime? @db.Date
+  id                Int            @id @default(autoincrement())
+  business_area     String?        @db.VarChar(50)
+  sub_business_area String?        @db.VarChar(100)
+  process_name      String?        @db.VarChar(100)
+  document_name     String?        @db.VarChar(100)
+  version           String?        @db.VarChar(20)
+  progress          String?        @db.VarChar(20)
+  doc_status        String?        @db.VarChar(20)
+  status_percentage Decimal?       @db.Decimal(5, 0)
+  priority          String?        @db.VarChar(20)
+  target_date       DateTime?      @db.Date
+  process_owner     String?        @db.VarChar(20)
+  update_date       DateTime?      @db.Date
+  remarks           String?        @db.Text
+  review_date       DateTime?      @db.Date
+  businessareas     BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bpr_business_area")
 
+  @@index([business_area], map: "fk_bpr_business_area")
   @@map("businessprocessregister")
 }
 
 /// The business quality objectives model
 model BusinessQualityObjective {
-  id                      Int       @id @default(autoincrement())
-  category               String?   @db.VarChar(100)
-  business_area          String?   @db.VarChar(100)
-  sub_business_area      String?   @db.VarChar(100)
-  qms_main_objectives    String?   @db.Text
-  qms_objective_description String? @db.Text
-  kpi_or_sla_targets     String?   @db.Text
-  performance_monitoring String?   @db.Text
-  proof_of_measuring     String?   @db.VarChar(20)
-  proof_of_reporting     String?   @db.VarChar(20)
-  frequency              String?   @db.VarChar(20)
-  responsible_person_team String?   @db.VarChar(100)
-  review_date            DateTime? @db.Date
-  progress                 String?   @db.VarChar(20)
-  status_percentage      Int?      @db.Int
+  id                        Int            @id @default(autoincrement())
+  category                  String?        @db.VarChar(100)
+  business_area             String?        @db.VarChar(50)
+  sub_business_area         String?        @db.VarChar(100)
+  qms_main_objectives       String?        @db.Text
+  qms_objective_description String?        @db.Text
+  kpi_or_sla_targets        String?        @db.Text
+  performance_monitoring    String?        @db.Text
+  proof_of_measuring        String?        @db.VarChar(20)
+  proof_of_reporting        String?        @db.VarChar(20)
+  frequency                 String?        @db.VarChar(20)
+  responsible_person_team   String?        @db.VarChar(100)
+  review_date               DateTime?      @db.Date
+  progress                  String?        @db.VarChar(20)
+  status_percentage         Int?
+  businessareas             BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bqo_business_area")
 
+  @@index([business_area], map: "fk_bqo_business_area")
   @@map("businessqualityobjectives")
+}
+
+model TrainingSession {
+  id            Int            @id @default(autoincrement())
+  business_area String?        @db.VarChar(50)
+  sessions      String         @db.VarChar(50)
+  session_date  DateTime       @db.Date
+  remarks       String         @db.Text
+  businessareas BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_ts_business_area")
+
+  @@index([business_area], map: "fk_ts_business_area")
+  @@map("trainingsessions")
+}
+
+model BusinessDocumentRegister {
+  id                 Int            @id @default(autoincrement())
+  business_area      String?        @db.VarChar(50)
+  sub_business_area  String?        @db.VarChar(100)
+  document_name      String?        @db.VarChar(100)
+  name_and_numbering String?        @db.VarChar(100)
+  document_type      String?        @db.VarChar(20)
+  version            String?        @db.VarChar(20)
+  progress           String?        @db.VarChar(20)
+  doc_status         String?        @db.VarChar(20)
+  status_percentage  Decimal?       @db.Decimal(5, 0)
+  priority           String?        @db.VarChar(20)
+  target_date        DateTime?      @db.Date
+  document_owner     String?        @db.VarChar(20)
+  update_date        DateTime?      @db.Date
+  remarks            String?        @db.Text
+  review_date        DateTime?      @db.Date
+  businessareas      BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bdr_business_area")
+
+  @@index([business_area], map: "fk_bdr_business_area")
+  @@map("businessdocumentregister")
+}
+
+model PerformanceMonitoringControl {
+  id                  Int            @id @default(autoincrement())
+  business_area       String?        @db.VarChar(50)
+  sub_business_area   String?        @db.VarChar(100)
+  Name_reports        String?        @db.VarChar(100)
+  doc_type            String?        @db.VarChar(50)
+  priority            String?        @db.VarChar(20)
+  doc_status          String?        @db.VarChar(100)
+  progress            String?        @db.VarChar(100)
+  status_percentage   Decimal?       @db.Decimal(5, 0)
+  target_date         DateTime?      @db.Date
+  proof               String?        @db.VarChar(20)
+  frequency           String?        @db.VarChar(50)
+  responsible_persons String?        @db.VarChar(50)
+  remarks             String?        @db.Text
+  businessareas       BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_pmc_business_area")
+
+  @@index([business_area], map: "fk_pmc_business_area")
+  @@map("performancemonitoringcontrol")
+}
+
+model RacmMatrix {
+  id                    Int            @id @default(autoincrement())
+  process_name          String         @db.VarChar(255)
+  activity_description  String?        @db.Text
+  issue_description     String         @db.Text
+  issue_type            String?        @db.VarChar(100)
+  likelihood            Int?
+  impact                Int?
+  risk_score            Int?
+  control_description   String?        @db.Text
+  control_type          String?        @db.VarChar(20)
+  control_owner         String?        @db.VarChar(255)
+  control_effectiveness String?        @db.VarChar(20)
+  residual_risk         Int?
+  status                String?        @db.VarChar(20)
+  created_at            DateTime?      @default(now()) @db.Timestamp(0)
+  updated_at            DateTime?      @default(now()) @updatedAt @db.Timestamp(0)
+  business_area         String?        @db.VarChar(50)
+  businessareas         BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_rm_business_area")
+
+  @@index([business_area], map: "fk_rm_business_area")
+  @@map("racm_matrix")
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique(map: "email") @db.VarChar(50)
+  username      String         @unique(map: "username") @db.VarChar(20)
+  password      String         @db.VarChar(255)
+  business_area String?        @db.VarChar(50)
+  created_at    DateTime?      @default(now()) @db.Timestamp(0)
+  businessareas BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_use_business_area")
+
+  @@index([business_area], map: "fk_use_business_area")
+  @@map("users")
+}
+
+model BusinessAreas {
+  business_area                String                         @id @db.VarChar(50)
+  businessdocumentregister     BusinessDocumentRegister[]
+  businessprocessregister      BusinessProcessRegister[]
+  businessqualityobjectives    BusinessQualityObjective[]
+  performancemonitoringcontrol PerformanceMonitoringControl[]
+  racm_matrix                  RacmMatrix[]
+  trainingsessions             TrainingSession[]
+  users                        User[]
+}
+
+model BusinessProcessVersions {
+  id              Int      @id @default(autoincrement())
+  businessProcessId String
+  versionNumber   String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("businessprocessversions")
+}
+
+/// QMS Internal Self-Assessment models
+model QMSAssessment {
+  id              Int                @id @default(autoincrement())
+  business_area   String             @db.VarChar(100)
+  assessor_name   String             @db.VarChar(100)
+  assessment_date DateTime           @db.Date
+  created_at      DateTime           @default(now()) @db.Timestamp(0)
+  
+  // Relations
+  items           QMSAssessmentItem[]
+  approval        QMSApproval?
+
+  @@map("qms_assessments")
+}
+
+model QMSAssessmentItem {
+  id                Int            @id @default(autoincrement())
+  assessment_id     Int
+  section           String         @db.VarChar(50)
+  clause_reference  String         @db.VarChar(20)
+  item_number       String         @db.VarChar(10)
+  item_description  String         @db.Text
+  status            QMSStatus
+  comment           String?        @db.Text
+  
+  // Relations
+  assessment        QMSAssessment  @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+
+  @@map("qms_assessment_items")
+}
+
+model QMSApproval {
+  id             Int           @id @default(autoincrement())
+  assessment_id  Int           @unique
+  conducted_by   String?       @db.VarChar(100)
+  conducted_date DateTime?     @db.Date
+  approved_by    String?       @db.VarChar(100)
+  approved_date  DateTime?     @db.Date
+  
+  // Relations
+  assessment     QMSAssessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+
+  @@map("qms_approvals")
+}
+
+model QMSSection {
+  id               Int      @id @default(autoincrement())
+  section_number   String   @db.VarChar(10)
+  title            String   @db.VarChar(255)
+  clause_reference String   @db.VarChar(50)
+
+  @@map("qms_sections")
+}
+
+model QMSStatusOption {
+  code    QMSStatus @id
+  meaning String    @db.VarChar(100)
+
+  @@map("qms_status_options")
+}
+
+enum QMSStatus {
+  C
+  NC
+  OFI
+  NA
 }

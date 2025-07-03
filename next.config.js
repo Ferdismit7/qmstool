@@ -8,6 +8,14 @@ const nextConfig = {
   env: {
     ENABLE_AI_FEATURES: process.env.ENABLE_AI_FEATURES,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: '/api/:path*',
+      },
+    ];
+  },
 }
 
 export default nextConfig 

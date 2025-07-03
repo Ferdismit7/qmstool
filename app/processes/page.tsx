@@ -3,15 +3,46 @@
 import { useState, useEffect } from 'react';
 import ProcessForm from '../components/ProcessForm';
 import BusinessProcessTable from '../components/BusinessProcessTable';
-import type { BusinessProcess, BusinessProcessRegister, BusinessProcessRegisterInput } from '../lib/types/businessProcess';
-import { toBusinessProcessRegister, toBusinessProcess, calculateMetrics } from '../lib/utils/businessProcess';
+import type { BusinessProcessRegister, BusinessProcessRegisterInput } from '@/lib/types/businessProcessRegister';
+import { DOC_STATUS, PRIORITY, PROGRESS_STATUS } from '@/lib/types/businessProcessRegister';
 import businessProcessService from '../lib/services/businessProcessService';
-import { DOC_STATUS, PRIORITY, PROGRESS_STATUS } from '../lib/types/businessProcess';
+import { FaPlus } from 'react-icons/fa';
+
+// Calculate metrics for the dashboard
+const calculateMetrics = (processes: BusinessProcessRegister[]) => {
+  const totalProcesses = processes.length;
+  const overallProgress = totalProcesses > 0
+    ? Math.round(processes.reduce((sum, p) => sum + (p.statusPercentage || 0), 0) / totalProcesses)
+    : 0;
+
+  const priorityCounts = processes.reduce((acc, p) => {
+    acc[p.priority] = (acc[p.priority] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const statusCounts = processes.reduce((acc, p) => {
+    acc[p.docStatus] = (acc[p.docStatus] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const progressCounts = processes.reduce((acc, p) => {
+    acc[p.progress] = (acc[p.progress] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return {
+    totalProcesses,
+    overallProgress,
+    priorityCounts,
+    statusCounts,
+    progressCounts
+  };
+};
 
 export default function ProcessesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editData, setEditData] = useState<BusinessProcessRegister | undefined>(undefined);
-  const [processes, setProcesses] = useState<BusinessProcess[]>([]);
+  const [processes, setProcesses] = useState<BusinessProcessRegister[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,9 +69,8 @@ export default function ProcessesPage() {
     setShowForm(true);
   };
 
-  const handleEdit = (process: BusinessProcess) => {
-    const latest = processes.find(p => p.id === process.id);
-    setEditData(toBusinessProcessRegister(latest || process));
+  const handleEdit = (process: BusinessProcessRegister) => {
+    setEditData(process);
     setShowForm(true);
   };
 
@@ -52,18 +82,10 @@ export default function ProcessesPage() {
   const handleFormSubmit = async (formData: BusinessProcessRegisterInput) => {
     setError(null);
     try {
-      const savedProcess = await businessProcessService.save(formData, editData?.id);
-      const completeProcess = toBusinessProcess(savedProcess, processes.length);
-
+      await businessProcessService.save(formData, editData?.id);
       setShowForm(false);
-      if (editData) {
-        setProcesses(prevProcesses =>
-          prevProcesses.map(p => p.id === String(editData.id) ? { ...p, ...completeProcess } : p)
-        );
-        setEditData(undefined);
-      } else {
-        setProcesses(prevProcesses => [...prevProcesses, completeProcess]);
-      }
+      await fetchProcesses();
+      setEditData(undefined);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to save process');
       console.error('Error saving process:', error);
@@ -73,14 +95,14 @@ export default function ProcessesPage() {
   const metrics = calculateMetrics(processes);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="max-w-full py-8 mx-auto p-2 space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-brand-white">Business Process Registry</h1>
+        <h1 className="text-3xl font-bold text-brand-white">Business Process Registry</h1>
         <button
           onClick={handleAdd}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-blue text-brand-white hover:bg-brand-blue/90 transition-colors"
         >
-          Add Process
+          <FaPlus /> Add Process
         </button>
       </div>
 

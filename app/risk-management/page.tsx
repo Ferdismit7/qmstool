@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import RiskManagementTable from '@/app/components/RiskManagementTable';
+import { FaPlus } from 'react-icons/fa';
 
 interface RiskManagementControl {
   id: number;
@@ -58,14 +59,14 @@ export default function RiskManagementPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-brand-white mb-2">Risk Management</h1>
-          <p className="text-brand-gray2">Manage your risk assessment and control matrix</p>
+          <p className="text-brand-gray3">Manage your risk assessment and control matrix</p>
         </div>
-        <Link
-          href="/risk-management/new"
-          className="px-6 py-2 rounded-lg bg-brand-blue text-white hover:bg-brand-blue/90 transition-colors"
+        <button
+          onClick={() => router.push('/risk-management/new')}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-blue text-brand-white hover:bg-brand-blue/90 transition-colors"
         >
-          Add New Risk Control
-        </Link>
+          <FaPlus /> Add Risk Control
+        </button>
       </div>
 
       <RiskManagementTable

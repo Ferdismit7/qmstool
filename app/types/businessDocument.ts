@@ -7,7 +7,7 @@ export interface BusinessDocument {
   document_type: string;
   version: string;
   progress: string;
-  status: string;
+  doc_status: string;
   status_percentage: number;
   priority: 'Low' | 'Medium' | 'High' | 'Critical';
   target_date: string | null;

@@ -3,3 +3,13 @@ node_modules
 .env
 # Next.js build output
 .next
+# Build output
+dist/
+# TypeScript build info
+*.tsbuildinfo
+# IDE files
+.vscode/
+.idea/
+# OS files
+.DS_Store
+Thumbs.db

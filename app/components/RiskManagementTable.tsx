@@ -2,47 +2,86 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { FiEdit2, FiRefreshCw } from 'react-icons/fi';
+import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
 
+/**
+ * Interface representing a Risk Management Control
+ * @interface RiskManagementControl
+ */
 interface RiskManagementControl {
+  /** Unique identifier for the control */
   id: number;
+  /** Name of the process this control is associated with */
   process_name: string;
+  /** Description of the activity being controlled */
   activity_description: string;
+  /** Description of the issue being addressed */
   issue_description: string;
+  /** Type of issue being addressed */
   issue_type: string;
+  /** Likelihood score (1-5) */
   likelihood: number;
+  /** Impact score (1-5) */
   impact: number;
+  /** Calculated risk score (likelihood * impact) */
   risk_score: number;
+  /** Description of the control measure */
   control_description: string;
+  /** Type of control measure */
   control_type: 'Preventive' | 'Detective' | 'Corrective';
+  /** Person responsible for the control */
   control_owner: string;
+  /** Effectiveness rating of the control */
   control_effectiveness: 'High' | 'Medium' | 'Low';
+  /** Remaining risk after control implementation */
   residual_risk: number;
+  /** Current status of the control */
   status: 'Open' | 'Under Review' | 'Closed';
+  /** Creation timestamp */
   created_at: string;
+  /** Last update timestamp */
   updated_at: string;
 }
 
+/**
+ * Props for the RiskManagementTable component
+ * @interface RiskManagementTableProps
+ */
 interface RiskManagementTableProps {
+  /** Array of risk management controls to display */
   controls: RiskManagementControl[];
+  /** Whether the table is in a loading state */
   loading: boolean;
+  /** Optional callback function when a control is edited */
   onEdit?: (control: RiskManagementControl) => void;
+  /** Optional callback function to refresh the table data */
   refresh?: () => void;
 }
 
-// Add status styles
+/**
+ * Styles for different control statuses
+ * @constant
+ */
 const statusStyles = {
   'Open': 'bg-red-500 text-white',
   'Under Review': 'bg-orange-500 text-white',
   'Closed': 'bg-green-500 text-white',
 } as const;
 
-// Add control effectiveness styles
+/**
+ * Styles for different control effectiveness levels
+ * @constant
+ */
 const effectivenessStyles = {
   'High': 'bg-green-500 text-white',
   'Medium': 'bg-orange-500 text-white',
   'Low': 'bg-red-500 text-white',
 } as const;
 
+/**
+ * Column definitions for the risk management table
+ * @constant
+ */
 const columns = [
   { key: 'process_name', label: 'Process Name' },
   { key: 'activity_description', label: 'Activity Description' },
@@ -59,11 +98,41 @@ const columns = [
   { key: 'status', label: 'Status' },
 ];
 
+/**
+ * RiskManagementTable Component
+ * 
+ * A comprehensive table component for displaying and managing risk controls.
+ * Features include:
+ * - Expandable cells for long content
+ * - Status indicators with color coding
+ * - Control effectiveness visualization
+ * - Risk score and residual risk display
+ * - Edit and delete functionality
+ * - Responsive design with horizontal scrolling
+ * - Accessibility features
+ * 
+ * @component
+ * @param {RiskManagementTableProps} props - Component props
+ * @example
+ * ```tsx
+ * <RiskManagementTable 
+ *   controls={controls}
+ *   loading={false}
+ *   onEdit={handleEdit}
+ *   refresh={refreshData}
+ * />
+ * ```
+ * 
+ * @returns {JSX.Element} A table displaying risk management controls with interactive features
+ */
 export default function RiskManagementTable({ controls, loading, onEdit, refresh }: RiskManagementTableProps) {
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
 
-  // Delete control
+  /**
+   * Deletes a risk management control
+   * @param {number} id - The ID of the control to delete
+   */
   const deleteControl = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this risk control?')) return;
     try {
@@ -77,6 +146,10 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
     }
   };
 
+  /**
+   * Handles cell click events for expanding/collapsing cell content
+   * @param {string} cellId - The ID of the clicked cell
+   */
   const handleCellClick = (cellId: string) => {
     setExpandedCell(prev => (prev === cellId ? null : cellId));
   };
@@ -93,7 +166,7 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [expandedCell]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <CenteredLoadingSpinner />;
   if (!controls) return <div>No data.</div>;
 
   return (
@@ -131,7 +204,7 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
       `}</style>
       <table className="w-full bg-transparent">
         <thead>
-          <tr className="bg-brand-primary sticky top-0">
+          <tr className="bg-brand-dark sticky top-0">
             {columns.map(col => (
               <th
                 key={col.key}

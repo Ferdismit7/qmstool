@@ -4,15 +4,16 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PerformanceMonitoringTable from '@/app/components/PerformanceMonitoringTable';
+import { FaPlus } from 'react-icons/fa';
 
 interface PerformanceMonitoringControl {
   id: number;
   business_area: string;
   sub_business_area: string;
   Name_reports: string;
-  type: string;
+  doc_type: string;
   priority: string;
-  status: string;
+  doc_status: string;
   progress: string;
   status_percentage: number;
   target_date: string;
@@ -58,12 +59,12 @@ export default function PerformanceMonitoringPage() {
           <h1 className="text-3xl font-bold text-brand-white mb-2">Performance Monitoring</h1>
           <p className="text-brand-gray2">Manage your performance monitoring controls</p>
         </div>
-        <Link
-          href="/performance-monitoring/new"
-          className="px-6 py-2 rounded-lg bg-brand-blue text-white hover:bg-brand-blue/90 transition-colors"
+        <button
+          onClick={() => router.push('/performance-monitoring/new')}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-blue text-brand-white hover:bg-brand-blue/90 transition-colors"
         >
-          Add New Control
-        </Link>
+          <FaPlus /> Add Control
+        </button>
       </div>
 
       <PerformanceMonitoringTable

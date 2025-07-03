@@ -2,10 +2,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { FiEdit2, FiRefreshCw } from 'react-icons/fi';
-import type { BusinessProcess } from '../lib/types/businessProcess';
-import { DOC_STATUS, PROGRESS_STATUS, PRIORITY } from '../lib/types/businessProcess';
+import type { BusinessProcessRegister } from '@/lib/types/businessProcessRegister';
+import { DOC_STATUS, PROGRESS_STATUS, PRIORITY } from '@/lib/types/businessProcessRegister';
+import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
 
-// Add progress status styles
+/**
+ * Styles for different progress statuses
+ * @constant
+ */
 const progressStatusStyles = {
   [PROGRESS_STATUS.COMPLETED]: 'bg-green-500 text-white',
   [PROGRESS_STATUS.ON_TRACK]: 'bg-blue-500 text-white',
@@ -13,13 +17,25 @@ const progressStatusStyles = {
   [PROGRESS_STATUS.MAJOR_CHALLENGES]: 'bg-red-500 text-white',
 } as const;
 
+/**
+ * Props for the BusinessProcessTable component
+ * @interface BusinessProcessTableProps
+ */
 interface BusinessProcessTableProps {
-  processes: BusinessProcess[];
+  /** Array of business processes to display */
+  processes: BusinessProcessRegister[];
+  /** Whether the table is in a loading state */
   loading: boolean;
-  onEdit?: (process: BusinessProcess) => void;
+  /** Optional callback function when a process is edited */
+  onEdit?: (process: BusinessProcessRegister) => void;
+  /** Optional callback function to refresh the table data */
   refresh?: () => void;
 }
 
+/**
+ * Column definitions for the business process table
+ * @constant
+ */
 const columns = [
   { key: 'businessArea', label: 'Business Area' },
   { key: 'subBusinessArea', label: 'Sub Business Area' },
@@ -27,7 +43,7 @@ const columns = [
   { key: 'documentName', label: 'Document Name' },
   { key: 'version', label: 'Version' },
   { key: 'progress', label: 'Progress' },
-  { key: 'status', label: 'Status' },
+  { key: 'docStatus', label: 'Status' },
   { key: 'statusPercentage', label: 'Status %' },
   { key: 'priority', label: 'Priority' },
   { key: 'targetDate', label: 'Target Date' },
@@ -37,15 +53,45 @@ const columns = [
   { key: 'reviewDate', label: 'Review Date' },
 ];
 
+/**
+ * BusinessProcessTable Component
+ * 
+ * A comprehensive table component for displaying and managing business processes.
+ * Features include:
+ * - Expandable cells for long content
+ * - Progress status indicators with color coding
+ * - Status percentage visualization
+ * - Edit and delete functionality
+ * - Responsive design with horizontal scrolling
+ * - Accessibility features
+ * 
+ * @component
+ * @param {BusinessProcessTableProps} props - Component props
+ * @example
+ * ```tsx
+ * <BusinessProcessTable 
+ *   processes={processes}
+ *   loading={false}
+ *   onEdit={handleEdit}
+ *   refresh={refreshData}
+ * />
+ * ```
+ * 
+ * @returns {JSX.Element} A table displaying business processes with interactive features
+ */
 export default function BusinessProcessTable({ processes, loading, onEdit, refresh }: BusinessProcessTableProps) {
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
 
-  // Delete process
-  const deleteProcess = async (id: string, documentName: string) => {
+  /**
+   * Deletes a business process
+   * @param {string} id - The ID of the process to delete
+   * @param {string} documentName - The name of the document to delete
+   */
+  const deleteProcess = async (id: number, documentName: string) => {
     if (!window.confirm(`Are you sure you want to delete this ${documentName}?`)) return;
     try {
-      const response = await fetch(`/api/business-processes?id=${id}`, {
+      const response = await fetch(`/api/business-processes?id=${id.toString()}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete process');
@@ -55,6 +101,10 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
     }
   };
 
+  /**
+   * Handles cell click events for expanding/collapsing cell content
+   * @param {string} cellId - The ID of the clicked cell
+   */
   const handleCellClick = (cellId: string) => {
     setExpandedCell(prev => (prev === cellId ? null : cellId));
   };
@@ -72,7 +122,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [expandedCell]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <CenteredLoadingSpinner />;
   if (!processes) return <div>No data.</div>;
 
   return (
@@ -111,7 +161,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
       `}</style>
       <table className="w-full bg-transparent">
         <thead>
-          <tr className="bg-brand-primary sticky top-0">
+          <tr className="bg-brand-dark sticky top-0">
             {columns.map(col => (
               <th
                 key={col.key}
@@ -131,13 +181,15 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
               style={{ borderCollapse: 'separate', borderSpacing: 0 }}
             >
               {columns.map((col) => {
-                let value = process[col.key as keyof BusinessProcess];
+                let value = process[col.key as keyof BusinessProcessRegister];
                 if (col.key === 'statusPercentage') {
-                  const percent = process.statusPrecentage ?? 0;
+                  const percent = process.statusPercentage ?? 0;
                   value = percent.toString() + '%';
                 }
                 if (col.key === 'targetDate' || col.key === 'updateDate' || col.key === 'reviewDate') {
                   value = value ? new Date(value as string).toLocaleDateString('en-GB') : (col.key === 'reviewDate' ? '-' : '');
+                } else {
+                  value = String(value ?? '');
                 }
                 const cellId = `cell-${process.id}-${col.key}`;
                 

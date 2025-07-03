@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import BusinessDocumentForm from '../components/BusinessDocumentForm';
 import BusinessDocumentTable from '../components/BusinessDocumentTable';
 import { BusinessDocument } from '../types/businessDocument';
+import { FaPlus } from 'react-icons/fa';
 
 const DOC_STATUS = ['New', 'In Progress', 'Completed', 'To be reviewed'] as const;
 const PROGRESS_STATUS = ['Completed', 'On-Track', 'Minor Challenges', 'Major Challenges'] as const;
@@ -38,8 +39,8 @@ export default function DocumentsPage() {
 
   // Dashboard metrics
   const totalDocuments = documents.length;
-  const completedDocuments = documents.filter(d => d.status === 'Completed').length;
-  const inProgressDocuments = documents.filter(d => d.status === 'In progress').length;
+  const completedDocuments = documents.filter(d => d.doc_status === 'Completed').length;
+  const inProgressDocuments = documents.filter(d => d.doc_status === 'In progress').length;
   const criticalDocuments = documents.filter(d => d.priority === 'Critical').length;
   
   // Calculate overall progress by averaging all document status percentages
@@ -56,7 +57,7 @@ export default function DocumentsPage() {
 
   // Calculate counts for each option
   const statusCounts = documents.reduce((acc, doc) => {
-    acc[doc.status] = (acc[doc.status] || 0) + 1;
+    acc[doc.doc_status] = (acc[doc.doc_status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -140,16 +141,16 @@ export default function DocumentsPage() {
 
   return (
     <div className="min-h-full">
-      <div className="w-full py-1">
+      <div className="w-full py-8">
         <div className="w-full px-2">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-            <h1 className="text-2xl font-bold text-brand-white">Business Document Registry</h1>
+            <h1 className="text-3xl font-bold text-brand-white">Business Document Registry</h1>
             <button
               onClick={handleAdd}
-              className="w-full sm:w-auto bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-blue text-brand-white hover:bg-brand-blue/90 transition-colors"
             >
-              Add Document
+              <FaPlus /> Add Document
             </button>
           </div>
 

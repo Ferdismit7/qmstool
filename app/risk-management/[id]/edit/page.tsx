@@ -3,9 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import RiskManagementForm from '@/app/components/RiskManagementForm';
+import { FullScreenLoadingSpinner } from '@/app/components/ui/LoadingSpinner';
 
 interface RiskManagementControl {
   id: number;
+  business_area: string;
   process_name: string;
   activity_description: string;
   issue_description: string;
@@ -44,7 +46,7 @@ export default function EditRiskManagementPage({ params }: { params: { id: strin
     fetchControl();
   }, [params.id]);
 
-  if (loading) return <div className="text-center py-4">Loading...</div>;
+  if (loading) return <FullScreenLoadingSpinner />;
   if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
   if (!control) return <div className="text-center py-4">Control not found</div>;
 

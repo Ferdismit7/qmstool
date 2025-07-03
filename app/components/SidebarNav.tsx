@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FiLayers, FiFileText, FiTarget, FiActivity, FiAlertTriangle } from 'react-icons/fi';
+import { FiLayers, FiFileText, FiTarget, FiActivity, FiAlertTriangle, FiBarChart2, FiList } from 'react-icons/fi';
 
 export default function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 h-screen sticky top-0 left-0 z-30 flex flex-col bg-brand-black1/50 backdrop-blur-xl border-r border-brand-gray1 shadow-xl">
-      <div className="h-20 flex items-center px-6 border-b border-brand-dark">
+    <aside className="w-56 h-full sticky top-0 left-0 z-30 flex flex-col bg-brand-black1/40 backdrop-blur-xl border-r border-brand-gray1 shadow-xl">
+      <div className="h-40 flex items-center px-6">
         <span className="text-2xl font-bold tracking-wide flex items-center gap-3">
           <FiLayers className="text-brand-primary" size={32} />
         </span>
@@ -56,10 +56,26 @@ export default function SidebarNav() {
               Risk Management
             </Link>
           </li>
+          <li>
+            <Link href="/qms-status-overview" className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold shadow text-lg transition-all
+              ${pathname === '/qms-status-overview' ? 'bg-brand-primary/60 text-brand-white' : 'hover:bg-brand-primary/60 text-brand-white'}`}
+            >
+              <FiBarChart2 size={22} />
+              QMS Status Overview
+            </Link>
+          </li>
+          <li>
+            <Link href="/qms-assessments" className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold shadow text-lg transition-all
+              ${pathname === '/qms-assessments' ? 'bg-brand-primary/60 text-brand-white' : 'hover:bg-brand-primary/60 text-brand-white'}`}
+            >
+              <FiList size={22} />
+              View Assessments
+            </Link>
+          </li>
         </ul>
       </nav>
-      <div className="px-6 py-6 border-t border-brand-dark text-xs text-brand-gray3">
-        &copy; {new Date().getFullYear()} Ferdinand Smit
+      <div className="px-6 py-3 border-t border-brand-gray1 text-xs text-brand-gray3">
+        &copy; {new Date().getFullYear()} Ailura
       </div>
     </aside>
   );

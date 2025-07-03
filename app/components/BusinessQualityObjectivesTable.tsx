@@ -2,27 +2,50 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaEdit, FaTrash, FaPlus, FaSearch, FaFilter, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
+import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
 
+/**
+ * Interface representing a Business Quality Objective
+ * @interface BusinessQualityObjective
+ */
 interface BusinessQualityObjective {
+  /** Unique identifier for the objective */
   id: number;
+  /** Category of the objective */
   category: string;
+  /** Business area the objective belongs to */
   business_area: string;
+  /** Sub-business area for more specific categorization */
   sub_business_area: string;
+  /** Main objectives of the QMS */
   qms_main_objectives: string;
+  /** Detailed description of the objective */
   qms_objective_description: string;
+  /** KPI or SLA targets associated with the objective */
   kpi_or_sla_targets: string;
+  /** Performance monitoring details */
   performance_monitoring: string;
+  /** Proof of measuring the objective */
   proof_of_measuring: string;
+  /** Proof of reporting the objective */
   proof_of_reporting: string;
+  /** Frequency of monitoring */
   frequency: string;
+  /** Person or team responsible for the objective */
   responsible_person_team: string;
+  /** Date when the objective should be reviewed */
   review_date: string;
+  /** Current progress status */
   progress: string;
+  /** Percentage of completion */
   status_percentage: number;
 }
 
-// Add progress status styles
+/**
+ * Styles for different progress statuses
+ * @constant
+ */
 const progressStatusStyles = {
   'Not Started': 'bg-gray-500 text-white',
   'In Progress': 'bg-blue-500 text-white',
@@ -32,20 +55,31 @@ const progressStatusStyles = {
   'Completed': 'bg-green-500 text-white',
 } as const;
 
+/**
+ * BusinessQualityObjectivesTable Component
+ * 
+ * A comprehensive table component for displaying and managing business quality objectives.
+ * Features include:
+ * - Sorting by any column
+ * - Expandable cells for long content
+ * - Status indicators with color coding
+ * - Progress tracking
+ * - CRUD operations
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <BusinessQualityObjectivesTable />
+ * ```
+ * 
+ * @returns {JSX.Element} A table displaying business quality objectives with interactive features
+ */
 export default function BusinessQualityObjectivesTable() {
   const [objectives, setObjectives] = useState<BusinessQualityObjective[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<keyof BusinessQualityObjective>('id');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    category: '',
-    business_area: '',
-    progress: '',
-    frequency: '',
-  });
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -58,10 +92,20 @@ export default function BusinessQualityObjectivesTable() {
     try {
       const response = await fetch('/api/business-quality-objectives');
       if (!response.ok) throw new Error('Failed to fetch objectives');
-      const data = await response.json();
-      setObjectives(data);
+      const result = await response.json();
+      
+      // Handle the API response structure: { success: true, data: objectives }
+      if (result.success && Array.isArray(result.data)) {
+        setObjectives(result.data);
+      } else if (Array.isArray(result)) {
+        // Fallback for direct array response
+        setObjectives(result);
+      } else {
+        setObjectives([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
+      setObjectives([]);
     } finally {
       setLoading(false);
     }
@@ -108,36 +152,34 @@ export default function BusinessQualityObjectivesTable() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [expandedCell]);
 
-  const filteredObjectives = objectives
-    .filter(obj => {
-      const matchesSearch = Object.values(obj).some(value =>
-        value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      const matchesFilters = 
-        (!filters.category || obj.category === filters.category) &&
-        (!filters.business_area || obj.business_area === filters.business_area) &&
-        (!filters.progress || obj.progress === filters.progress) &&
-        (!filters.frequency || obj.frequency === filters.frequency);
-      return matchesSearch && matchesFilters;
-    })
-    .sort((a, b) => {
-      const aValue = a[sortField];
-      const bValue = b[sortField];
-      if (aValue === bValue) return 0;
-      const modifier = sortDirection === 'asc' ? 1 : -1;
-      return aValue > bValue ? modifier : -modifier;
-    });
+  const sortedObjectives = objectives.sort((a, b) => {
+    const aValue = a[sortField];
+    const bValue = b[sortField];
+    if (aValue === bValue) return 0;
+    const modifier = sortDirection === 'asc' ? 1 : -1;
+    return aValue > bValue ? modifier : -modifier;
+  });
 
   const getSortIcon = (field: keyof BusinessQualityObjective) => {
     if (sortField !== field) return <FaSort className="ml-1" />;
     return sortDirection === 'asc' ? <FaSortUp className="ml-1" /> : <FaSortDown className="ml-1" />;
   };
 
+  /**
+   * Formats a date string to the GB locale format
+   * @param {string | null | undefined} dateString - The date string to format
+   * @returns {string} Formatted date string or empty string if no date provided
+   */
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('en-GB');
   };
 
+  /**
+   * Gets the appropriate color class for a given status
+   * @param {string} status - The status to get the color for
+   * @returns {string} Tailwind CSS classes for the status color
+   */
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Not Started':
@@ -157,6 +199,11 @@ export default function BusinessQualityObjectivesTable() {
     }
   };
 
+  /**
+   * Gets the appropriate color class for a given status percentage
+   * @param {number} percentage - The percentage to get the color for
+   * @returns {string} Tailwind CSS classes for the percentage color
+   */
   const getStatusPercentageColor = (percentage: number) => {
     if (percentage === 0) return 'bg-gray-500/20 border-gray-500';
     if (percentage < 25) return 'bg-red-500/20 border-red-500';
@@ -165,7 +212,7 @@ export default function BusinessQualityObjectivesTable() {
     return 'bg-green-500/20 border-green-500';
   };
 
-  if (loading) return <div className="text-center py-4">Loading...</div>;
+  if (loading) return <CenteredLoadingSpinner />;
   if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
 
   const columns = [
@@ -230,73 +277,10 @@ export default function BusinessQualityObjectivesTable() {
           max-width: 100%;
         }
       `}</style>
-      <div className="flex justify-between items-center mb-4">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search objectives..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 rounded-lg bg-brand-gray1 text-brand-white border border-brand-gray2 focus:outline-none focus:border-brand-primary"
-          />
-          <FaSearch className="absolute left-3 top-3 text-brand-gray2" />
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-gray1 text-brand-white hover:bg-brand-gray2"
-          >
-            <FaFilter /> Filters
-          </button>
-          <button
-            onClick={() => router.push('/business-quality-objectives/new')}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-blue text-brand-white hover:bg-brand-blue/90"
-          >
-            <FaPlus /> Add Objective
-          </button>
-        </div>
-      </div>
-
-      {showFilters && (
-        <div className="grid grid-cols-4 gap-4 mb-4 p-4 bg-brand-gray1/50 rounded-lg">
-          <select
-            value={filters.category}
-            onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-            className="px-3 py-2 rounded-lg bg-brand-gray1 text-brand-white border border-brand-gray2 focus:outline-none focus:border-brand-primary"
-          >
-            <option value="">All Categories</option>
-            {/* Add your category options here */}
-          </select>
-          <select
-            value={filters.business_area}
-            onChange={(e) => setFilters({ ...filters, business_area: e.target.value })}
-            className="px-3 py-2 rounded-lg bg-brand-gray1 text-brand-white border border-brand-gray2 focus:outline-none focus:border-brand-primary"
-          >
-            <option value="">All Business Areas</option>
-            {/* Add your business area options here */}
-          </select>
-          <select
-            value={filters.progress}
-            onChange={(e) => setFilters({ ...filters, progress: e.target.value })}
-            className="px-3 py-2 rounded-lg bg-brand-gray1 text-brand-white border border-brand-gray2 focus:outline-none focus:border-brand-primary"
-          >
-            <option value="">All Progress</option>
-            {/* Add your progress options here */}
-          </select>
-          <select
-            value={filters.frequency}
-            onChange={(e) => setFilters({ ...filters, frequency: e.target.value })}
-            className="px-3 py-2 rounded-lg bg-brand-gray1 text-brand-white border border-brand-gray2 focus:outline-none focus:border-brand-primary"
-          >
-            <option value="">All Frequencies</option>
-            {/* Add your frequency options here */}
-          </select>
-        </div>
-      )}
 
       <table className="w-full bg-transparent">
         <thead>
-          <tr className="bg-brand-primary sticky top-0">
+          <tr className="bg-brand-dark sticky top-0">
             {columns.map(col => (
               <th
                 key={col.key}
@@ -309,7 +293,7 @@ export default function BusinessQualityObjectivesTable() {
           </tr>
         </thead>
         <tbody>
-          {filteredObjectives.map((objective) => (
+          {sortedObjectives.map((objective) => (
             <tr
               key={objective.id}
               className="bg-white/3 rounded-xl overflow-hidden shadow-md mb-3 hover:bg-white/20 transition-colors"

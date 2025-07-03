@@ -7,7 +7,7 @@ export interface BusinessProcess {
   version: string;
   progress: string;
   status: string;
-  statusPrecentage: number;
+  statusPercentage: number;
   priority: 'Low' | 'Medium' | 'High';
   targetDate: string;
   processOwner: string;
@@ -25,7 +25,7 @@ export interface BusinessProcessRegister {
   version: string;
   progress: string;
   docStatus: string;
-  statusPrecentage: number;
+  statusPercentage: number;
   priority: 'Low' | 'Medium' | 'High';
   targetDate: Date;
   processOwner: string;
