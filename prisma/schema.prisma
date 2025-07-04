@@ -18,7 +18,7 @@ model BusinessProcessRegister {
   version           String?        @db.VarChar(20)
   progress          String?        @db.VarChar(20)
   doc_status        String?        @db.VarChar(20)
-  status_percentage Decimal?       @db.Decimal(5, 0) @db.Unsigned
+  status_percentage Decimal?       @db.Decimal(5, 0)
   priority          String?        @db.VarChar(20)
   target_date       DateTime?      @db.Date
   process_owner     String?        @db.VarChar(20)
