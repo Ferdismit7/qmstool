@@ -76,7 +76,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Use a transaction with raw SQL
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.user.update({
         where: { id: userId },
         data: dataToUpdate,
