@@ -8,6 +8,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Check if JWT_SECRET is available (for build-time safety)
+  if (!process.env.JWT_SECRET) {
+    console.warn('JWT_SECRET not available in middleware');
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get('authToken')?.value;
 
   if (!token) {

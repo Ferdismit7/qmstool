@@ -19,6 +19,12 @@ export interface JWTPayload {
  */
 export const getUserFromToken = (request: NextRequest): JWTPayload | null => {
   try {
+    // Check if JWT_SECRET is available (for build-time safety)
+    if (!process.env.JWT_SECRET) {
+      console.warn('JWT_SECRET not available');
+      return null;
+    }
+
     // First try to get token from cookies (for server-side requests)
     let token = request.cookies.get('authToken')?.value;
     
@@ -34,7 +40,7 @@ export const getUserFromToken = (request: NextRequest): JWTPayload | null => {
       return null;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
     return decoded;
   } catch (error) {
     return null;

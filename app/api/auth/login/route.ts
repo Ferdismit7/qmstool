@@ -31,6 +31,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if JWT_SECRET is available
+    if (!process.env.JWT_SECRET) {
+      return NextResponse.json(
+        { message: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
     // Generate JWT token with business area
     const token = jwt.sign(
       { 
@@ -39,7 +47,7 @@ export async function POST(request: Request) {
         username: user.username,
         businessArea: user.business_area 
       },
-      process.env.JWT_SECRET!,
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
