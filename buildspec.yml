@@ -16,4 +16,5 @@ phases:
 artifacts:
   files:
     - '**/*'
-  discard-paths: no 
+  discard-paths: no
+  location: s3://ailura-qms-app/
