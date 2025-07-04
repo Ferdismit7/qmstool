@@ -40,15 +40,21 @@ const LoginForm = ({ onToggleForm }: LoginFormProps) => {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Store the token if remember me is checked
+      // Clear any existing tokens first
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');
+      document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+
       if (formData.rememberMe) {
         localStorage.setItem('authToken', data.token);
+        document.cookie = `authToken=${data.token}; path=/; max-age=2592000;`;
+        console.log('Token stored in localStorage and persistent cookie (remember me enabled)');
       } else {
         sessionStorage.setItem('authToken', data.token);
+        document.cookie = `authToken=${data.token}; path=/;`;
+        localStorage.removeItem('authToken'); // Extra safety: always remove from localStorage
+        console.log('Token stored in sessionStorage and session cookie (remember me disabled)');
       }
-
-      // Set the token in cookies for middleware
-      document.cookie = `authToken=${data.token}; path=/`;
 
       // Dispatch custom event to notify Layout component of user change
       window.dispatchEvent(new Event('tokenChange'));

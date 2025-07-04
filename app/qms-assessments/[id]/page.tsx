@@ -267,6 +267,14 @@ export default function QMSAssessmentDetailPage() {
     return titles[sectionNumber] || `Section ${sectionNumber}`;
   };
 
+  // Defensive helpers
+  const safe = (val: any, fallback = '—') => (val === undefined || val === null || val === '' ? fallback : val);
+  const safeDate = (dateString: string) => {
+    if (!dateString) return '—';
+    const d = new Date(dateString);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
   // When entering edit mode, copy assessment to editState
   useEffect(() => {
     if (editMode && assessment) {
@@ -309,26 +317,26 @@ export default function QMSAssessmentDetailPage() {
 
   // Save changes
   const handleSave = async () => {
-    if (!editState) return;
     setSaving(true);
     setSaveError(null);
     setSaveSuccess(false);
     try {
-      const response = await fetch(`/api/qms-assessments/${editState.id}`, {
+      const response = await fetch(`/api/qms-assessments/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editState)
+        body: JSON.stringify(editState),
       });
       const result = await response.json();
       if (result.success) {
-        setEditMode(false);
         setSaveSuccess(true);
-        setAssessment(result.data);
+        setEditMode(false);
+        // Immediately re-fetch the full assessment details after save
+        await fetchAssessment();
       } else {
-        setSaveError(result.error || 'Failed to save changes');
+        setSaveError(result.error || 'Failed to save assessment');
       }
     } catch (error) {
-      setSaveError('Network error while saving');
+      setSaveError('Network error occurred while saving assessment');
     } finally {
       setSaving(false);
     }
@@ -378,6 +386,7 @@ export default function QMSAssessmentDetailPage() {
   }
 
   const groupedItems = groupItemsBySection(assessment.items);
+  const avgItems = assessment && assessment.items && assessment.items.length > 0 ? assessment.items.length : 0;
 
   return (
     <div className="w-full px-6 py-6 max-w-7xl mx-auto">
@@ -493,7 +502,7 @@ export default function QMSAssessmentDetailPage() {
                   className="text-brand-white font-medium bg-brand-gray2/20 border border-brand-gray2/50 rounded-lg px-2 py-1 w-full"
                 />
               ) : (
-                <div className="text-brand-white font-medium">{formatDate(assessment.assessmentDate)}</div>
+                <div className="text-brand-white font-medium">{safeDate(assessment.assessmentDate)}</div>
               )}
             </div>
           </div>
@@ -501,7 +510,7 @@ export default function QMSAssessmentDetailPage() {
             <FiCalendar className="text-brand-primary" size={20} />
             <div>
               <div className="text-sm text-brand-gray2">Created</div>
-              <div className="text-brand-white font-medium">{formatDate(assessment.createdAt)}</div>
+              <div className="text-brand-white font-medium">{safeDate(assessment.createdAt)}</div>
             </div>
           </div>
         </div>
@@ -611,7 +620,7 @@ export default function QMSAssessmentDetailPage() {
                   className="text-brand-white bg-brand-gray2/20 border border-brand-gray2/50 rounded-lg px-2 py-1 w-full"
                 />
               ) : (
-                <div className="text-brand-white">{assessment.approval?.conductedDate ? formatDate(assessment.approval.conductedDate) : ''}</div>
+                <div className="text-brand-white">{safeDate(assessment.approval?.conductedDate || '')}</div>
               )}
             </div>
             <div>
@@ -641,7 +650,7 @@ export default function QMSAssessmentDetailPage() {
                   className="text-brand-white bg-brand-gray2/20 border border-brand-gray2/50 rounded-lg px-2 py-1 w-full"
                 />
               ) : (
-                <div className="text-brand-white">{assessment.approval?.approvedDate ? formatDate(assessment.approval.approvedDate) : ''}</div>
+                <div className="text-brand-white">{safeDate(assessment.approval?.approvedDate || '')}</div>
               )}
             </div>
           </div>

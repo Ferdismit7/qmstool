@@ -3,7 +3,12 @@ import { getUserFromToken } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    // Debug: Log the incoming Authorization header
+    const authHeader = request.headers.get('authorization');
+    console.log('[API /auth/me] Authorization header:', authHeader);
+
     const user = getUserFromToken(request);
+    console.log('[API /auth/me] Decoded user from token:', user);
     
     if (!user) {
       return NextResponse.json(

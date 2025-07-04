@@ -9,13 +9,10 @@ const LogoutButton = () => {
     // Remove token from localStorage and sessionStorage
     localStorage.removeItem('authToken');
     sessionStorage.removeItem('authToken');
-    
-    // Remove token from cookies
+    // Remove token from cookies with proper expiration
     document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    
     // Dispatch custom event to notify Layout component of user change
     window.dispatchEvent(new Event('tokenChange'));
-    
     // Redirect to login page
     router.push('/auth');
   };

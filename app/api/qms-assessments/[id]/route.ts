@@ -88,27 +88,32 @@ export async function GET(
     console.log('Approval result:', approval);
 
     // Transform data for frontend
+    const safeDate = (d: any) => {
+      if (!d) return '';
+      const dateObj = new Date(d);
+      return isNaN(dateObj.getTime()) ? '' : dateObj.toISOString().split('T')[0];
+    };
     const transformedAssessment = {
       id: assessment.id,
-      businessArea: assessment.business_area,
-      assessorName: assessment.assessor_name,
-      assessmentDate: assessment.assessment_date.toISOString().split('T')[0],
-      createdAt: assessment.created_at.toISOString().split('T')[0],
-      items: items.map((item: any) => ({
+      businessArea: assessment.business_area || '',
+      assessorName: assessment.assessor_name || '',
+      assessmentDate: safeDate(assessment.assessment_date),
+      createdAt: safeDate(assessment.created_at),
+      items: (items || []).map((item: any) => ({
         id: item.id,
-        section: item.section,
-        clauseReference: item.clause_reference,
-        itemNumber: item.item_number,
-        itemDescription: item.item_description,
-        status: item.status,
-        comment: item.comment
+        section: item.section || '',
+        clauseReference: item.clause_reference || '',
+        itemNumber: item.item_number || '',
+        itemDescription: item.item_description || '',
+        status: item.status || '',
+        comment: item.comment || ''
       })),
       approval: approval ? {
         id: approval.id,
-        conductedBy: approval.conducted_by,
-        conductedDate: approval.conducted_date?.toISOString().split('T')[0],
-        approvedBy: approval.approved_by,
-        approvedDate: approval.approved_date?.toISOString().split('T')[0]
+        conductedBy: approval.conducted_by || '',
+        conductedDate: safeDate(approval.conducted_date),
+        approvedBy: approval.approved_by || '',
+        approvedDate: safeDate(approval.approved_date)
       } : null
     };
 
@@ -221,9 +226,31 @@ export async function PUT(
       ]);
     }
 
+    // After update, fetch by id only (not by business area)
+    const [updatedAssessment] = await query(`
+      SELECT id, business_area, assessor_name, assessment_date, created_at
+      FROM qms_assessments 
+      WHERE id = ?
+    `, [assessmentId]);
+
+    // Defensive transformation for updated assessment
+    const safeDate = (d: any) => {
+      if (!d) return '';
+      const dateObj = new Date(d);
+      return isNaN(dateObj.getTime()) ? '' : dateObj.toISOString().split('T')[0];
+    };
+    const transformedUpdatedAssessment = {
+      id: updatedAssessment.id,
+      businessArea: updatedAssessment.business_area || '',
+      assessorName: updatedAssessment.assessor_name || '',
+      assessmentDate: safeDate(updatedAssessment.assessment_date),
+      createdAt: safeDate(updatedAssessment.created_at),
+      items: [], // You may want to fetch items again if needed
+      approval: null // You may want to fetch approval again if needed
+    };
     return NextResponse.json({
       success: true,
-      message: 'Assessment updated successfully'
+      data: transformedUpdatedAssessment
     });
   } catch (error) {
     console.error('Error updating QMS assessment:', error);

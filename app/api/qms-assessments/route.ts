@@ -12,14 +12,21 @@ import { QMSAssessmentData } from '@/app/types/qmsAssessment';
  * @route POST /api/qms-assessments - Create new assessment with items
  */
 
+// Helper function to safely format date
+const safeDate = (d: any) => {
+  if (!d) return '—';
+  const dateObj = new Date(d);
+  return isNaN(dateObj.getTime()) ? '—' : dateObj.toISOString().split('T')[0];
+};
+
 // Helper function to transform database fields to frontend expected format
 const transformAssessment = (dbAssessment: any) => ({
   id: dbAssessment.id,
-  businessArea: dbAssessment.business_area,
-  assessorName: dbAssessment.assessor_name,
-  assessmentDate: dbAssessment.assessment_date,
-  createdAt: dbAssessment.created_at,
-  itemCount: dbAssessment.item_count || 0
+  businessArea: dbAssessment.business_area || '',
+  assessorName: dbAssessment.assessor_name || '',
+  assessmentDate: safeDate(dbAssessment.assessment_date),
+  createdAt: safeDate(dbAssessment.created_at),
+  itemCount: Number(dbAssessment.item_count) || 0
 });
 
 /**
@@ -54,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: assessments
+      data: (assessments || []).map(transformAssessment)
     });
   } catch (error) {
     console.error('Error fetching QMS assessments:', error);

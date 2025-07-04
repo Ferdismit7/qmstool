@@ -334,8 +334,9 @@ export class CalculationService {
     if (data.length === 0) return 0;
     
     const totalPercentage = data.reduce((sum, item) => {
-      const percentage = item.status_percentage || 0;
-      return sum + Number(percentage);
+      // Ensure percentage is a valid number and cap at 100%
+      const percentage = Math.min(Math.max(Number(item.status_percentage) || 0, 0), 100);
+      return sum + percentage;
     }, 0);
     
     return Math.round(totalPercentage / data.length);

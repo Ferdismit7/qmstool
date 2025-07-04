@@ -120,6 +120,17 @@ export async function PUT(
       );
     }
 
+    // Validate status_percentage is between 0 and 100
+    if (status_percentage !== null && status_percentage !== undefined) {
+      const percentage = Number(status_percentage);
+      if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+        return NextResponse.json(
+          { error: 'Status percentage must be between 0 and 100' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create placeholders for IN clause
     const placeholders = userBusinessAreas.map(() => '?').join(',');
     const queryParams = [...userBusinessAreas, Number(params.id)];

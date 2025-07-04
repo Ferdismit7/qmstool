@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import SidebarNav from './SidebarNav';
 import LogoutButton from './LogoutButton';
@@ -10,8 +10,10 @@ const SIDEBAR_WIDTH = 'w-56'; // 14rem
 const HEADER_HEIGHT = 'h-16'; // 4rem
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<{ username: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const isAssessmentPage =
     pathname.startsWith('/qms-assessments') ||
@@ -20,56 +22,134 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Check if we should show the sidebar (exclude dashboard and auth pages)
   const shouldShowSidebar = pathname !== '/dashboard' && pathname !== '/auth';
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        if (token) {
-          const response = await fetch('/api/auth/me', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          if (response.ok) {
-            const userData = await response.json();
-            console.log('Fetched user data:', userData); // Debug log
-            setUser(userData);
-          } else {
-            console.log('Failed to fetch user data, response not ok'); // Debug log
-            setUser(null);
-          }
-        } else {
-          console.log('No token found'); // Debug log
+  // Helper function to get token from all possible sources
+  const getAuthToken = () => {
+    // Check sessionStorage first (default for non-remembered logins)
+    let token = sessionStorage.getItem('authToken');
+    console.log('sessionStorage token:', token ? 'Found' : 'Not found');
+    // If not in sessionStorage, check localStorage (for remembered logins)
+    if (!token) {
+      token = localStorage.getItem('authToken');
+      console.log('localStorage token:', token ? 'Found' : 'Not found');
+    }
+    // If still no token, check cookies (for server-side compatibility)
+    if (!token) {
+      const cookies = document.cookie.split(';');
+      const authCookie = cookies.find(cookie => cookie.trim().startsWith('authToken='));
+      if (authCookie) {
+        token = authCookie.split('=')[1];
+        console.log('Cookie token: Found');
+      } else {
+        console.log('Cookie token: Not found');
+      }
+    }
+    console.log('Final token result:', token ? 'Token available' : 'No token found');
+    return token;
+  };
+
+  // Helper function to decode JWT token (client-side, for display purposes only)
+  const decodeToken = (token: string) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error('Failed to decode token:', error);
+      return null;
+    }
+  };
+
+  // Helper function to fetch user data
+  const fetchUserData = async (token: string) => {
+    try {
+      console.log('Attempting to fetch user data with token:', token);
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      console.log('API response status:', response.status);
+      const responseBody = await response.clone().text();
+      console.log('API response body:', responseBody);
+      
+      if (response.ok) {
+        const userData = JSON.parse(responseBody);
+        console.log('Fetched user data successfully:', userData);
+        setUser(userData);
+        return true;
+      } else {
+        console.log('Failed to fetch user data, response not ok:', response.status);
+        if (response.status === 401) {
+          console.log('Token is invalid (401), clearing tokens');
+          localStorage.removeItem('authToken');
+          sessionStorage.removeItem('authToken');
+          document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
           setUser(null);
+        } else {
+          console.log('API error but keeping token - might be temporary issue');
+          const tokenData = decodeToken(token);
+          if (tokenData && tokenData.username) {
+            console.log('Creating temporary user state from token:', tokenData);
+            setUser({ username: tokenData.username });
+          }
         }
-      } catch (error) {
-        console.error('Failed to fetch user data:', error);
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+      console.log('Network error, keeping existing user state');
+      const tokenData = decodeToken(token);
+      if (tokenData && tokenData.username) {
+        console.log('Creating temporary user state from token after network error:', tokenData);
+        setUser({ username: tokenData.username });
+      }
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      setIsLoading(true);
+      
+      const token = getAuthToken();
+      console.log('Initial token check:', token ? 'Token found' : 'No token');
+      
+      if (token) {
+        // First, try to create a temporary user state from the token
+        const tokenData = decodeToken(token);
+        if (tokenData && tokenData.username) {
+          console.log('Setting temporary user state from token:', tokenData);
+          setUser({ username: tokenData.username });
+        }
+        
+        // Then try to fetch the full user data
+        await fetchUserData(token);
+      } else {
         setUser(null);
       }
+      
+      setIsLoading(false);
     };
 
-    fetchUser();
-  }, []); // Remove pathname dependency to avoid unnecessary re-fetches
+    // Add a small delay to ensure DOM is ready and cookies are accessible
+    // Use a shorter delay for better user experience
+    const timer = setTimeout(initializeAuth, 50);
+    
+    return () => clearTimeout(timer);
+  }, []); // Only run on mount
 
   // Listen for storage changes (when authToken is updated)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'authToken') {
-        console.log('Auth token changed, refetching user data'); // Debug log
-        // Refetch user data when authToken changes
-        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        console.log('Auth token changed, refetching user data');
+        const token = getAuthToken();
         if (token) {
-          fetch('/api/auth/me', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          })
-          .then(response => response.ok ? response.json() : null)
-          .then(userData => {
-            console.log('Refetched user data:', userData); // Debug log
-            setUser(userData);
-          })
-          .catch(() => setUser(null));
+          fetchUserData(token);
         } else {
           setUser(null);
         }
@@ -78,20 +158,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     // Also listen for custom events when token changes in the same window
     const handleTokenChange = () => {
-      console.log('Custom token change event detected'); // Debug log
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      console.log('Custom token change event detected');
+      const token = getAuthToken();
       if (token) {
-        fetch('/api/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        })
-        .then(response => response.ok ? response.json() : null)
-        .then(userData => {
-          console.log('Refetched user data from custom event:', userData); // Debug log
-          setUser(userData);
-        })
-        .catch(() => setUser(null));
+        fetchUserData(token);
       } else {
         setUser(null);
       }
@@ -106,11 +176,42 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isLoading && !user && pathname !== '/auth') {
+      router.replace('/auth');
+    }
+  }, [isLoading, user, pathname]);
+
   const getInitials = (username: string) => {
     const initial = username.charAt(0).toUpperCase();
-    console.log('Getting initial for username:', username, 'Initial:', initial); // Debug log
+    console.log('Getting initial for username:', username, 'Initial:', initial);
     return initial;
   };
+
+  // GUARD: Don't render anything until auth is known
+  if (isLoading) return null;
+  if (!user && pathname !== '/auth') return null;
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex h-full bg-brand-gray1">
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <header className="relative z-10 flex h-16 flex-shrink-0 items-center justify-between border-b border-brand-gray2/50 bg-brand-gray1 px-4 sm:px-6 lg:px-8">
+            <h1 className="text-2xl font-bold text-brand-white">Quality Management Systems</h1>
+            <div className="flex items-center gap-4">
+              <div className="animate-pulse bg-brand-gray2 h-6 w-6 rounded"></div>
+              <div className="animate-pulse bg-brand-gray2 h-8 w-8 rounded-full"></div>
+              <LogoutButton />
+            </div>
+          </header>
+          <main className="flex-1 overflow-y-auto bg-brand-gray1 p-4">
+            {children}
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full bg-brand-gray1">

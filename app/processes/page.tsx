@@ -11,8 +11,14 @@ import { FaPlus } from 'react-icons/fa';
 // Calculate metrics for the dashboard
 const calculateMetrics = (processes: BusinessProcessRegister[]) => {
   const totalProcesses = processes.length;
+  
+  // Calculate overall progress with proper validation
   const overallProgress = totalProcesses > 0
-    ? Math.round(processes.reduce((sum, p) => sum + (p.statusPercentage || 0), 0) / totalProcesses)
+    ? Math.round(processes.reduce((sum, p) => {
+        // Ensure percentage is a valid number and cap at 100%
+        const percentage = Math.min(Math.max(Number(p.statusPercentage) || 0, 0), 100);
+        return sum + percentage;
+      }, 0) / totalProcesses)
     : 0;
 
   const priorityCounts = processes.reduce((acc, p) => {

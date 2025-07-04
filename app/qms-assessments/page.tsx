@@ -276,6 +276,17 @@ export default function QMSAssessmentsPage() {
     }
   };
 
+  // Defensive helpers
+  const safe = (val: any, fallback = '—') => (val === undefined || val === null || val === '' ? fallback : val);
+  const safeDate = (dateString: string) => {
+    if (!dateString) return '—';
+    const d = new Date(dateString);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  // Fix average calculation for list
+  const avgItems = filteredAssessments.length > 0 ? Math.round(filteredAssessments.reduce((sum, a) => sum + (a.itemCount || 0), 0) / filteredAssessments.length) : 0;
+
   // Fetch assessments on component mount
   useEffect(() => {
     fetchAssessments();
@@ -370,17 +381,17 @@ export default function QMSAssessmentsPage() {
                       <div className="flex items-center gap-2">
                         <FiMapPin className="text-brand-primary" size={16} />
                         <span className="text-brand-gray2">Business Area:</span>
-                        <span className="text-brand-white">{assessment.businessArea}</span>
+                        <span className="text-brand-white">{safe(assessment.businessArea)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <FiUser className="text-brand-primary" size={16} />
                         <span className="text-brand-gray2">Assessor:</span>
-                        <span className="text-brand-white">{assessment.assessorName}</span>
+                        <span className="text-brand-white">{safe(assessment.assessorName)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <FiCalendar className="text-brand-primary" size={16} />
                         <span className="text-brand-gray2">Date:</span>
-                        <span className="text-brand-white">{formatDate(assessment.assessmentDate)}</span>
+                        <span className="text-brand-white">{safeDate(assessment.assessmentDate)}</span>
                       </div>
                     </div>
                     
@@ -430,7 +441,7 @@ export default function QMSAssessmentsPage() {
             </div>
             <div>
               <div className="text-2xl font-bold text-blue-400">
-                {filteredAssessments.length > 0 ? Math.round(filteredAssessments.reduce((sum, a) => sum + a.itemCount, 0) / filteredAssessments.length) : 0}
+                {avgItems || '—'}
               </div>
               <div className="text-sm text-brand-gray2">Avg Items/Assessment</div>
             </div>

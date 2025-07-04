@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-
+console.log('MIDDLEWARE JWT_SECRET:', process.env.JWT_SECRET);
 export async function middleware(request: NextRequest) {
   // Skip auth check for auth-related routes
   if (request.nextUrl.pathname.startsWith('/auth')) {

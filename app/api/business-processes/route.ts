@@ -109,6 +109,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate status_percentage is between 0 and 100
+    if (status_percentage !== null && status_percentage !== undefined) {
+      const percentage = Number(status_percentage);
+      if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+        return NextResponse.json(
+          { error: 'Status percentage must be between 0 and 100' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Use the first business area for new records (or you could add a business_area field to the form)
     const userBusinessArea = userBusinessAreas[0];
 

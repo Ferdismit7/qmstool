@@ -65,7 +65,11 @@ export const calculateMetrics = (processes: BusinessProcess[]) => {
     inProgressProcesses: processes.filter(p => p.status === DOC_STATUS.IN_PROGRESS).length,
     highPriorityProcesses: processes.filter(p => p.priority === 'High').length,
     overallProgress: processes.length > 0
-      ? Math.round(processes.reduce((sum, p) => sum + (typeof p.statusPercentage === 'number' ? p.statusPercentage : 0), 0) / processes.length)
+      ? Math.round(processes.reduce((sum, p) => {
+          // Ensure percentage is a valid number and cap at 100%
+          const percentage = Math.min(Math.max(Number(p.statusPercentage) || 0, 0), 100);
+          return sum + percentage;
+        }, 0) / processes.length)
       : 0,
     statusCounts,
     progressCounts,

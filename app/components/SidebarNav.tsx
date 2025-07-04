@@ -72,6 +72,14 @@ export default function SidebarNav() {
               View Assessments
             </Link>
           </li>
+          <li>
+            <Link href="/operations-summary" className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold shadow text-lg transition-all
+              ${pathname === '/operations-summary' ? 'bg-brand-primary/60 text-brand-white' : 'hover:bg-brand-primary/60 text-brand-white'}`}
+            >
+              <FiBarChart2 size={22} />
+              Operations Summary
+            </Link>
+          </li>
         </ul>
       </nav>
       <div className="px-6 py-3 border-t border-brand-gray1 text-xs text-brand-gray3">

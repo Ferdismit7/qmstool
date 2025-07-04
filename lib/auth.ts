@@ -2,6 +2,9 @@ import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
 import { query } from '@/app/lib/db';
 
+// Debug: Print the JWT secret on server start
+console.log('JWT_SECRET:', process.env.JWT_SECRET);
+
 export interface JWTPayload {
   userId: number;
   email: string;
