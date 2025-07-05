@@ -12,9 +12,9 @@ frontend:
         - echo Prisma client generated successfully
         - ls -la node_modules/.prisma/
         - echo Checking environment variables...
-        - echo "NODE_ENV: $NODE_ENV"
-        - echo "DATABASE_URL exists: $([ -n "$DATABASE_URL" ] && echo 'yes' || echo 'no')"
-        - echo "JWT_SECRET exists: $([ -n "$JWT_SECRET" ] && echo 'yes' || echo 'no')"
+        - echo NODE_ENV: $NODE_ENV
+        - echo DATABASE_URL exists: $([ -n "$DATABASE_URL" ] && echo yes || echo no)
+        - echo JWT_SECRET exists: $([ -n "$JWT_SECRET" ] && echo yes || echo no)
     build:
       commands:
         - echo Building Next.js app...
