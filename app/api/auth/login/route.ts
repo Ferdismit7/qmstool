@@ -5,9 +5,24 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(request: Request) {
   try {
+    console.log('Login attempt started');
     const { email, password } = await request.json();
+    console.log('Login attempt for email:', email);
+
+    // Test database connection first
+    try {
+      await prisma.$connect();
+      console.log('Database connection successful');
+    } catch (dbError) {
+      console.error('Database connection failed:', dbError);
+      return NextResponse.json(
+        { message: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
 
     // Get user from database using Prisma
+    console.log('Attempting to find user...');
     const user = await prisma.user.findUnique({
       where: { email },
       select: {
@@ -19,6 +34,8 @@ export async function POST(request: Request) {
       }
     });
 
+    console.log('User lookup result:', user ? 'User found' : 'User not found');
+
     if (!user) {
       return NextResponse.json(
         { message: 'Invalid credentials' },
@@ -27,7 +44,9 @@ export async function POST(request: Request) {
     }
 
     // Verify password
+    console.log('Verifying password...');
     const isValid = await bcrypt.compare(password, user.password);
+    console.log('Password verification result:', isValid);
 
     if (!isValid) {
       return NextResponse.json(
@@ -38,6 +57,7 @@ export async function POST(request: Request) {
 
     // Check if JWT_SECRET is available
     if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET not available');
       return NextResponse.json(
         { message: 'Server configuration error' },
         { status: 500 }
@@ -45,6 +65,7 @@ export async function POST(request: Request) {
     }
 
     // Generate JWT token with business area
+    console.log('Generating JWT token...');
     const token = jwt.sign(
       { 
         userId: user.id, 
@@ -65,12 +86,16 @@ export async function POST(request: Request) {
       maxAge: 24 * 60 * 60 // 24 hours
     });
 
+    console.log('Login successful for user:', user.email);
     return response;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error details:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 } 
