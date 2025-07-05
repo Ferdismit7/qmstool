@@ -7,19 +7,31 @@ declare global {
 
 let prisma: PrismaClient;
 
-if (process.env.NODE_ENV === 'production') {
+try {
+  if (process.env.NODE_ENV === 'production') {
+    prisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL || 'mysql://dummy:dummy@localhost:3306/dummy',
+        },
+      },
+    });
+  } else {
+    if (!global.prisma) {
+      global.prisma = new PrismaClient();
+    }
+    prisma = global.prisma;
+  }
+} catch (error) {
+  console.error('Failed to initialize Prisma client:', error);
+  // Create a fallback client
   prisma = new PrismaClient({
     datasources: {
       db: {
-        url: process.env.DATABASE_URL || 'mysql://dummy:dummy@localhost:3306/dummy',
+        url: 'mysql://dummy:dummy@localhost:3306/dummy',
       },
     },
   });
-} else {
-  if (!global.prisma) {
-    global.prisma = new PrismaClient();
-  }
-  prisma = global.prisma;
 }
 
 export default prisma; 
