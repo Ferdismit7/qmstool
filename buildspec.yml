@@ -9,10 +9,13 @@ phases:
       - npm install
       - echo Generating Prisma client...
       - npx prisma generate
+      - echo Prisma client generated successfully
+      - ls -la node_modules/.prisma/
   build:
     commands:
       - echo Building Next.js app...
       - npm run build
+      - echo Build completed successfully
 artifacts:
   files:
     - '**/*'
