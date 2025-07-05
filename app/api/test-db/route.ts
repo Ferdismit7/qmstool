@@ -1,74 +1,49 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
+    console.log('Testing database connection...');
+    
+    // Log environment variables (without sensitive data)
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.log('DATABASE_URL length:', process.env.DATABASE_URL?.length || 0);
+    
+    console.log('Prisma client imported successfully');
+
     // Test database connection
-    const connection = await query('SELECT 1');
-    console.log('Database connection test:', connection);
-
-    // Check if table exists
-    const tableExists = await query(`
-      SELECT COUNT(*) as count 
-      FROM information_schema.tables 
-      WHERE table_schema = DATABASE() 
-      AND table_name = 'racm_matrix'
-    `);
-    console.log('Table exists check:', tableExists);
-
-    // Get table structure
-    const tableStructure = await query(`
-      SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE, IS_NULLABLE
-      FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_NAME = 'racm_matrix'
-      AND TABLE_SCHEMA = DATABASE()
-    `);
-    console.log('Table structure:', tableStructure);
-
-    // Create table if it doesn't exist
-    if (tableExists[0].count === 0) {
-      console.log('Creating racm_matrix table...');
-      await query(`
-        CREATE TABLE racm_matrix (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          process_name VARCHAR(255) NOT NULL,
-          activity_description TEXT,
-          issue_description TEXT NOT NULL,
-          issue_type VARCHAR(100),
-          likelihood TINYINT,
-          impact TINYINT,
-          risk_score INT,
-          control_description TEXT,
-          control_type ENUM('Preventive', 'Detective', 'Corrective'),
-          control_owner VARCHAR(255),
-          control_effectiveness ENUM('High', 'Medium', 'Low'),
-          residual_risk TINYINT,
-          status ENUM('Open', 'Under Review', 'Closed'),
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        )
-      `);
-      console.log('Table created successfully');
+    try {
+      await prisma.$connect();
+      console.log('Database connection successful');
+      
+      // Test a simple query
+      const userCount = await prisma.user.count();
+      console.log('User count:', userCount);
+      
+      await prisma.$disconnect();
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Database connection successful',
+        userCount,
+        environment: process.env.NODE_ENV,
+        hasDatabaseUrl: !!process.env.DATABASE_URL
+      });
+    } catch (dbError) {
+      console.error('Database connection failed:', dbError);
+      return NextResponse.json({
+        error: 'Database connection failed',
+        details: dbError instanceof Error ? dbError.message : 'Unknown database error',
+        environment: process.env.NODE_ENV,
+        hasDatabaseUrl: !!process.env.DATABASE_URL
+      }, { status: 500 });
     }
-
-    return NextResponse.json({
-      connection: 'success',
-      tableExists: tableExists[0].count > 0,
-      tableStructure
-    });
   } catch (error) {
-    console.error('Test Error:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      code: error instanceof Error && 'code' in error ? (error as any).code : undefined,
-      sqlMessage: error instanceof Error && 'sqlMessage' in error ? (error as any).sqlMessage : undefined
-    });
-    return NextResponse.json(
-      { 
-        error: 'Database test failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    console.error('Test route error:', error);
+    return NextResponse.json({
+      error: 'Test route failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 } 
