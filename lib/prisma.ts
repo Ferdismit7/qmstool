@@ -5,39 +5,45 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-let prisma: PrismaClient;
+let prisma: PrismaClient | null = null;
 
-try {
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Initializing Prisma client for production...');
-    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
-    
-    if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL environment variable is not set');
-    }
-    
-    prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
+function initializePrisma() {
+  if (prisma) return prisma;
+  
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Initializing Prisma client for production...');
+      console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+      
+      if (!process.env.DATABASE_URL) {
+        console.error('DATABASE_URL environment variable is not set');
+        return null;
+      }
+      
+      prisma = new PrismaClient({
+        datasources: {
+          db: {
+            url: process.env.DATABASE_URL,
+          },
         },
-      },
-      log: ['error', 'warn'],
-    });
-  } else {
-    console.log('Initializing Prisma client for development...');
-    if (!global.prisma) {
-      global.prisma = new PrismaClient({
         log: ['error', 'warn'],
       });
+    } else {
+      console.log('Initializing Prisma client for development...');
+      if (!global.prisma) {
+        global.prisma = new PrismaClient({
+          log: ['error', 'warn'],
+        });
+      }
+      prisma = global.prisma;
     }
-    prisma = global.prisma;
+    
+    console.log('Prisma client initialized successfully');
+    return prisma;
+  } catch (error) {
+    console.error('Failed to initialize Prisma client:', error);
+    return null;
   }
-  
-  console.log('Prisma client initialized successfully');
-} catch (error) {
-  console.error('Failed to initialize Prisma client:', error);
-  throw error; // Re-throw to prevent silent failures
 }
 
-export default prisma; 
+export default initializePrisma(); 

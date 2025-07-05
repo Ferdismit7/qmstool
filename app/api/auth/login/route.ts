@@ -10,7 +10,14 @@ export async function POST(request: Request) {
     const { email, password } = await request.json();
     console.log('Login attempt for email:', email);
 
-
+    // Check if Prisma is available
+    if (!prisma) {
+      console.error('Prisma client not available');
+      return NextResponse.json(
+        { message: 'Database client not available - check environment variables' },
+        { status: 500 }
+      );
+    }
 
     // Test database connection first
     try {
@@ -126,10 +133,12 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   } finally {
-    try {
-      await prisma.$disconnect();
-    } catch (disconnectError) {
-      console.error('Failed to disconnect Prisma:', disconnectError);
+    if (prisma) {
+      try {
+        await prisma.$disconnect();
+      } catch (disconnectError) {
+        console.error('Failed to disconnect Prisma:', disconnectError);
+      }
     }
   }
 } 

@@ -5,15 +5,23 @@ frontend:
       commands:
         - echo Installing dependencies...
         - npm install
+        - echo Checking Prisma installation...
+        - npx prisma --version
         - echo Generating Prisma client...
         - npx prisma generate
         - echo Prisma client generated successfully
         - ls -la node_modules/.prisma/
+        - echo Checking environment variables...
+        - echo "NODE_ENV: $NODE_ENV"
+        - echo "DATABASE_URL exists: $([ -n "$DATABASE_URL" ] && echo 'yes' || echo 'no')"
+        - echo "JWT_SECRET exists: $([ -n "$JWT_SECRET" ] && echo 'yes' || echo 'no')"
     build:
       commands:
         - echo Building Next.js app...
         - npm run build
         - echo Build completed successfully
+        - echo Checking build output...
+        - ls -la .next/
   artifacts:
     baseDirectory: .next
     files:

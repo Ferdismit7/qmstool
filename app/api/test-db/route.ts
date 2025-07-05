@@ -12,6 +12,17 @@ export async function GET() {
     
     console.log('Prisma client imported successfully');
 
+    // Check if Prisma is available
+    if (!prisma) {
+      console.error('Prisma client not available');
+      return NextResponse.json({
+        error: 'Prisma client not available',
+        details: 'Database client not initialized - check environment variables',
+        environment: process.env.NODE_ENV,
+        hasDatabaseUrl: !!process.env.DATABASE_URL
+      }, { status: 500 });
+    }
+
     // Test database connection
     try {
       await prisma.$connect();
