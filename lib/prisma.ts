@@ -11,7 +11,7 @@ if (process.env.NODE_ENV === 'production') {
   prisma = new PrismaClient({
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: process.env.DATABASE_URL || 'mysql://dummy:dummy@localhost:3306/dummy',
       },
     },
   });
