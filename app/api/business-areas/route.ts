@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // Fetch business areas using MySQL query
-    const businessAreas = await query(`
-      SELECT business_area 
-      FROM businessareas 
-      ORDER BY business_area ASC
-    `);
+    // Fetch business areas using Prisma
+    const businessAreas = await prisma.businessAreas.findMany({
+      select: { business_area: true },
+      orderBy: { business_area: 'asc' }
+    });
 
     return NextResponse.json({ success: true, data: businessAreas });
   } catch (error) {
@@ -34,13 +33,11 @@ export async function POST(request: Request) {
     const trimmedBusinessArea = business_area.trim();
 
     // Check if business area already exists
-    const existingAreas = await query(`
-      SELECT business_area 
-      FROM businessareas 
-      WHERE business_area = ?
-    `, [trimmedBusinessArea]);
+    const existingArea = await prisma.businessAreas.findUnique({
+      where: { business_area: trimmedBusinessArea }
+    });
 
-    if (existingAreas.length > 0) {
+    if (existingArea) {
       return NextResponse.json(
         { message: 'Business area already exists' },
         { status: 400 }
@@ -48,10 +45,9 @@ export async function POST(request: Request) {
     }
 
     // Add new business area
-    await query(`
-      INSERT INTO businessareas (business_area) 
-      VALUES (?)
-    `, [trimmedBusinessArea]);
+    await prisma.businessAreas.create({
+      data: { business_area: trimmedBusinessArea }
+    });
 
     return NextResponse.json(
       { message: 'Business area added successfully', business_area: trimmedBusinessArea },

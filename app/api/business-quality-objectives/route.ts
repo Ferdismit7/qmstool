@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import prisma from '@/lib/prisma';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -9,13 +9,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Create placeholders for IN clause
-    const placeholders = userBusinessAreas.map(() => '?').join(',');
-    
-    const objectives = await query(
-      `SELECT * FROM businessqualityobjectives WHERE business_area IN (${placeholders}) ORDER BY id DESC`,
-      userBusinessAreas
-    );
+    const objectives = await prisma.businessQualityObjective.findMany({
+      where: {
+        business_area: {
+          in: userBusinessAreas
+        }
+      },
+      orderBy: {
+        id: 'desc'
+      }
+    });
     return NextResponse.json({ success: true, data: objectives });
   } catch (error) {
     console.error('Database Error:', error);
@@ -34,21 +37,33 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, target, current_value, unit, target_date, status } = body;
+    const { category, sub_business_area, qms_main_objectives, qms_objective_description, kpi_or_sla_targets, performance_monitoring, proof_of_measuring, proof_of_reporting, frequency, responsible_person_team, review_date, progress, status_percentage } = body;
 
     // Use the first business area for new records
     const userBusinessArea = userBusinessAreas[0];
 
-    const result = await query(
-      `INSERT INTO businessqualityobjectives 
-      (name, description, target, current_value, unit, target_date, status, business_area)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, description, target, current_value, unit, target_date, status, userBusinessArea]
-    );
+    const objective = await prisma.businessQualityObjective.create({
+      data: {
+        category,
+        sub_business_area,
+        qms_main_objectives,
+        qms_objective_description,
+        kpi_or_sla_targets,
+        performance_monitoring,
+        proof_of_measuring,
+        proof_of_reporting,
+        frequency,
+        responsible_person_team,
+        review_date: review_date ? new Date(review_date) : null,
+        progress,
+        status_percentage,
+        business_area: userBusinessArea
+      }
+    });
 
     return NextResponse.json({
       success: true,
-      data: { id: result.insertId },
+      data: { id: objective.id },
       message: 'Business quality objective created successfully'
     });
   } catch (error) {

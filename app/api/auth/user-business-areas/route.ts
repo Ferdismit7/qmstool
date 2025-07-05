@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
-import { query } from '@/app/lib/db';
+import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,9 +14,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user ID and primary business area from the users table
-    const [userRecord] = await query(`
-      SELECT id, business_area FROM users WHERE email = ?
-    `, [user.email]);
+    const userRecord = await prisma.user.findUnique({
+      where: { email: user.email },
+      select: { id: true, business_area: true }
+    });
 
     if (!userRecord) {
       return NextResponse.json(
@@ -29,12 +30,12 @@ export async function GET(request: NextRequest) {
     let businessAreas: string[] = [];
     
     try {
-      const userBusinessAreas = await query(`
+      const userBusinessAreas = await prisma.$queryRaw`
         SELECT business_area 
         FROM user_business_areas 
-        WHERE user_id = ?
+        WHERE user_id = ${userRecord.id}
         ORDER BY business_area ASC
-      `, [userRecord.id]);
+      ` as any[];
 
       businessAreas = userBusinessAreas.map((row: any) => row.business_area);
     } catch (error) {

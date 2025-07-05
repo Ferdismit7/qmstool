@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import prisma from '@/lib/prisma';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
 
 // Helper function to transform database fields to component expected format
@@ -48,16 +48,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Create placeholders for IN clause
-    const placeholders = userBusinessAreas.map(() => '?').join(',');
-    
-    const businessProcesses = await query(`
-      SELECT bpr.*, ba.business_area 
-      FROM businessprocessregister bpr
-      LEFT JOIN businessareas ba ON bpr.business_area = ba.business_area
-      WHERE bpr.business_area IN (${placeholders})
-      ORDER BY bpr.update_date DESC
-    `, userBusinessAreas);
+    const businessProcesses = await prisma.businessProcessRegister.findMany({
+      where: {
+        business_area: {
+          in: userBusinessAreas
+        }
+      },
+      include: {
+        businessareas: true
+      },
+      orderBy: {
+        update_date: 'desc'
+      }
+    });
 
     // Transform the data to match component expectations
     const transformedProcesses = businessProcesses.map(transformBusinessProcess);
@@ -123,26 +126,27 @@ export async function POST(request: NextRequest) {
     // Use the first business area for new records (or you could add a business_area field to the form)
     const userBusinessArea = userBusinessAreas[0];
 
-    const result = await query(`
-      INSERT INTO businessprocessregister (
-        business_area, sub_business_area, process_name, document_name, 
-        version, progress, doc_status, status_percentage, priority, 
-        target_date, process_owner, update_date, remarks, review_date
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)
-    `, [
-      userBusinessArea, sub_business_area, process_name, document_name,
-      version || '1.0', progress || 'NOT_STARTED', doc_status || 'DRAFT',
-      status_percentage, priority, target_date ? new Date(target_date) : null,
-      process_owner, remarks, review_date ? new Date(review_date) : null
-    ]);
-
-    // Fetch the created record
-    const [businessProcess] = await query(`
-      SELECT bpr.*, ba.business_area 
-      FROM businessprocessregister bpr
-      LEFT JOIN businessareas ba ON bpr.business_area = ba.business_area
-      WHERE bpr.id = ?
-    `, [result.insertId]);
+    const businessProcess = await prisma.businessProcessRegister.create({
+      data: {
+        business_area: userBusinessArea,
+        sub_business_area: sub_business_area,
+        process_name: process_name,
+        document_name: document_name,
+        version: version || '1.0',
+        progress: progress || 'NOT_STARTED',
+        doc_status: doc_status || 'DRAFT',
+        status_percentage: status_percentage,
+        priority: priority,
+        target_date: target_date ? new Date(target_date) : null,
+        process_owner: process_owner,
+        update_date: new Date(),
+        remarks: remarks,
+        review_date: review_date ? new Date(review_date) : null
+      },
+      include: {
+        businessareas: true
+      }
+    });
 
     // Transform the response
     const transformedProcess = transformBusinessProcess(businessProcess);

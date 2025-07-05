@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
-import { query } from '@/app/lib/db';
+import prisma from '@/lib/prisma';
 
 // Debug: Print the JWT secret on server start
 console.log('JWT_SECRET:', process.env.JWT_SECRET);
@@ -59,22 +59,23 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
       return [];
     }
 
-    // Get user ID from the users table
-    const [userRecord] = await query(`
-      SELECT id FROM users WHERE email = ?
-    `, [user.email]);
+    // Get user ID from the users table using Prisma
+    const userRecord = await prisma.user.findUnique({
+      where: { email: user.email },
+      select: { id: true }
+    });
 
     if (!userRecord) {
       return [];
     }
 
     // Get all business areas for this user from user_business_areas table
-    const userBusinessAreas = await query(`
+    const userBusinessAreas = await prisma.$queryRaw`
       SELECT business_area 
       FROM user_business_areas 
-      WHERE user_id = ?
+      WHERE user_id = ${userRecord.id}
       ORDER BY business_area ASC
-    `, [userRecord.id]);
+    ` as any[];
 
     // If no business areas found in user_business_areas table, fall back to primary business area
     if (userBusinessAreas.length === 0 && user.businessArea) {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
@@ -8,9 +8,9 @@ export async function POST(request: Request) {
     console.log('Received signup request for:', { username, email, businessAreas });
 
     // Check if user already exists
-    const [existingUser] = await query(`
-      SELECT id FROM users WHERE email = ?
-    `, [email]);
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
 
     if (existingUser) {
       return NextResponse.json(
@@ -30,19 +30,23 @@ export async function POST(request: Request) {
       ? businessAreas[0] 
       : null;
 
-    // Create new user
-    const result = await query(`
-      INSERT INTO users (username, email, password, business_area, created_at)
-      VALUES (?, ?, ?, ?, NOW())
-    `, [username, email, hashedPassword, primaryBusinessArea]);
+    // Create new user using Prisma
+    const user = await prisma.user.create({
+      data: {
+        username,
+        email,
+        password: hashedPassword,
+        business_area: primaryBusinessArea,
+        created_at: new Date()
+      }
+    });
 
-    const userId = result.insertId;
-    console.log('User created successfully with ID:', userId);
+    console.log('User created successfully with ID:', user.id);
 
     // Store all business areas in a separate table
     if (Array.isArray(businessAreas) && businessAreas.length > 0) {
       // Create user_business_areas table if it doesn't exist
-      await query(`
+      await prisma.$executeRaw`
         CREATE TABLE IF NOT EXISTS user_business_areas (
           id INT AUTO_INCREMENT PRIMARY KEY,
           user_id INT NOT NULL,
@@ -52,17 +56,17 @@ export async function POST(request: Request) {
           FOREIGN KEY (business_area) REFERENCES businessareas(business_area) ON DELETE CASCADE,
           UNIQUE KEY unique_user_business (user_id, business_area)
         )
-      `);
+      `;
 
       // Insert all business areas for this user
       for (const businessArea of businessAreas) {
         try {
-          await query(`
+          await prisma.$executeRaw`
             INSERT INTO user_business_areas (user_id, business_area)
-            VALUES (?, ?)
-          `, [userId, businessArea]);
+            VALUES (${user.id}, ${businessArea})
+          `;
         } catch (error) {
-          console.error(`Failed to insert business area ${businessArea} for user ${userId}:`, error);
+          console.error(`Failed to insert business area ${businessArea} for user ${user.id}:`, error);
           // Continue with other business areas even if one fails
         }
       }

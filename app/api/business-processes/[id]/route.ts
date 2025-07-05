@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import prisma from '@/lib/prisma';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
 
 // Helper function to transform database fields to component expected format
@@ -51,16 +51,17 @@ export async function GET(
       );
     }
 
-    // Create placeholders for IN clause
-    const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [...userBusinessAreas, Number(params.id)];
-
-    const [process] = await query(`
-      SELECT bpr.*, ba.business_area 
-      FROM businessprocessregister bpr
-      LEFT JOIN businessareas ba ON bpr.business_area = ba.business_area
-      WHERE bpr.id = ? AND bpr.business_area IN (${placeholders})
-    `, queryParams);
+    const process = await prisma.businessProcessRegister.findFirst({
+      where: {
+        id: Number(params.id),
+        business_area: {
+          in: userBusinessAreas
+        }
+      },
+      include: {
+        businessareas: true
+      }
+    });
 
     if (!process) {
       return NextResponse.json(
@@ -131,27 +132,31 @@ export async function PUT(
       }
     }
 
-    // Create placeholders for IN clause
-    const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [...userBusinessAreas, Number(params.id)];
+    const updatedProcess = await prisma.businessProcessRegister.updateMany({
+      where: {
+        id: Number(params.id),
+        business_area: {
+          in: userBusinessAreas
+        }
+      },
+      data: {
+        sub_business_area: sub_business_area,
+        process_name: process_name,
+        document_name: document_name,
+        version: version,
+        progress: progress,
+        doc_status: doc_status,
+        status_percentage: status_percentage,
+        priority: priority,
+        target_date: target_date ? new Date(target_date) : null,
+        process_owner: process_owner,
+        update_date: new Date(),
+        remarks: remarks,
+        review_date: review_date ? new Date(review_date) : null
+      }
+    });
 
-    // Use the first business area for updates
-    const userBusinessArea = userBusinessAreas[0];
-
-    const result = await query(`
-      UPDATE businessprocessregister SET
-        sub_business_area = ?, process_name = ?, document_name = ?,
-        version = ?, progress = ?, doc_status = ?, status_percentage = ?, priority = ?,
-        target_date = ?, process_owner = ?, update_date = NOW(), remarks = ?, review_date = ?
-      WHERE id = ? AND business_area IN (${placeholders})
-    `, [
-      sub_business_area, process_name, document_name,
-      version, progress, doc_status, status_percentage, priority,
-      target_date ? new Date(target_date) : null, process_owner, remarks,
-      review_date ? new Date(review_date) : null, Number(params.id), ...userBusinessAreas
-    ]);
-
-    if (result.affectedRows === 0) {
+    if (updatedProcess.count === 0) {
       return NextResponse.json(
         { error: 'Process not found' }, 
         { status: 404 }
@@ -159,14 +164,19 @@ export async function PUT(
     }
 
     // Fetch the updated record
-    const [updatedProcess] = await query(`
-      SELECT bpr.*, ba.business_area 
-      FROM businessprocessregister bpr
-      LEFT JOIN businessareas ba ON bpr.business_area = ba.business_area
-      WHERE bpr.id = ? AND bpr.business_area IN (${placeholders})
-    `, [Number(params.id), ...userBusinessAreas]);
+    const process = await prisma.businessProcessRegister.findFirst({
+      where: {
+        id: Number(params.id),
+        business_area: {
+          in: userBusinessAreas
+        }
+      },
+      include: {
+        businessareas: true
+      }
+    });
 
-    const transformedProcess = transformBusinessProcess(updatedProcess);
+    const transformedProcess = transformBusinessProcess(process);
     return NextResponse.json(transformedProcess);
   } catch (error) {
     console.error('Failed to update process:', error);
@@ -191,15 +201,16 @@ export async function DELETE(
       );
     }
 
-    // Create placeholders for IN clause
-    const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [...userBusinessAreas, Number(params.id)];
+    const result = await prisma.businessProcessRegister.deleteMany({
+      where: {
+        id: Number(params.id),
+        business_area: {
+          in: userBusinessAreas
+        }
+      }
+    });
 
-    const result = await query(`
-      DELETE FROM businessprocessregister WHERE id = ? AND business_area IN (${placeholders})
-    `, queryParams);
-
-    if (result.affectedRows === 0) {
+    if (result.count === 0) {
       return NextResponse.json(
         { error: 'Process not found' }, 
         { status: 404 }

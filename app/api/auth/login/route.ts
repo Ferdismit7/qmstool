@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -7,12 +7,17 @@ export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
 
-    // Get user from database
-    const [user] = await query(`
-      SELECT id, email, username, password, business_area 
-      FROM users 
-      WHERE email = ?
-    `, [email]);
+    // Get user from database using Prisma
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        password: true,
+        business_area: true
+      }
+    });
 
     if (!user) {
       return NextResponse.json(

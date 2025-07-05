@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import prisma from '@/lib/prisma';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
 import { NextRequest } from 'next/server';
 
@@ -11,32 +11,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Create placeholders for IN clause
-    const placeholders = userBusinessAreas.map(() => '?').join(',');
-    
-    const result = await query(`
-      SELECT 
-        id,
-        process_name,
-        business_area,
-        activity_description,
-        issue_description,
-        issue_type,
-        likelihood,
-        impact,
-        risk_score,
-        control_description,
-        control_type,
-        control_owner,
-        control_effectiveness,
-        residual_risk,
-        status,
-        created_at,
-        updated_at
-      FROM racm_matrix 
-      WHERE business_area IN (${placeholders})
-      ORDER BY created_at DESC
-    `, userBusinessAreas);
+    const result = await prisma.racmMatrix.findMany({
+      where: {
+        business_area: {
+          in: userBusinessAreas
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
     return NextResponse.json(result);
   } catch (error) {
     console.error('Database Error:', error);
@@ -104,37 +88,23 @@ export async function POST(request: NextRequest) {
       business_area: userBusinessArea
     });
 
-    const result = await query(`
-      INSERT INTO racm_matrix (
+    const result = await prisma.racmMatrix.create({
+      data: {
         process_name,
-        business_area,
-        activity_description,
+        business_area: userBusinessArea,
+        activity_description: activity_description || null,
         issue_description,
-        issue_type,
-        likelihood,
-        impact,
-        control_description,
-        control_type,
-        control_owner,
-        control_effectiveness,
-        residual_risk,
-        status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      process_name,
-      userBusinessArea, // Force business area to user's area
-      activity_description || null,
-      issue_description,
-      issue_type || null,
-      likelihood || null,
-      impact || null,
-      control_description || null,
-      control_type || null,
-      control_owner || null,
-      control_effectiveness || null,
-      residual_risk || null,
-      status || null
-    ]);
+        issue_type: issue_type || null,
+        likelihood: likelihood || null,
+        impact: impact || null,
+        control_description: control_description || null,
+        control_type: control_type || null,
+        control_owner: control_owner || null,
+        control_effectiveness: control_effectiveness || null,
+        residual_risk: residual_risk || null,
+        status: status || null
+      }
+    });
 
     console.log('Insert result:', result);
     return NextResponse.json(result);
@@ -189,11 +159,16 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if control exists and user has access
-    const existingControl = await query(`
-      SELECT business_area FROM racm_matrix WHERE id = ?
-    `, [id]) as any[];
+    const existingControl = await prisma.racmMatrix.findFirst({
+      where: {
+        id: Number(id),
+        business_area: {
+          in: userBusinessAreas
+        }
+      }
+    });
 
-    if (!existingControl || existingControl.length === 0 || !userBusinessAreas.includes(existingControl[0].business_area)) {
+    if (!existingControl) {
       return NextResponse.json({ error: 'Risk management control not found' }, { status: 404 });
     }
 
@@ -205,41 +180,25 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized to modify business area' }, { status: 403 });
     }
 
-    await query(`
-      UPDATE racm_matrix SET
-        process_name = ?,
-        business_area = ?,
-        activity_description = ?,
-        issue_description = ?,
-        issue_type = ?,
-        likelihood = ?,
-        impact = ?,
-        risk_score = ?,
-        control_description = ?,
-        control_type = ?,
-        control_owner = ?,
-        control_effectiveness = ?,
-        residual_risk = ?,
-        status = ?,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `, [
-      process_name,
-      userBusinessArea, // Force business area to user's area
-      activity_description || null,
-      issue_description,
-      issue_type || null,
-      likelihood || null,
-      impact || null,
-      risk_score || null,
-      control_description || null,
-      control_type || null,
-      control_owner || null,
-      control_effectiveness || null,
-      residual_risk || null,
-      status || null,
-      id
-    ]);
+    await prisma.racmMatrix.update({
+      where: { id: Number(id) },
+      data: {
+        process_name,
+        business_area: userBusinessArea,
+        activity_description: activity_description || null,
+        issue_description,
+        issue_type: issue_type || null,
+        likelihood: likelihood || null,
+        impact: impact || null,
+        control_description: control_description || null,
+        control_type: control_type || null,
+        control_owner: control_owner || null,
+        control_effectiveness: control_effectiveness || null,
+        residual_risk: residual_risk || null,
+        status: status || null,
+        updated_at: new Date()
+      }
+    });
 
     return NextResponse.json({ message: 'Risk management control updated successfully' });
   } catch (error) {
@@ -267,15 +226,22 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if control exists and user has access
-    const existingControl = await query(`
-      SELECT business_area FROM racm_matrix WHERE id = ?
-    `, [id]) as any[];
+    const existingControl = await prisma.racmMatrix.findFirst({
+      where: {
+        id: Number(id),
+        business_area: {
+          in: userBusinessAreas
+        }
+      }
+    });
 
-    if (!existingControl || existingControl.length === 0 || !userBusinessAreas.includes(existingControl[0].business_area)) {
+    if (!existingControl) {
       return NextResponse.json({ error: 'Risk management control not found' }, { status: 404 });
     }
 
-    await query('DELETE FROM racm_matrix WHERE id = ?', [id]);
+    await prisma.racmMatrix.delete({
+      where: { id: Number(id) }
+    });
 
     return NextResponse.json({ message: 'Risk management control deleted successfully' });
   } catch (error) {
