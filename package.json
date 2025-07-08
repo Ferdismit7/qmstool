@@ -10,8 +10,8 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.0.0",
-    "@aws-sdk/s3-request-presigner": "^3.0.0",
+    "@aws-sdk/client-s3": "^3.842.0",
+    "@aws-sdk/s3-request-presigner": "^3.842.0",
     "@prisma/client": "^6.8.2",
     "@supabase/supabase-js": "^2.49.8",
     "@types/bcrypt": "^5.0.2",
