@@ -11,7 +11,7 @@ frontend:
         - npx prisma generate
         - echo Prisma client generated successfully
         - echo Checking environment variables...
-        - echo "NODE_ENV: $NODE_ENV"
+        - echo "NODE_ENV is set"
         - echo "Checking DATABASE_URL..."
         - echo "Checking JWT_SECRET..."
     build:
