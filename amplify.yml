@@ -4,13 +4,12 @@ frontend:
     preBuild:
       commands:
         - echo Installing dependencies...
-        - npm install
+        - npm ci
         - echo Checking Prisma installation...
         - npx prisma --version
         - echo Generating Prisma client...
         - npx prisma generate
         - echo Prisma client generated successfully
-        - ls -la node_modules/.prisma/
         - echo Checking environment variables...
         - echo NODE_ENV: $NODE_ENV
         - echo DATABASE_URL exists: $([ -n "$DATABASE_URL" ] && echo yes || echo no)
@@ -29,4 +28,15 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
-      - .next/cache/**/* 
+      - .next/cache/**/*
+  customHeaders:
+    - pattern: '**/*'
+      headers:
+        - key: 'Strict-Transport-Security'
+          value: 'max-age=31536000; includeSubDomains'
+        - key: 'X-Frame-Options'
+          value: 'DENY'
+        - key: 'X-Content-Type-Options'
+          value: 'nosniff'
+        - key: 'Referrer-Policy'
+          value: 'strict-origin-when-cross-origin' 

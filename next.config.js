@@ -4,9 +4,14 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true, // Enables additional React checks and warnings
+  reactStrictMode: true,
   env: {
     ENABLE_AI_FEATURES: process.env.ENABLE_AI_FEATURES,
+  },
+  // Amplify compatibility
+  output: 'standalone',
+  experimental: {
+    outputFileTracingRoot: undefined,
   },
   async rewrites() {
     return [
@@ -15,6 +20,10 @@ const nextConfig = {
         destination: '/api/:path*',
       },
     ];
+  },
+  // Handle static assets
+  images: {
+    unoptimized: true,
   },
 }
 
