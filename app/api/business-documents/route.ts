@@ -5,6 +5,10 @@ import { getCurrentUserBusinessAreas } from '@/lib/auth';
 // GET all business documents for user's business areas
 export async function GET(request: NextRequest) {
   try {
+    if (!prisma) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
     if (userBusinessAreas.length === 0) {
@@ -41,6 +45,10 @@ export async function GET(request: NextRequest) {
 // POST new business document
 export async function POST(request: NextRequest) {
   try {
+    if (!prisma) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
     if (userBusinessAreas.length === 0) {
@@ -114,6 +122,10 @@ export async function POST(request: NextRequest) {
 // PUT (update) a business document
 export async function PUT(request: NextRequest) {
   try {
+    if (!prisma) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
     if (userBusinessAreas.length === 0) {
@@ -201,6 +213,10 @@ export async function PUT(request: NextRequest) {
 // DELETE a business document
 export async function DELETE(request: NextRequest) {
   try {
+    if (!prisma) {
+      return NextResponse.json({ error: 'Database not available' }, { status: 500 });
+    }
+
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
     if (userBusinessAreas.length === 0) {
@@ -237,4 +253,4 @@ export async function DELETE(request: NextRequest) {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
-} 
+}
