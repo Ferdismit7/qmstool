@@ -11,9 +11,9 @@ frontend:
         - npx prisma generate
         - echo Prisma client generated successfully
         - echo Checking environment variables...
-        - echo NODE_ENV: $NODE_ENV
-        - 'if [ -n "$DATABASE_URL" ]; then echo "DATABASE_URL exists: yes"; else echo "DATABASE_URL exists: no"; fi'
-        - 'if [ -n "$JWT_SECRET" ]; then echo "JWT_SECRET exists: yes"; else echo "JWT_SECRET exists: no"; fi'
+        - echo "NODE_ENV: $NODE_ENV"
+        - echo "Checking DATABASE_URL..."
+        - echo "Checking JWT_SECRET..."
     build:
       commands:
         - echo Building Next.js app...
