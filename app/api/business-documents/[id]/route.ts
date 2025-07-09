@@ -5,9 +5,11 @@ import { getCurrentUserBusinessAreas } from '@/lib/auth';
 // GET a single business document
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     // Get user's business areas
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
@@ -20,7 +22,7 @@ export async function GET(
 
     // Create placeholders for IN clause
     const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [...userBusinessAreas, parseInt(params.id)];
+    const queryParams = [...userBusinessAreas, parseInt(id)];
 
     const [document] = await query(`
       SELECT bdr.*, ba.business_area 
@@ -45,9 +47,11 @@ export async function GET(
 // PUT (update) a business document
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     if (userBusinessAreas.length === 0) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -72,7 +76,7 @@ export async function PUT(
 
     // Create placeholders for IN clause
     const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [...userBusinessAreas, parseInt(params.id)];
+    const queryParams = [...userBusinessAreas, parseInt(id)];
 
     // Check if document exists and user has access
     const [existingDocument] = await query(`
@@ -83,8 +87,6 @@ export async function PUT(
     if (!existingDocument) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
-
-
 
     const result = await query(`
       UPDATE businessdocumentregister SET
@@ -97,7 +99,7 @@ export async function PUT(
       sub_business_area, document_name, name_and_numbering, document_type,
       version, progress, doc_status, status_percentage, priority,
       target_date ? new Date(target_date) : null, document_owner, remarks,
-      review_date ? new Date(review_date) : null, parseInt(params.id), ...userBusinessAreas
+      review_date ? new Date(review_date) : null, parseInt(id), ...userBusinessAreas
     ]);
 
     if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
@@ -110,7 +112,7 @@ export async function PUT(
       FROM businessdocumentregister bdr
       LEFT JOIN businessareas ba ON bdr.business_area = ba.business_area
       WHERE bdr.id = ? AND bdr.business_area IN (${placeholders})
-    `, [parseInt(params.id), ...userBusinessAreas]);
+    `, [parseInt(id), ...userBusinessAreas]);
 
     return NextResponse.json(updatedDocument);
   } catch (error) {
@@ -125,9 +127,11 @@ export async function PUT(
 // DELETE a business document
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     if (userBusinessAreas.length === 0) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -135,7 +139,7 @@ export async function DELETE(
 
     // Create placeholders for IN clause
     const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [...userBusinessAreas, parseInt(params.id)];
+    const queryParams = [...userBusinessAreas, parseInt(id)];
 
     // Check if document exists and user has access
     const [existingDocument] = await query(`
