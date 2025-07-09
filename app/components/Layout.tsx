@@ -1,13 +1,12 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import SidebarNav from './SidebarNav';
 import LogoutButton from './LogoutButton';
 import Link from 'next/link';
 
 const SIDEBAR_WIDTH = 'w-56'; // 14rem
-const HEADER_HEIGHT = 'h-16'; // 4rem
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -15,9 +14,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isAssessmentPage =
-    pathname.startsWith('/qms-assessments') ||
-    pathname === '/qms-internal-assessment';
+
 
   // Check if we should show the sidebar (exclude dashboard and auth pages)
   const shouldShowSidebar = pathname !== '/dashboard' && pathname !== '/auth';
@@ -62,8 +59,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Helper function to fetch user data
-  const fetchUserData = async (token: string) => {
+  const fetchUserData = useCallback(async (token: string) => {
+    setIsLoading(true);
     try {
       console.log('Attempting to fetch user data with token:', token);
       const response = await fetch('/api/auth/me', {
@@ -108,8 +105,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         setUser({ username: tokenData.username });
       }
       return false;
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -140,7 +139,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const timer = setTimeout(initializeAuth, 50);
     
     return () => clearTimeout(timer);
-  }, []); // Only run on mount
+  }, [fetchUserData]); // Add fetchUserData to dependencies
 
   // Listen for storage changes (when authToken is updated)
   useEffect(() => {
@@ -174,13 +173,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('tokenChange', handleTokenChange);
     };
-  }, []);
+  }, [fetchUserData]); // Add fetchUserData to dependencies
 
   useEffect(() => {
     if (!isLoading && !user && pathname !== '/auth') {
       router.replace('/auth');
     }
-  }, [isLoading, user, pathname]);
+  }, [isLoading, user, pathname, router]); // Add router to dependencies
 
   const getInitials = (username: string) => {
     const initial = username.charAt(0).toUpperCase();

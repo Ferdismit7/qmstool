@@ -1,49 +1,40 @@
 import { PrismaClient } from '@prisma/client';
 
-declare global {
-  // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined;
-}
+// Prevent multiple instances of Prisma Client in development
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
 
-let prisma: PrismaClient | null = null;
-
-function initializePrisma() {
-  if (prisma) return prisma;
-  
-  try {
-    if (process.env.NODE_ENV === 'production') {
-      console.log('Initializing Prisma client for production...');
-      console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
-      
-      if (!process.env.DATABASE_URL) {
-        console.error('DATABASE_URL environment variable is not set');
-        return null;
-      }
-      
-      prisma = new PrismaClient({
-        datasources: {
+// Initialize Prisma Client
+export const prisma = globalForPrisma.prisma ?? 
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'development' 
+      ? ['query', 'error', 'warn'] 
+      : ['error'],
+    datasources: process.env.DATABASE_URL
+      ? {
           db: {
             url: process.env.DATABASE_URL,
           },
-        },
-        log: ['error', 'warn'],
-      });
-    } else {
-      console.log('Initializing Prisma client for development...');
-      if (!global.prisma) {
-        global.prisma = new PrismaClient({
-          log: ['error', 'warn'],
-        });
-      }
-      prisma = global.prisma;
-    }
-    
-    console.log('Prisma client initialized successfully');
-    return prisma;
+        }
+      : undefined,
+  });
+
+// If not in production, save Prisma Client to global
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
+
+// Test database connection
+export async function testConnection() {
+  try {
+    await prisma.$connect();
+    console.log('Database connected successfully');
+    return true;
   } catch (error) {
-    console.error('Failed to initialize Prisma client:', error);
-    return null;
+    console.error('Database connection failed:', error);
+    return false;
   }
 }
 
-export default initializePrisma(); 
+export default prisma;

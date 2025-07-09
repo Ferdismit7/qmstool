@@ -8,9 +8,14 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Get user's business areas
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    
     if (userBusinessAreas.length === 0) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized - No business area access' },
+        { status: 401 }
+      );
     }
 
     // Create placeholders for IN clause
@@ -79,8 +84,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    // Use the first business area for updates
-    const userBusinessArea = userBusinessAreas[0];
+
 
     const result = await query(`
       UPDATE businessdocumentregister SET
@@ -96,7 +100,7 @@ export async function PUT(
       review_date ? new Date(review_date) : null, parseInt(params.id), ...userBusinessAreas
     ]);
 
-    if (result.affectedRows === 0) {
+    if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
@@ -148,7 +152,7 @@ export async function DELETE(
       WHERE id = ? AND business_area IN (${placeholders})
     `, queryParams);
 
-    if (result.affectedRows === 0) {
+    if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 

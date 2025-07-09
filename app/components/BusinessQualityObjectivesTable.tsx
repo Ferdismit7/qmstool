@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaEdit, FaTrash, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
 
 /**
@@ -78,8 +77,6 @@ export default function BusinessQualityObjectivesTable() {
   const [objectives, setObjectives] = useState<BusinessQualityObjective[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortField, setSortField] = useState<keyof BusinessQualityObjective>('id');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -126,15 +123,6 @@ export default function BusinessQualityObjectivesTable() {
     }
   };
 
-  const handleSort = (field: keyof BusinessQualityObjective) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
   const handleCellClick = (cellId: string) => {
     setExpandedCell(prev => (prev === cellId ? null : cellId));
   };
@@ -152,18 +140,7 @@ export default function BusinessQualityObjectivesTable() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [expandedCell]);
 
-  const sortedObjectives = objectives.sort((a, b) => {
-    const aValue = a[sortField];
-    const bValue = b[sortField];
-    if (aValue === bValue) return 0;
-    const modifier = sortDirection === 'asc' ? 1 : -1;
-    return aValue > bValue ? modifier : -modifier;
-  });
-
-  const getSortIcon = (field: keyof BusinessQualityObjective) => {
-    if (sortField !== field) return <FaSort className="ml-1" />;
-    return sortDirection === 'asc' ? <FaSortUp className="ml-1" /> : <FaSortDown className="ml-1" />;
-  };
+  const sortedObjectives = objectives;
 
   /**
    * Formats a date string to the GB locale format
@@ -173,43 +150,6 @@ export default function BusinessQualityObjectivesTable() {
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('en-GB');
-  };
-
-  /**
-   * Gets the appropriate color class for a given status
-   * @param {string} status - The status to get the color for
-   * @returns {string} Tailwind CSS classes for the status color
-   */
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Not Started':
-        return 'bg-gray-500/20 border-gray-500';
-      case 'In Progress':
-        return 'bg-blue-500/20 border-blue-500';
-      case 'On-Track':
-        return 'bg-green-500/20 border-green-500';
-      case 'Minor Challenges':
-        return 'bg-yellow-500/20 border-yellow-500';
-      case 'Major Challenges':
-        return 'bg-orange-500/20 border-orange-500';
-      case 'Completed':
-        return 'bg-green-500/20 border-green-500';
-      default:
-        return 'bg-gray-500/20 border-gray-500';
-    }
-  };
-
-  /**
-   * Gets the appropriate color class for a given status percentage
-   * @param {number} percentage - The percentage to get the color for
-   * @returns {string} Tailwind CSS classes for the percentage color
-   */
-  const getStatusPercentageColor = (percentage: number) => {
-    if (percentage === 0) return 'bg-gray-500/20 border-gray-500';
-    if (percentage < 25) return 'bg-red-500/20 border-red-500';
-    if (percentage < 50) return 'bg-orange-500/20 border-orange-500';
-    if (percentage < 75) return 'bg-yellow-500/20 border-yellow-500';
-    return 'bg-green-500/20 border-green-500';
   };
 
   if (loading) return <CenteredLoadingSpinner />;

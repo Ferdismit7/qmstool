@@ -1,7 +1,3 @@
-// next.config.js
-// This file configures Next.js for the project.
-// You can add custom Next.js configuration options here.
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -10,9 +6,16 @@ const nextConfig = {
   },
   // Amplify compatibility
   output: 'standalone',
-  experimental: {
-    outputFileTracingRoot: undefined,
+  // Next.js 15 specific optimizations
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
   },
+  // Remove experimental flag that's now standard in v15
+  // experimental: {
+  //   outputFileTracingRoot: undefined,
+  // },
   async rewrites() {
     return [
       {
@@ -27,4 +30,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig; 
+module.exports = nextConfig;

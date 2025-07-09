@@ -49,9 +49,7 @@ interface RiskManagementFormProps {
   control?: RiskManagementControl;
 }
 
-interface BusinessArea {
-  business_area: string;
-}
+
 
 /**
  * RiskManagementForm Component
@@ -163,7 +161,7 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
 
     try {
       // Remove risk_score from the data being sent
-      const { risk_score, ...formDataToSubmit } = formData;
+      const { ...formDataToSubmit } = formData;
 
       const url = control ? `/api/risk-management/${control.id}` : '/api/risk-management';
       const method = control ? 'PUT' : 'POST';

@@ -33,17 +33,14 @@ export async function GET(request: NextRequest) {
       AND table_name = 'user_business_areas'
     `);
 
-    let userBusinessAreas = [];
-    let tableExistsBool = tableExists.count > 0;
+    let userBusinessAreas: { business_area: string }[] = [];
+    const tableExistsBool = (tableExists as unknown as { count: number }).count > 0;
 
     if (tableExistsBool) {
       // Get all business areas for this user
       userBusinessAreas = await query(`
-        SELECT business_area 
-        FROM user_business_areas 
-        WHERE user_id = ?
-        ORDER BY business_area ASC
-      `, [userRecord.id]);
+        SELECT business_area FROM user_business_areas WHERE user_id = ${userRecord.id}
+      `) as unknown as { business_area: string }[];
     }
 
     // Get all business areas from businessareas table
@@ -60,8 +57,8 @@ export async function GET(request: NextRequest) {
         primaryBusinessArea: userRecord.business_area
       },
       tableExists: tableExistsBool,
-      userBusinessAreas: userBusinessAreas.map((row: any) => row.business_area),
-      allBusinessAreas: allBusinessAreas.map((row: any) => row.business_area),
+      userBusinessAreas: userBusinessAreas.map((row: unknown) => (row as { business_area: string }).business_area),
+      allBusinessAreas: allBusinessAreas.map((row: unknown) => (row as { business_area: string }).business_area),
       userBusinessAreasCount: userBusinessAreas.length,
       allBusinessAreasCount: allBusinessAreas.length
     });

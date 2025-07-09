@@ -1,5 +1,17 @@
 import mysql from 'mysql2/promise';
 
+// Type definitions for database operations
+export interface DatabaseError extends Error {
+  code?: string;
+  errno?: number;
+  sqlMessage?: string;
+  sqlState?: string;
+}
+
+export interface QueryResult<T = unknown> {
+  [key: string]: T;
+}
+
 // Create a connection pool
 const pool = mysql.createPool({
   host: process.env.MYSQL_HOST,
@@ -12,7 +24,7 @@ const pool = mysql.createPool({
 });
 
 // Helper function to execute queries
-export async function query<T = any>(sql: string, params: any[] = []): Promise<T> {
+export async function query<T = QueryResult[]>(sql: string, params: unknown[] = []): Promise<T> {
   let connection;
   try {
     // Get a connection from the pool
@@ -36,10 +48,10 @@ export async function query<T = any>(sql: string, params: any[] = []): Promise<T
       params: JSON.stringify(params, null, 2),
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      code: error instanceof Error && 'code' in error ? (error as any).code : undefined,
-      errno: error instanceof Error && 'errno' in error ? (error as any).errno : undefined,
-      sqlMessage: error instanceof Error && 'sqlMessage' in error ? (error as any).sqlMessage : undefined,
-      sqlState: error instanceof Error && 'sqlState' in error ? (error as any).sqlState : undefined
+      code: error instanceof Error && 'code' in error ? (error as DatabaseError).code : undefined,
+      errno: error instanceof Error && 'errno' in error ? (error as DatabaseError).errno : undefined,
+      sqlMessage: error instanceof Error && 'sqlMessage' in error ? (error as DatabaseError).sqlMessage : undefined,
+      sqlState: error instanceof Error && 'sqlState' in error ? (error as DatabaseError).sqlState : undefined
     });
     throw error;
   } finally {

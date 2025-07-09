@@ -2,21 +2,9 @@
 
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { FiUsers, FiCalendar, FiPlus } from 'react-icons/fi';
+import { FiUsers, FiPlus } from 'react-icons/fi';
 
-// Mock data for demonstration
-const mockTrainings = [
-  { title: 'ISO:9001 Introduction', date: '2024-01-15', completed: true },
-  { title: 'ISO:9001 Documentation', date: '2024-02-10', completed: true },
-  { title: 'ISO:9001 Internal Audit', date: '2024-03-05', completed: false },
-  { title: 'ISO:9001 Review', date: '2024-03-20', completed: false },
-];
 
-const getProgress = (trainings: { completed: boolean }[]) => {
-  if (!trainings.length) return 0;
-  const completed = trainings.filter(t => t.completed).length;
-  return Math.round((completed / trainings.length) * 100);
-};
 
 const months = [
   { name: 'Jan', weeks: 4 },
@@ -55,7 +43,7 @@ export default function BusinessAreaProfilePage() {
         if (!res.ok) throw new Error('Failed to fetch sessions');
         const data = await res.json();
         setSessions(data);
-      } catch (err) {
+      } catch {
         setError('Could not load training sessions');
       } finally {
         setLoading(false);
@@ -90,7 +78,7 @@ export default function BusinessAreaProfilePage() {
       setSessions(prev => [...prev, newSession]);
       setForm({ session: '', session_date: '', remarks: '' });
       setShowForm(false);
-    } catch (err) {
+    } catch {
       setError('Could not save training session');
     } finally {
       setSubmitting(false);

@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 
 export async function POST(request: Request) {
   try {
     console.log('Test login attempt started');
-    const { email, password } = await request.json();
+    const { email } = await request.json();
     console.log('Test login attempt for email:', email);
 
     // Check if JWT_SECRET is available

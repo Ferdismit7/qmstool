@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/app/lib/db';
 
+interface UserBusinessArea {
+  business_area: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { email, businessAreas } = await request.json();
@@ -12,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user ID
-    const [user] = await query(`
+    const [user] = await query<{ id: number }[]>(`
       SELECT id FROM users WHERE email = ?
     `, [email]);
 
@@ -23,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     let addedCount = 0;
-    let errors = [];
+    const errors: string[] = [];
 
     // Add each business area for the user
     for (const businessArea of businessAreas) {
@@ -42,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get updated list of user's business areas
-    const userBusinessAreas = await query(`
+    const userBusinessAreas = await query<UserBusinessArea[]>(`
       SELECT business_area 
       FROM user_business_areas 
       WHERE user_id = ?
@@ -54,7 +58,7 @@ export async function POST(request: NextRequest) {
       userEmail: email,
       addedCount: addedCount,
       totalUserBusinessAreas: userBusinessAreas.length,
-      userBusinessAreas: userBusinessAreas.map((row: any) => row.business_area),
+      userBusinessAreas: userBusinessAreas.map((row: UserBusinessArea) => row.business_area),
       errors: errors
     });
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import {prisma } from '@/lib/prisma';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
 import { NextRequest } from 'next/server';
 
@@ -49,7 +49,6 @@ export async function POST(request: NextRequest) {
       issue_type,
       likelihood,
       impact,
-      risk_score,
       control_description,
       control_type,
       control_owner,
@@ -78,7 +77,6 @@ export async function POST(request: NextRequest) {
       issue_type,
       likelihood,
       impact,
-      risk_score,
       control_description,
       control_type,
       control_owner,
@@ -141,7 +139,6 @@ export async function PUT(request: NextRequest) {
       issue_type,
       likelihood,
       impact,
-      risk_score,
       control_description,
       control_type,
       control_owner,

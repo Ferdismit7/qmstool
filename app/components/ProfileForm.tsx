@@ -31,7 +31,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       const response = await fetch('/api/business-areas');
       const data = await response.json();
       if (data.success) {
-        setAllBusinessAreas(data.data.map((area: any) => area.business_area));
+        setAllBusinessAreas(data.data.map((area: unknown) => (area as { business_area: string }).business_area));
       }
     } catch (error) {
       console.error('Failed to fetch business areas', error);
@@ -72,17 +72,22 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     }
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: unknown) => {
     setIsSubmitting(true);
     setSubmitMessage(null);
 
-    const payload: any = {
-      username: data.username,
-      email: data.email,
-      business_areas: data.business_areas,
+    const payload: {
+      username: string;
+      email: string;
+      business_areas: string[];
+      password?: string;
+    } = {
+      username: (data as { username: string }).username,
+      email: (data as { email: string }).email,
+      business_areas: (data as { business_areas: string[] }).business_areas,
     };
-    if (data.password) {
-      payload.password = data.password;
+    if ((data as { password?: string }).password) {
+      payload.password = (data as { password?: string }).password;
     }
 
     try {
@@ -104,7 +109,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       } else {
         setSubmitMessage({ type: 'error', message: result.error || 'Failed to update profile.' });
       }
-    } catch (error) {
+    } catch {
       setSubmitMessage({ type: 'error', message: 'An unknown error occurred.' });
     } finally {
       setIsSubmitting(false);

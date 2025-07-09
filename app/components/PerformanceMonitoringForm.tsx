@@ -3,9 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-type BusinessArea = {
-  business_area: string;
-}
+
 
 /**
  * Interface representing a Performance Monitoring Control

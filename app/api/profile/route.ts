@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import {prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     `;
     const businessAreas = userBusinessAreas.map(uba => uba.business_area);
 
-    const { password, ...userWithoutPassword } = user;
+    const { ...userWithoutPassword } = user;
     const userData = { ...userWithoutPassword, business_areas: businessAreas };
 
     return NextResponse.json({ success: true, data: userData });
@@ -43,7 +43,7 @@ export async function PUT(req: NextRequest) {
     }
     const userId = tokenUser.userId;
 
-    const { username, email, business_areas, password } = await req.json();
+    const { username, email, business_areas } = await req.json();
 
     const currentUser = await prisma.user.findUnique({ where: { id: userId } });
     if (!currentUser) {
@@ -64,16 +64,11 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    const dataToUpdate: any = {
+    const dataToUpdate: Record<string, unknown> = {
       username,
       email,
       business_area: business_areas && business_areas.length > 0 ? business_areas[0] : null,
     };
-  
-    if (password) {
-      const bcrypt = require('bcrypt');
-      dataToUpdate.password = await bcrypt.hash(password, 10);
-    }
 
     // Use a transaction with raw SQL
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -91,7 +86,7 @@ export async function PUT(req: NextRequest) {
     });
 
     const updatedUser = await prisma.user.findUnique({ where: { id: userId } });
-    const { password: _, ...userWithoutPassword } = updatedUser!;
+    const { ...userWithoutPassword } = updatedUser!;
 
     return NextResponse.json({ success: true, data: userWithoutPassword });
 

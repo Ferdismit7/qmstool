@@ -24,7 +24,7 @@ export async function GET() {
     `);
 
     let fixedUsers = 0;
-    let errors = [];
+    const errors: string[] = [];
 
     // For each user, ensure they have an entry in user_business_areas
     for (const user of users) {
@@ -67,10 +67,10 @@ export async function GET() {
       totalUsers: usersCount[0].count,
       totalUserBusinessAreas: userBusinessAreasCount[0].count,
       errors: errors,
-      users: users.map((user: any) => ({
-        id: user.id,
-        email: user.email,
-        business_area: user.business_area
+      users: users.map((user: unknown) => ({
+        id: (user as { id: number }).id,
+        email: (user as { email: string }).email,
+        business_area: (user as { business_area: string }).business_area
       }))
     });
   } catch (error) {

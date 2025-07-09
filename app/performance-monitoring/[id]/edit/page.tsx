@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import PerformanceMonitoringForm from '@/app/components/PerformanceMonitoringForm';
 import { FullScreenLoadingSpinner } from '@/app/components/ui/LoadingSpinner';
 
@@ -27,7 +26,6 @@ export default function EditPerformanceMonitoringPage({
 }: {
   params: { id: string };
 }) {
-  const router = useRouter();
   const [control, setControl] = useState<PerformanceMonitoringControl | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

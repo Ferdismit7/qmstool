@@ -12,22 +12,29 @@ import { QMSAssessmentData } from '@/app/types/qmsAssessment';
  * @route POST /api/qms-assessments - Create new assessment with items
  */
 
-// Helper function to safely format date
-const safeDate = (d: any) => {
-  if (!d) return '—';
-  const dateObj = new Date(d);
-  return isNaN(dateObj.getTime()) ? '—' : dateObj.toISOString().split('T')[0];
-};
+
 
 // Helper function to transform database fields to frontend expected format
-const transformAssessment = (dbAssessment: any) => ({
-  id: dbAssessment.id,
-  businessArea: dbAssessment.business_area || '',
-  assessorName: dbAssessment.assessor_name || '',
-  assessmentDate: safeDate(dbAssessment.assessment_date),
-  createdAt: safeDate(dbAssessment.created_at),
-  itemCount: Number(dbAssessment.item_count) || 0
-});
+const transformAssessment = (dbAssessment: unknown) => {
+  const a = dbAssessment as {
+    id: number;
+    business_area: string;
+    assessor_name: string;
+    assessment_date: string;
+    created_at: string;
+    items: Array<unknown>;
+    approval?: unknown;
+  };
+  return {
+    id: a.id,
+    businessArea: a.business_area || '',
+    assessorName: a.assessor_name || '',
+    assessmentDate: a.assessment_date,
+    createdAt: a.created_at,
+    items: a.items,
+    approval: a.approval,
+  };
+};
 
 /**
  * GET handler - Retrieves all QMS assessments for the current user's business area
@@ -108,14 +115,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Start a transaction to create assessment and items
-    const connection = await query('START TRANSACTION');
+    await query('START TRANSACTION');
 
     try {
       // Create the main assessment record
       const assessmentResult = await query(`
         INSERT INTO qms_assessments (business_area, assessor_name, assessment_date)
         VALUES (?, ?, ?)
-      `, [businessArea, assessor, new Date(assessmentDate)]);
+      `, [businessArea, assessor, new Date(assessmentDate)]) as { insertId: number };
 
       const assessmentId = assessmentResult.insertId;
 
@@ -191,7 +198,15 @@ export async function POST(request: NextRequest) {
       });
 
       // Insert all assessment items
-      for (const item of itemsToInsert) {
+      for (const item of itemsToInsert as Array<{
+        assessmentId: number;
+        section: string;
+        clauseReference: string;
+        itemNumber: string;
+        itemDescription: string;
+        status: string;
+        comment: string | null;
+      }>) {
         await query(`
           INSERT INTO qms_assessment_items (
             assessment_id, section, clause_reference, item_number, 

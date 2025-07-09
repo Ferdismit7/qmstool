@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/app/lib/db';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // First, let's see what data we have
     const allProcesses = await query(`
@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
       ORDER BY id
     `);
 
-    const invalidProcesses = allProcesses.filter((process: any) => {
-      const percentage = Number(process.status_percentage);
+    const invalidProcesses = allProcesses.filter((process: unknown) => {
+      const percentage = Number((process as { status_percentage: number }).status_percentage);
       return isNaN(percentage) || percentage < 0 || percentage > 100;
     });
 
@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
 
     // Calculate what the overall progress should be now
     const totalProcesses = updatedProcesses.length;
-    const totalPercentage = updatedProcesses.reduce((sum: number, process: any) => {
-      const percentage = Math.min(Math.max(Number(process.status_percentage) || 0, 0), 100);
-      return sum + percentage;
+    const totalPercentage = updatedProcesses.reduce((sum: number, process: unknown) => {
+      const percentage = (process as { status_percentage: number }).status_percentage || 0;
+      return sum + Number(percentage);
     }, 0);
     
     const calculatedOverallProgress = totalProcesses > 0

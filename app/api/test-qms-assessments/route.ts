@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/app/lib/db';
 
 /**
@@ -9,7 +9,7 @@ import { query } from '@/app/lib/db';
  * @route GET /api/test-qms-assessments - Test QMS assessments functionality
  */
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('Testing QMS assessments functionality...');
 
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
         },
         businessAreas: {
           count: businessAreas.length,
-          sample: businessAreas.slice(0, 5).map((ba: any) => ba.business_area) // Show first 5 business areas
+          sample: businessAreas.slice(0, 5).map((ba: unknown) => (ba as { business_area: string }).business_area) // Show first 5 business areas
         }
       }
     });

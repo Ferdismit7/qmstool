@@ -1,5 +1,24 @@
 import type { BusinessProcess, BusinessProcessRegister } from '../types/businessProcess';
-import { DOC_STATUS, PROGRESS_STATUS } from '../types/businessProcess';
+import { DOC_STATUS } from '../types/businessProcess';
+
+interface SavedProcess {
+  id?: number;
+  businessArea?: string;
+  subBusinessArea?: string;
+  processName?: string;
+  documentName?: string;
+  version?: string;
+  progress?: string;
+  status?: string;
+  docStatus?: string;
+  statusPercentage?: number;
+  priority?: string;
+  targetDate?: string | Date;
+  processOwner?: string;
+  updateDate?: string | Date;
+  remarks?: string;
+  reviewDate?: string | Date;
+}
 
 export const toBusinessProcessRegister = (process: BusinessProcess): BusinessProcessRegister => ({
   id: parseInt(process.id),
@@ -19,7 +38,7 @@ export const toBusinessProcessRegister = (process: BusinessProcess): BusinessPro
   reviewDate: process.reviewDate ? new Date(process.reviewDate) : new Date(),
 });
 
-export const toBusinessProcess = (savedProcess: any, processesLength: number): BusinessProcess => ({
+export const toBusinessProcess = (savedProcess: SavedProcess, processesLength: number): BusinessProcess => ({
   id: savedProcess.id?.toString() ?? (processesLength + 1).toString(),
   businessArea: savedProcess.businessArea || '',
   subBusinessArea: savedProcess.subBusinessArea || '',
@@ -29,7 +48,7 @@ export const toBusinessProcess = (savedProcess: any, processesLength: number): B
   progress: savedProcess.progress || '',
   status: savedProcess.status || savedProcess.docStatus || '',
   statusPercentage: savedProcess.statusPercentage ?? 0,
-  priority: savedProcess.priority || 'Low',
+  priority: (savedProcess.priority || 'Low') as 'Low' | 'Medium' | 'High',
   targetDate: savedProcess.targetDate instanceof Date
     ? savedProcess.targetDate.toISOString().split('T')[0]
     : savedProcess.targetDate || '',

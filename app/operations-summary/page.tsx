@@ -26,7 +26,7 @@ export default function OperationsSummaryPage() {
         } else {
           setError(result.error || 'Failed to fetch summary');
         }
-      } catch (err) {
+      } catch {
         setError('Network error');
       } finally {
         setLoading(false);

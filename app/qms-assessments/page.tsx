@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { FiEye, FiDownload, FiCalendar, FiUser, FiMapPin } from 'react-icons/fi';
 import { FaPlus } from 'react-icons/fa';
 import { CenteredLoadingSpinner } from '@/app/components/ui/LoadingSpinner';
-import { QMSAssessmentSummary, AssessmentStatus } from '@/app/types/qmsAssessment';
+import { QMSAssessmentSummary } from '@/app/types/qmsAssessment';
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -80,7 +80,7 @@ export default function QMSAssessmentsPage() {
       } else {
         setError(result.error || 'Failed to fetch assessments');
       }
-    } catch (error) {
+    } catch {
       setError('Network error occurred while fetching assessments');
     } finally {
       setLoading(false);
@@ -100,9 +100,7 @@ export default function QMSAssessmentsPage() {
 
     // Only filter if a business area is explicitly selected AND user has multiple business areas
     if (selectedBusinessArea && userBusinessAreas.length > 1) {
-      const filtered = assessments.filter(assessment => 
-        assessment.businessArea === selectedBusinessArea
-      );
+      const filtered = assessments.filter((assessment: unknown) => (assessment as { businessArea: string }).businessArea === selectedBusinessArea);
       console.log('Filtered assessments:', filtered.map(a => ({ id: a.id, businessArea: a.businessArea })));
       setFilteredAssessments(filtered);
     } else {
@@ -157,12 +155,13 @@ export default function QMSAssessmentsPage() {
       y += 10;
 
       // Group items by section
-      const groupedItems: Record<string, any[]> = {};
-      assessment.items.forEach((item: any) => {
-        if (!groupedItems[item.section]) {
-          groupedItems[item.section] = [];
+      const groupedItems: Record<string, unknown[]> = {};
+      assessment.items.forEach((item: unknown) => {
+        const section = (item as { section: string }).section;
+        if (!groupedItems[section]) {
+          groupedItems[section] = [];
         }
-        groupedItems[item.section].push(item);
+        groupedItems[section].push(item);
       });
 
       // For each section, add a table
@@ -181,19 +180,19 @@ export default function QMSAssessmentsPage() {
             'Status',
             'Comment',
           ]],
-          body: items.map((item: any) => [
-            item.clauseReference,
-            item.itemNumber,
-            item.itemDescription,
-            item.status,
-            item.comment || ''
+          body: items.map((item: unknown) => [
+            (item as { clauseReference: string }).clauseReference,
+            (item as { itemNumber: string }).itemNumber,
+            (item as { itemDescription: string }).itemDescription,
+            (item as { status: string }).status,
+            (item as { comment?: string }).comment || ''
           ]),
           styles: { fontSize: 9, cellPadding: 2 },
           headStyles: { fillColor: [41, 128, 185], textColor: 255 },
           margin: { left: 14, right: 14 },
           theme: 'grid',
         });
-        y = (doc as any).lastAutoTable?.finalY || y + 30;
+        y = (doc as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY || y + 30;
       });
 
       // Approvals
@@ -256,28 +255,8 @@ export default function QMSAssessmentsPage() {
     });
   };
 
-  /**
-   * Gets status badge styling
-   * @param status - The assessment status
-   * @returns CSS classes for styling
-   */
-  const getStatusBadgeStyle = (status: AssessmentStatus) => {
-    switch (status) {
-      case 'C':
-        return 'bg-green-500/20 text-green-300 border-green-500/50';
-      case 'NC':
-        return 'bg-red-500/20 text-red-300 border-red-500/50';
-      case 'OFI':
-        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50';
-      case 'NA':
-        return 'bg-gray-500/20 text-gray-300 border-gray-500/50';
-      default:
-        return 'bg-gray-500/20 text-gray-300 border-gray-500/50';
-    }
-  };
-
   // Defensive helpers
-  const safe = (val: any, fallback = '—') => (val === undefined || val === null || val === '' ? fallback : val);
+  const safe = (val: unknown, fallback = '—') => (val === undefined || val === null || val === '' ? fallback : String(val));
   const safeDate = (dateString: string) => {
     if (!dateString) return '—';
     const d = new Date(dateString);
@@ -285,7 +264,7 @@ export default function QMSAssessmentsPage() {
   };
 
   // Fix average calculation for list
-  const avgItems = filteredAssessments.length > 0 ? Math.round(filteredAssessments.reduce((sum, a) => sum + (a.itemCount || 0), 0) / filteredAssessments.length) : 0;
+  const avgItems = filteredAssessments.length > 0 ? Math.round(filteredAssessments.reduce((sum: number, assessment: unknown) => sum + ((assessment as { itemCount?: number }).itemCount || 0), 0) / filteredAssessments.length) : 0;
 
   // Fetch assessments on component mount
   useEffect(() => {
@@ -435,7 +414,7 @@ export default function QMSAssessmentsPage() {
             </div>
             <div>
               <div className="text-2xl font-bold text-green-400">
-                {filteredAssessments.filter(a => true).length}
+                {filteredAssessments.filter(() => true).length}
               </div>
               <div className="text-sm text-brand-gray2">This Month</div>
             </div>
@@ -447,7 +426,7 @@ export default function QMSAssessmentsPage() {
             </div>
             <div>
               <div className="text-2xl font-bold text-purple-400">
-                {new Set(filteredAssessments.map(a => a.businessArea)).size}
+                {new Set(filteredAssessments.map(assessment => assessment.businessArea)).size}
               </div>
               <div className="text-sm text-brand-gray2">Business Areas</div>
             </div>

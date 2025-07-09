@@ -1,5 +1,10 @@
 import mysql from 'mysql2/promise';
 
+// Type definitions for database operations
+export interface QueryResult<T = unknown> {
+  [key: string]: T;
+}
+
 // Create a connection pool
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -12,10 +17,10 @@ const pool = mysql.createPool({
 });
 
 // Query function
-export async function query(sql: string, params: any[] = []) {
+export async function query<T = QueryResult[]>(sql: string, params: unknown[] = []): Promise<T> {
   try {
     const [results] = await pool.execute(sql, params);
-    return results;
+    return results as T;
   } catch (error) {
     console.error('Database query error:', error);
     throw error;

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import {prisma } from '@/lib/prisma';
+
+interface UserBusinessArea {
+  business_area: string;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,10 +39,10 @@ export async function GET(request: NextRequest) {
         FROM user_business_areas 
         WHERE user_id = ${userRecord.id}
         ORDER BY business_area ASC
-      ` as any[];
+      ` as UserBusinessArea[];
 
-      businessAreas = userBusinessAreas.map((row: any) => row.business_area);
-    } catch (error) {
+      businessAreas = userBusinessAreas.map((row: UserBusinessArea) => row.business_area);
+    } catch {
       console.log('user_business_areas table does not exist or is empty, using primary business area');
     }
 

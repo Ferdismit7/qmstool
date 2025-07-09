@@ -30,4 +30,5 @@ class BusinessProcessService {
   }
 }
 
-export default new BusinessProcessService(); 
+const businessProcessService = new BusinessProcessService();
+export default businessProcessService; 

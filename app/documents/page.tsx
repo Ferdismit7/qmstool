@@ -26,7 +26,7 @@ export default function DocumentsPage() {
       const data = await response.json();
       console.log('Fetched documents:', data); // Debug log
       setDocuments(data);
-    } catch (err) {
+    } catch {
       // Optionally handle error
     } finally {
       setLoading(false);
@@ -39,9 +39,6 @@ export default function DocumentsPage() {
 
   // Dashboard metrics
   const totalDocuments = documents.length;
-  const completedDocuments = documents.filter(d => d.doc_status === 'Completed').length;
-  const inProgressDocuments = documents.filter(d => d.doc_status === 'In progress').length;
-  const criticalDocuments = documents.filter(d => d.priority === 'Critical').length;
   
   // Calculate overall progress by averaging all document status percentages
   const overallProgress = documents.length > 0
@@ -117,15 +114,15 @@ export default function DocumentsPage() {
 
   const handleEdit = (document: BusinessDocument) => {
     // Format dates for the form
-    const isValidDate = (date: any) => {
+    const isValidDate = (date: unknown) => {
       if (!date) return false;
-      const d = new Date(date);
+      const d = new Date(date as string);
       return d instanceof Date && !isNaN(d.getTime());
     };
 
-    const safeFormatDate = (date: any) => {
+    const safeFormatDate = (date: unknown) => {
       if (!isValidDate(date)) return '';
-      return new Date(date).toISOString().split('T')[0];
+      return new Date(date as string).toISOString().split('T')[0];
     };
 
     const formattedDocument = {

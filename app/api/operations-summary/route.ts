@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/app/lib/db';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Get all business areas
     const businessAreas = await query('SELECT business_area FROM businessareas ORDER BY business_area');
@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
       const total = allPercentages.length;
       const avgProgress = total > 0 ? Math.round(allPercentages.reduce((sum, v) => sum + v, 0) / total) : 0;
       // Count minor/major challenges (from businessprocessregister only)
-      const minorChallenges = processes.filter((p: any) => p.progress === 'Minor Challenges').length;
-      const majorChallenges = processes.filter((p: any) => p.progress === 'Major Challenges').length;
+      const minorChallenges = processes.filter((p: unknown) => (p as { progress: string }).progress === 'Minor Challenges').length;
+      const majorChallenges = processes.filter((p: unknown) => (p as { progress: string }).progress === 'Major Challenges').length;
       results.push({
         businessArea: area,
         overallProgress: avgProgress,

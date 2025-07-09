@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import {prisma } from '@/lib/prisma';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -39,7 +39,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      business_area,
       sub_business_area,
       Name_reports,
       doc_type,

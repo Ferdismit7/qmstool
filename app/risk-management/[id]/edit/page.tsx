@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import RiskManagementForm from '@/app/components/RiskManagementForm';
 import { FullScreenLoadingSpinner } from '@/app/components/ui/LoadingSpinner';
 
@@ -24,7 +23,6 @@ interface RiskManagementControl {
 }
 
 export default function EditRiskManagementPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
   const [control, setControl] = useState<RiskManagementControl | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

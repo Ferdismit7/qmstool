@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { FiArrowLeft, FiDownload, FiCalendar, FiUser, FiMapPin, FiCheckCircle, FiXCircle, FiAlertTriangle, FiMinus } from 'react-icons/fi';
 import { AssessmentStatus } from '@/app/types/qmsAssessment';
@@ -74,7 +74,7 @@ export default function QMSAssessmentDetailPage() {
   /**
    * Fetches the assessment details from the API
    */
-  const fetchAssessment = async () => {
+  const fetchAssessment = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/qms-assessments/${params.id}`);
@@ -85,12 +85,12 @@ export default function QMSAssessmentDetailPage() {
       } else {
         setError(result.error || 'Failed to fetch assessment');
       }
-    } catch (error) {
+    } catch {
       setError('Network error occurred while fetching assessment');
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
 
   /**
    * Handles downloading the assessment as PDF
@@ -149,7 +149,7 @@ export default function QMSAssessmentDetailPage() {
         margin: { left: 14, right: 14 },
         theme: 'grid',
       });
-      y = (doc as any).lastAutoTable?.finalY || y + 30;
+      y = (doc as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY || y + 30;
     });
 
     // Approvals
@@ -178,19 +178,6 @@ export default function QMSAssessmentDetailPage() {
 
     // Save PDF
     doc.save(`QMS-Assessment-${assessment.id}.pdf`);
-  };
-
-  /**
-   * Formats date for display
-   * @param dateString - The date string to format
-   * @returns Formatted date string
-   */
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
   };
 
   /**
@@ -268,7 +255,6 @@ export default function QMSAssessmentDetailPage() {
   };
 
   // Defensive helpers
-  const safe = (val: any, fallback = '—') => (val === undefined || val === null || val === '' ? fallback : val);
   const safeDate = (dateString: string) => {
     if (!dateString) return '—';
     const d = new Date(dateString);
@@ -335,7 +321,7 @@ export default function QMSAssessmentDetailPage() {
       } else {
         setSaveError(result.error || 'Failed to save assessment');
       }
-    } catch (error) {
+    } catch {
       setSaveError('Network error occurred while saving assessment');
     } finally {
       setSaving(false);
@@ -355,7 +341,7 @@ export default function QMSAssessmentDetailPage() {
     if (params.id) {
       fetchAssessment();
     }
-  }, [params.id]);
+  }, [params.id, fetchAssessment]);
 
   if (loading) {
     return (
@@ -385,8 +371,7 @@ export default function QMSAssessmentDetailPage() {
     );
   }
 
-  const groupedItems = groupItemsBySection(assessment.items);
-  const avgItems = assessment && assessment.items && assessment.items.length > 0 ? assessment.items.length : 0;
+
 
   return (
     <div className="w-full px-6 py-6 max-w-7xl mx-auto">

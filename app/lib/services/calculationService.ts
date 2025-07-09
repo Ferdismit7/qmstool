@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import {prisma } from '@/lib/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
 
 /**
@@ -190,12 +190,12 @@ export class CalculationService {
     
     const metrics: Metrics = {
       totalObjectives: objectives.length,
-      byCategory: this.calculateByCategory(objectives),
-      byProgress: this.calculateByProgress(objectives),
-      byFrequency: this.calculateByFrequency(objectives),
-      overallProgress: this.calculateOverallProgress(objectives),
-      statusDistribution: this.calculateStatusDistribution(objectives),
-      kpiMetrics: this.calculateKPIMetrics(objectives)
+      byCategory: this.calculateByCategory(objectives as BusinessQualityData[]),
+      byProgress: this.calculateByProgress(objectives as BusinessQualityData[]),
+      byFrequency: this.calculateByFrequency(objectives as BusinessQualityData[]),
+      overallProgress: this.calculateOverallProgress(objectives as BusinessQualityData[]),
+      statusDistribution: this.calculateStatusDistribution(objectives as BusinessQualityData[]),
+      kpiMetrics: this.calculateKPIMetrics(objectives as BusinessQualityData[])
     };
 
     return metrics;
@@ -213,12 +213,12 @@ export class CalculationService {
     
     const metrics: PerformanceMetrics = {
       totalReports: reports.length,
-      byType: this.calculateByType(reports as any),
-      byPriority: this.calculateByPriority(reports as any),
-      byStatus: this.calculateByStatus(reports as any),
-      overallProgress: this.calculateOverallProgress(reports as any),
-      statusDistribution: this.calculateStatusDistribution(reports as any),
-      complianceMetrics: this.calculateComplianceMetrics(reports as any)
+      byType: this.calculateByType(reports as unknown as PerformanceMonitoringData[]),
+      byPriority: this.calculateByPriority(reports as unknown as PerformanceMonitoringData[]),
+      byStatus: this.calculateByStatus(reports as unknown as PerformanceMonitoringData[]),
+      overallProgress: this.calculateOverallProgress(reports as unknown as PerformanceMonitoringData[]),
+      statusDistribution: this.calculateStatusDistribution(reports as unknown as PerformanceMonitoringData[]),
+      complianceMetrics: this.calculateComplianceMetrics(reports as unknown as PerformanceMonitoringData[])
     };
 
     return metrics;
@@ -236,12 +236,12 @@ export class CalculationService {
     
     const metrics: RiskMetrics = {
       totalRisks: risks.length,
-      byCategory: this.calculateByCategory(risks as any),
-      byPriority: this.calculateByPriority(risks as any),
-      byStatus: this.calculateByStatus(risks as any),
-      overallProgress: this.calculateOverallProgress(risks as any),
-      statusDistribution: this.calculateStatusDistribution(risks as any),
-      riskMetrics: this.calculateRiskMetrics(risks as any)
+      byCategory: this.calculateByCategory(risks as unknown as RiskManagementData[]),
+      byPriority: this.calculateByPriority(risks as unknown as RiskManagementData[]),
+      byStatus: this.calculateByStatus(risks as unknown as RiskManagementData[]),
+      overallProgress: this.calculateOverallProgress(risks as unknown as RiskManagementData[]),
+      statusDistribution: this.calculateStatusDistribution(risks as unknown as RiskManagementData[]),
+      riskMetrics: this.calculateRiskMetrics(risks as unknown as RiskManagementData[])
     };
 
     return metrics;

@@ -135,7 +135,7 @@ const LoginForm = ({ onToggleForm }: LoginFormProps) => {
         </form>
 
         <p className="mt-4 text-center text-brand-white">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <button
             onClick={onToggleForm}
             className="text-blue-500 hover:text-blue-400 focus:outline-none"

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import BusinessDocumentForm from '../components/BusinessDocumentForm';
 import BusinessDocumentTable from '../components/BusinessDocumentTable';
 import { BusinessDocument } from '../types/businessDocument';
-import { FaPlus } from 'react-icons/fa';
+
 
 export default function BusinessDocumentRegistry() {
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
@@ -64,15 +64,15 @@ export default function BusinessDocumentRegistry() {
     }
   };
 
-  const isValidDate = (date: any) => {
+  const isValidDate = (date: unknown) => {
     if (!date) return false;
-    const d = new Date(date);
+    const d = new Date(date as string);
     return d instanceof Date && !isNaN(d.getTime());
   };
 
-  const safeFormatDate = (date: any) => {
+  const safeFormatDate = (date: unknown) => {
     if (!isValidDate(date)) return '';
-    return new Date(date).toISOString().split('T')[0];
+    return new Date(date as string).toISOString().split('T')[0];
   };
 
   const handleEdit = (document: BusinessDocument) => {

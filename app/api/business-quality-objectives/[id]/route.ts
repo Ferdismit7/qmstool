@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import {prisma } from '@/lib/prisma';
 import { getCurrentUserBusinessArea } from '@/lib/auth';
 
 // GET a single business quality objective
@@ -49,7 +49,7 @@ export async function PUT(
     }
 
     const data = await request.json();
-    const { id, business_area, target_date, ...updateData } = data;
+    const { business_area, ...updateData } = data;
 
     // Ensure user can't change business area
     if (business_area && business_area !== userBusinessArea) {

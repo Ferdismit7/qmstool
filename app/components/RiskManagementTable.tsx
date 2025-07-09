@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FiEdit2, FiRefreshCw } from 'react-icons/fi';
+
 import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
 
 /**
@@ -224,7 +224,7 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
               style={{ borderCollapse: 'separate', borderSpacing: 0 }}
             >
               {columns.map((col) => {
-                let value = control[col.key as keyof RiskManagementControl];
+                const value = control[col.key as keyof RiskManagementControl];
                 const cellId = `cell-${control.id}-${col.key}`;
 
                 // Special rendering for status column

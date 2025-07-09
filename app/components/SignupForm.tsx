@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 
 interface SignupFormProps {
   onToggleForm: () => void;
@@ -12,7 +11,6 @@ interface BusinessArea {
 }
 
 const SignupForm = ({ onToggleForm }: SignupFormProps) => {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -91,7 +89,7 @@ const SignupForm = ({ onToggleForm }: SignupFormProps) => {
         const data = await response.json();
         setError(data.message || 'Failed to add business area');
       }
-    } catch (error) {
+    } catch {
       setError('Failed to add business area');
     } finally {
       setLoading(false);

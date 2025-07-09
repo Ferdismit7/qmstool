@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import BusinessQualityObjectiveForm from '@/app/components/BusinessQualityObjectiveForm';
 
 interface BusinessQualityObjective {
@@ -27,7 +26,6 @@ export default function EditBusinessQualityObjectivePage({
 }: {
   params: { id: string };
 }) {
-  const router = useRouter();
   const [objective, setObjective] = useState<BusinessQualityObjective | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -88,9 +88,9 @@ export async function GET(
     console.log('Approval result:', approval);
 
     // Transform data for frontend
-    const safeDate = (d: any) => {
+    const safeDate = (d: unknown) => {
       if (!d) return '';
-      const dateObj = new Date(d);
+      const dateObj = new Date(d as string);
       return isNaN(dateObj.getTime()) ? '' : dateObj.toISOString().split('T')[0];
     };
     const transformedAssessment = {
@@ -99,21 +99,21 @@ export async function GET(
       assessorName: assessment.assessor_name || '',
       assessmentDate: safeDate(assessment.assessment_date),
       createdAt: safeDate(assessment.created_at),
-      items: (items || []).map((item: any) => ({
-        id: item.id,
-        section: item.section || '',
-        clauseReference: item.clause_reference || '',
-        itemNumber: item.item_number || '',
-        itemDescription: item.item_description || '',
-        status: item.status || '',
-        comment: item.comment || ''
+      items: (items || []).map((item: unknown) => ({
+        id: (item as { id: number }).id,
+        section: (item as { section: string }).section || '',
+        clauseReference: (item as { clause_reference: string }).clause_reference || '',
+        itemNumber: (item as { item_number: string }).item_number || '',
+        itemDescription: (item as { item_description: string }).item_description || '',
+        status: (item as { status: string }).status || '',
+        comment: (item as { comment: string }).comment || ''
       })),
       approval: approval ? {
-        id: approval.id,
-        conductedBy: approval.conducted_by || '',
-        conductedDate: safeDate(approval.conducted_date),
-        approvedBy: approval.approved_by || '',
-        approvedDate: safeDate(approval.approved_date)
+        id: (approval as { id: number }).id,
+        conductedBy: (approval as { conducted_by: string }).conducted_by || '',
+        conductedDate: safeDate((approval as { conducted_date: unknown }).conducted_date),
+        approvedBy: (approval as { approved_by: string }).approved_by || '',
+        approvedDate: safeDate((approval as { approved_date: unknown }).approved_date)
       } : null
     };
 
@@ -126,10 +126,10 @@ export async function GET(
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      code: error instanceof Error && 'code' in error ? (error as any).code : undefined,
-      errno: error instanceof Error && 'errno' in error ? (error as any).errno : undefined,
-      sqlMessage: error instanceof Error && 'sqlMessage' in error ? (error as any).sqlMessage : undefined,
-      sqlState: error instanceof Error && 'sqlState' in error ? (error as any).sqlState : undefined
+      code: error instanceof Error && 'code' in error ? (error as { code: unknown }).code : undefined,
+      errno: error instanceof Error && 'errno' in error ? (error as { errno: unknown }).errno : undefined,
+      sqlMessage: error instanceof Error && 'sqlMessage' in error ? (error as { sqlMessage: unknown }).sqlMessage : undefined,
+      sqlState: error instanceof Error && 'sqlState' in error ? (error as { sqlState: unknown }).sqlState : undefined
     });
     return NextResponse.json(
       { success: false, error: 'Failed to fetch assessment', details: error instanceof Error ? error.message : 'Unknown error' },
@@ -234,9 +234,9 @@ export async function PUT(
     `, [assessmentId]);
 
     // Defensive transformation for updated assessment
-    const safeDate = (d: any) => {
+    const safeDate = (d: unknown) => {
       if (!d) return '';
-      const dateObj = new Date(d);
+      const dateObj = new Date(d as string);
       return isNaN(dateObj.getTime()) ? '' : dateObj.toISOString().split('T')[0];
     };
     const transformedUpdatedAssessment = {

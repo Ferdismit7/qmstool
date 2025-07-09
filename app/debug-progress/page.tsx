@@ -2,8 +2,32 @@
 
 import { useState, useEffect } from 'react';
 
+interface ProcessData {
+  id: number;
+  process_name: string;
+  status_percentage: number;
+  progress: string;
+  doc_status: string;
+}
+
+interface CalculationData {
+  totalProcesses: number;
+  totalPercentage: number;
+  calculatedOverallProgress: number;
+  average: number;
+  fixedCount?: number;
+}
+
+interface DebugData {
+  processes: ProcessData[];
+  calculation: CalculationData;
+  totalProcesses?: number;
+  calculatedOverallProgress?: number;
+  fixedCount?: number;
+}
+
 export default function DebugProgressPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DebugData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,7 +141,7 @@ export default function DebugProgressPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data.processes || []).map((process: any) => {
+                  {(data.processes || []).map((process: ProcessData) => {
                     const percentage = Number(process.status_percentage);
                     const isValid = !isNaN(percentage) && percentage >= 0 && percentage <= 100;
                     return (

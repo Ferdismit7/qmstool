@@ -1,28 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import {prisma } from '@/lib/prisma';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
 
+
+
+
+
+interface FrontendData {
+  subBusinessArea?: string;
+  processName: string;
+  documentName?: string;
+  version?: string;
+  progress?: string;
+  docStatus?: string;
+  statusPercentage?: number;
+  priority?: string;
+  targetDate?: string;
+  processOwner?: string;
+  remarks?: string;
+  reviewDate?: string;
+}
+
 // Helper function to transform database fields to component expected format
-const transformBusinessProcess = (dbProcess: any) => ({
-  id: dbProcess.id,
-  businessArea: dbProcess.business_area,
-  subBusinessArea: dbProcess.sub_business_area,
-  processName: dbProcess.process_name,
-  documentName: dbProcess.document_name,
-  version: dbProcess.version,
-  progress: dbProcess.progress,
-  docStatus: dbProcess.doc_status,
-  statusPercentage: dbProcess.status_percentage,
-  priority: dbProcess.priority,
-  targetDate: dbProcess.target_date,
-  processOwner: dbProcess.process_owner,
-  updateDate: dbProcess.update_date,
-  remarks: dbProcess.remarks,
-  reviewDate: dbProcess.review_date,
-});
+const transformBusinessProcess = (dbProcess: unknown) => {
+  const p = dbProcess as {
+    id: number;
+    business_area: string;
+    sub_business_area: string | null;
+    process_name: string;
+    document_name: string | null;
+    version: string | null;
+    progress: string | null;
+    doc_status: string | null;
+    status_percentage: number | null;
+    priority: string | null;
+    target_date: Date | null;
+    process_owner: string | null;
+    update_date: Date | null;
+    remarks: string | null;
+    review_date: Date | null;
+  };
+  return {
+    id: p.id,
+    businessArea: p.business_area || '',
+    subBusinessArea: p.sub_business_area,
+    processName: p.process_name || '',
+    documentName: p.document_name,
+    version: p.version,
+    progress: p.progress,
+    docStatus: p.doc_status,
+    statusPercentage: p.status_percentage ? Number(p.status_percentage) : null,
+    priority: p.priority,
+    targetDate: p.target_date?.toISOString() || null,
+    processOwner: p.process_owner,
+    updateDate: p.update_date?.toISOString() || null,
+    remarks: p.remarks,
+    reviewDate: p.review_date?.toISOString() || null,
+  };
+};
 
 // Helper function to transform frontend camelCase to API snake_case
-const transformFrontendToAPI = (frontendData: any) => ({
+const transformFrontendToAPI = (frontendData: FrontendData) => ({
   sub_business_area: frontendData.subBusinessArea,
   process_name: frontendData.processName,
   document_name: frontendData.documentName,
@@ -86,7 +124,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const frontendData = await request.json();
+    const frontendData = await request.json() as FrontendData;
     const data = transformFrontendToAPI(frontendData);
     
     const {

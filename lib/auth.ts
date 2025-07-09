@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
-import prisma from '@/lib/prisma';
+import {prisma } from '@/lib/prisma';
 
 // Debug: Print the JWT secret on server start
 console.log('JWT_SECRET:', process.env.JWT_SECRET);
@@ -42,7 +42,7 @@ export const getUserFromToken = (request: NextRequest): JWTPayload | null => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
     return decoded;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -75,14 +75,14 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
       FROM user_business_areas 
       WHERE user_id = ${userRecord.id}
       ORDER BY business_area ASC
-    ` as any[];
+    ` as unknown as Array<{ business_area: string }>;
 
     // If no business areas found in user_business_areas table, fall back to primary business area
     if (userBusinessAreas.length === 0 && user.businessArea) {
       return [user.businessArea];
     }
 
-    return userBusinessAreas.map((row: any) => row.business_area);
+    return userBusinessAreas.map((row: unknown) => (row as { business_area: string }).business_area);
   } catch (error) {
     console.error('Error getting user business areas:', error);
     // Fall back to JWT business area if query fails

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FiEdit2, FiRefreshCw } from 'react-icons/fi';
 import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
 
 interface PerformanceMonitoringControl {

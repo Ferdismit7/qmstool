@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { BusinessDocument } from '../types/businessDocument';
-import { useRouter } from 'next/navigation';
 import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
 
 interface BusinessDocumentTableProps {
@@ -14,7 +13,6 @@ interface BusinessDocumentTableProps {
 }
 
 export default function BusinessDocumentTable({ documents, loading, onEdit, onDelete, refresh }: BusinessDocumentTableProps) {
-  const router = useRouter();
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -76,12 +74,6 @@ export default function BusinessDocumentTable({ documents, loading, onEdit, onDe
     'Major Challenges': 'bg-red-500 text-white',
     'Not Started': 'bg-gray-500 text-white',
     'In Progress': 'bg-blue-500 text-white',
-  };
-  const priorityColor: Record<string, string> = {
-    'Critical': 'bg-red-500 text-white',
-    'High': 'bg-orange-500 text-white',
-    'Medium': 'bg-yellow-500 text-white',
-    'Low': 'bg-green-500 text-white',
   };
 
   return (
@@ -323,4 +315,4 @@ export default function BusinessDocumentTable({ documents, loading, onEdit, onDe
       </table>
     </div>
   );
-} 
+}

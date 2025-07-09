@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FiEdit2, FiRefreshCw } from 'react-icons/fi';
 import type { BusinessProcessRegister } from '@/lib/types/businessProcessRegister';
-import { DOC_STATUS, PROGRESS_STATUS, PRIORITY } from '@/lib/types/businessProcessRegister';
+import { PROGRESS_STATUS } from '@/lib/types/businessProcessRegister';
 import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
 
 /**
@@ -96,7 +95,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
       });
       if (!response.ok) throw new Error('Failed to delete process');
       if (refresh) refresh();
-    } catch (err) {
+    } catch {
       // Optionally handle error
     }
   };

@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiSave, FiDownload, FiArrowLeft } from 'react-icons/fi';
-import { FaPlus } from 'react-icons/fa';
 import { QMSAssessmentData, AssessmentStatus } from '@/app/types/qmsAssessment';
 
 /**
@@ -98,7 +97,7 @@ export default function QMSInternalAssessmentPage() {
 
         if (response.ok) {
           const userData = await response.json();
-          setUserBusinessAreas(userData.businessAreas || []);
+          setUserBusinessAreas(userData.businessAreas as string[] || []);
           
           // Pre-populate with user's first business area
           if (userData.businessAreas.length > 0) {
@@ -140,7 +139,7 @@ export default function QMSInternalAssessmentPage() {
   const handleAssessmentChange = (section: string, item: string, field: 'status' | 'comment', value: string) => {
     setFormData(prev => {
       const newData = { ...prev };
-      const sectionData = newData[section as keyof QMSAssessmentData] as any;
+      const sectionData = newData[section as keyof QMSAssessmentData] as Record<string, { status: string; comment: string }>;
       if (sectionData && sectionData[item]) {
         sectionData[item][field] = value;
       }
@@ -156,8 +155,8 @@ export default function QMSInternalAssessmentPage() {
    * @returns The current value
    */
   const getAssessmentValue = (sectionKey: string, itemId: string, field: 'status' | 'comment') => {
-    const section = formData[sectionKey as keyof QMSAssessmentData] as any;
-    return section?.[itemId]?.[field] || '';
+    const section = formData[sectionKey as keyof QMSAssessmentData] as unknown;
+    return (section as Record<string, Record<string, string>>)?.[itemId]?.[field] || '';
   };
 
   /**
@@ -195,7 +194,7 @@ export default function QMSInternalAssessmentPage() {
           message: result.error || 'Failed to save assessment'
         });
       }
-    } catch (error) {
+    } catch {
       setSubmitMessage({
         type: 'error',
         message: 'Network error occurred while saving assessment'

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/app/lib/db';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const businessProcesses = await query(`
       SELECT id, process_name, status_percentage, progress, doc_status
@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
 
     // Calculate what the frontend would calculate
     const totalProcesses = businessProcesses.length;
-    const totalPercentage = businessProcesses.reduce((sum: number, process: any) => {
-      const percentage = process.status_percentage || 0;
+    const totalPercentage = businessProcesses.reduce((sum: number, process: unknown) => {
+      const percentage = (process as { status_percentage: number }).status_percentage || 0;
       return sum + Number(percentage);
     }, 0);
     
@@ -36,4 +36,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
