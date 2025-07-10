@@ -74,9 +74,11 @@ const transformFrontendToAPI = (frontendData: unknown) => {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
     if (userBusinessAreas.length === 0) {
@@ -88,7 +90,7 @@ export async function GET(
 
     const process = await prisma.businessProcessRegister.findFirst({
       where: {
-        id: Number(params.id),
+        id: Number(id),
         business_area: {
           in: userBusinessAreas
         }
@@ -118,9 +120,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
     if (userBusinessAreas.length === 0) {
@@ -169,7 +173,7 @@ export async function PUT(
 
     const updatedProcess = await prisma.businessProcessRegister.updateMany({
       where: {
-        id: Number(params.id),
+        id: Number(id),
         business_area: {
           in: userBusinessAreas
         }
@@ -199,9 +203,9 @@ export async function PUT(
     }
 
     // Fetch the updated record
-    const process = await prisma.businessProcessRegister.findFirst({
+    const updatedRecord = await prisma.businessProcessRegister.findFirst({
       where: {
-        id: Number(params.id),
+        id: Number(id),
         business_area: {
           in: userBusinessAreas
         }
@@ -211,7 +215,14 @@ export async function PUT(
       }
     });
 
-    const transformedProcess = transformBusinessProcess(process);
+    if (!updatedRecord) {
+      return NextResponse.json(
+        { error: 'Process not found' }, 
+        { status: 404 }
+      );
+    }
+
+    const transformedProcess = transformBusinessProcess(updatedRecord);
     return NextResponse.json(transformedProcess);
   } catch (error) {
     console.error('Failed to update process:', error);
@@ -224,9 +235,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
     if (userBusinessAreas.length === 0) {
@@ -236,22 +249,26 @@ export async function DELETE(
       );
     }
 
-    const result = await prisma.businessProcessRegister.deleteMany({
+    const deletedProcess = await prisma.businessProcessRegister.deleteMany({
       where: {
-        id: Number(params.id),
+        id: Number(id),
         business_area: {
           in: userBusinessAreas
         }
       }
     });
 
-    if (result.count === 0) {
+    if (deletedProcess.count === 0) {
       return NextResponse.json(
         { error: 'Process not found' }, 
         { status: 404 }
       );
     }
-    return NextResponse.json({ success: true });
+
+    return NextResponse.json(
+      { message: 'Process deleted successfully' }, 
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Failed to delete process:', error);
     return NextResponse.json(
