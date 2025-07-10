@@ -19,10 +19,11 @@ import { getCurrentUserBusinessAreas } from '@/lib/auth';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const assessmentId = parseInt(params.id);
+    const { id } = await params;
+    const assessmentId = parseInt(id);
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
 
     if (isNaN(assessmentId)) {
@@ -146,10 +147,11 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const assessmentId = parseInt(params.id);
+    const { id } = await params;
+    const assessmentId = parseInt(id);
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
 
     if (isNaN(assessmentId)) {
@@ -269,10 +271,11 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const assessmentId = parseInt(params.id);
+    const { id } = await params;
+    const assessmentId = parseInt(id);
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
 
     if (isNaN(assessmentId)) {
@@ -293,9 +296,9 @@ export async function DELETE(
     const placeholders = userBusinessAreas.map(() => '?').join(',');
     const queryParams = [assessmentId, ...userBusinessAreas];
 
-    // Check if the assessment exists and user has access
+    // Check if assessment exists and user has access
     const [existingAssessment] = await query(`
-      SELECT id FROM qms_assessments WHERE id = ? AND business_area IN (${placeholders})
+      SELECT id, business_area FROM qms_assessments WHERE id = ? AND business_area IN (${placeholders})
     `, queryParams);
 
     if (!existingAssessment) {
@@ -305,10 +308,27 @@ export async function DELETE(
       );
     }
 
-    // Delete the assessment (cascade will handle items and approval)
+    // Delete assessment items first (due to foreign key constraints)
     await query(`
+      DELETE FROM qms_assessment_items WHERE assessment_id = ?
+    `, [assessmentId]);
+
+    // Delete approval records
+    await query(`
+      DELETE FROM qms_approvals WHERE assessment_id = ?
+    `, [assessmentId]);
+
+    // Delete the main assessment
+    const result = await query(`
       DELETE FROM qms_assessments WHERE id = ? AND business_area IN (${placeholders})
     `, queryParams);
+
+    if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Assessment not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
