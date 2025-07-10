@@ -5,16 +5,17 @@ import { getCurrentUserBusinessArea } from '@/lib/auth';
 // GET single risk management control
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const userBusinessArea = getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const [result] = await query(`
       SELECT * FROM racm_matrix WHERE id = ? AND business_area = ?
-    `, [params.id, userBusinessArea]);
+    `, [id, userBusinessArea]);
     
     if (!result) {
       return NextResponse.json({ error: 'Risk management control not found' }, { status: 404 });
@@ -32,9 +33,10 @@ export async function GET(
 // PUT (update) a risk management control
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const userBusinessArea = getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -66,16 +68,16 @@ export async function PUT(
     `, [
       process_name, activity_description, issue_description, issue_type,
       likelihood, impact, control_description, control_type, control_owner,
-      control_effectiveness, residual_risk, status, params.id, userBusinessArea
+      control_effectiveness, residual_risk, status, id, userBusinessArea
     ]);
 
-    if (result.affectedRows === 0) {
+    if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
       return NextResponse.json({ error: 'Risk management control not found' }, { status: 404 });
     }
 
     const [updatedControl] = await query(`
       SELECT * FROM racm_matrix WHERE id = ? AND business_area = ?
-    `, [params.id, userBusinessArea]);
+    `, [id, userBusinessArea]);
 
     return NextResponse.json(updatedControl);
   } catch (error) {
@@ -90,9 +92,10 @@ export async function PUT(
 // DELETE a risk management control
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const userBusinessArea = getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -100,9 +103,9 @@ export async function DELETE(
 
     const result = await query(`
       DELETE FROM racm_matrix WHERE id = ? AND business_area = ?
-    `, [params.id, userBusinessArea]);
+    `, [id, userBusinessArea]);
 
-    if (result.affectedRows === 0) {
+    if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
       return NextResponse.json({ error: 'Risk management control not found' }, { status: 404 });
     }
 
