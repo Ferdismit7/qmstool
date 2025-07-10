@@ -11,10 +11,11 @@ import { query } from '@/app/lib/db';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const assessmentId = parseInt(params.id);
+    const { id } = await params;
+    const assessmentId = parseInt(id);
     
     if (isNaN(assessmentId)) {
       return NextResponse.json({

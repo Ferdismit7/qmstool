@@ -5,15 +5,16 @@ import { getCurrentUserBusinessArea } from '@/lib/auth';
 // GET a single training session
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const userBusinessArea = getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const session = await prisma.trainingSession.findUnique({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id) }
     });
     if (!session || session.business_area !== userBusinessArea) {
       return NextResponse.json({ error: 'Training session not found' }, { status: 404 });
@@ -31,9 +32,10 @@ export async function GET(
 // PUT (update) a training session
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const userBusinessArea = getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -41,7 +43,7 @@ export async function PUT(
 
     // Check if session exists and user has access
     const existingSession = await prisma.trainingSession.findUnique({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id) }
     });
 
     if (!existingSession || existingSession.business_area !== userBusinessArea) {
@@ -56,7 +58,7 @@ export async function PUT(
     }
 
     const session = await prisma.trainingSession.update({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       data: {
         ...data,
         business_area: userBusinessArea, // Force business area to user's area
@@ -76,9 +78,10 @@ export async function PUT(
 // DELETE a training session
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const userBusinessArea = getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -86,7 +89,7 @@ export async function DELETE(
 
     // Check if session exists and user has access
     const existingSession = await prisma.trainingSession.findUnique({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id) }
     });
 
     if (!existingSession || existingSession.business_area !== userBusinessArea) {
@@ -94,7 +97,7 @@ export async function DELETE(
     }
 
     await prisma.trainingSession.delete({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id) }
     });
     return NextResponse.json(
       { message: 'Training session deleted successfully' },
