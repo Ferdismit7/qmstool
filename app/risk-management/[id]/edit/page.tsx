@@ -22,7 +22,7 @@ interface RiskManagementControl {
   status: 'Open' | 'Under Review' | 'Closed';
 }
 
-export default function EditRiskManagementPage({ params }: { params: { id: string } }) {
+export default function EditRiskManagementPage({ params }: { params: Promise<{ id: string }> }) {
   const [control, setControl] = useState<RiskManagementControl | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,8 @@ export default function EditRiskManagementPage({ params }: { params: { id: strin
   useEffect(() => {
     const fetchControl = async () => {
       try {
-        const response = await fetch(`/api/risk-management/${params.id}`);
+        const { id } = await params;
+        const response = await fetch(`/api/risk-management/${id}`);
         if (!response.ok) throw new Error('Failed to fetch risk management control');
         const data = await response.json();
         setControl(data);
@@ -42,7 +43,7 @@ export default function EditRiskManagementPage({ params }: { params: { id: strin
     };
 
     fetchControl();
-  }, [params.id]);
+  }, [params]);
 
   if (loading) return <FullScreenLoadingSpinner />;
   if (error) return <div className="text-red-500 text-center py-4">{error}</div>;

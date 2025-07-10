@@ -24,7 +24,7 @@ interface PerformanceMonitoringControl {
 export default function EditPerformanceMonitoringPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const [control, setControl] = useState<PerformanceMonitoringControl | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,8 @@ export default function EditPerformanceMonitoringPage({
   useEffect(() => {
     const fetchControl = async () => {
       try {
-        const response = await fetch(`/api/performance-monitoring/${params.id}`);
+        const { id } = await params;
+        const response = await fetch(`/api/performance-monitoring/${id}`);
         if (!response.ok) throw new Error('Failed to fetch control');
         const data = await response.json();
         setControl(data);
@@ -45,7 +46,7 @@ export default function EditPerformanceMonitoringPage({
     };
 
     fetchControl();
-  }, [params.id]);
+  }, [params]);
 
   if (loading) return <FullScreenLoadingSpinner />;
   if (error) return <div className="text-red-500 text-center py-4">{error}</div>;

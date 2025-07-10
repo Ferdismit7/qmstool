@@ -1,16 +1,25 @@
 'use client';
 
+import React from 'react';
 import { useRouter } from 'next/navigation';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     area: string;
-  };
+  }>;
 }
 
 export default function BusinessAreaPage({ params }: PageProps) {
   const router = useRouter();
-  const areaName = decodeURIComponent(params.area);
+  const [areaName, setAreaName] = React.useState<string>('');
+
+  React.useEffect(() => {
+    const getAreaName = async () => {
+      const { area } = await params;
+      setAreaName(decodeURIComponent(area));
+    };
+    getAreaName();
+  }, [params]);
 
   const handleCardClick = (type: 'certification' | 'recertification') => {
     router.push(`/business-area/${encodeURIComponent(areaName)}/${type}`);

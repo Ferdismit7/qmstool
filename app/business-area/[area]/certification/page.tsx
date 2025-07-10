@@ -1,16 +1,25 @@
 'use client';
 
+import React from 'react';
 import { useRouter } from 'next/navigation';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     area: string;
-  };
+  }>;
 }
 
 export default function CertificationPage({ params }: PageProps) {
   const router = useRouter();
-  const areaName = decodeURIComponent(params.area);
+  const [areaName, setAreaName] = React.useState<string>('');
+
+  React.useEffect(() => {
+    const getAreaName = async () => {
+      const { area } = await params;
+      setAreaName(decodeURIComponent(area));
+    };
+    getAreaName();
+  }, [params]);
 
   return (
     <div className="container w-full px-2 py-8">

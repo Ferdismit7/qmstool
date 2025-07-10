@@ -24,7 +24,7 @@ interface BusinessQualityObjective {
 export default function EditBusinessQualityObjectivePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const [objective, setObjective] = useState<BusinessQualityObjective | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,8 @@ export default function EditBusinessQualityObjectivePage({
   useEffect(() => {
     const fetchObjective = async () => {
       try {
-        const response = await fetch(`/api/business-quality-objectives/${params.id}`);
+        const { id } = await params;
+        const response = await fetch(`/api/business-quality-objectives/${id}`);
         if (!response.ok) throw new Error('Failed to fetch objective');
         const data = await response.json();
         setObjective(data);
@@ -45,7 +46,7 @@ export default function EditBusinessQualityObjectivePage({
     };
 
     fetchObjective();
-  }, [params.id]);
+  }, [params]);
 
   if (loading) return <div className="text-center py-4">Loading...</div>;
   if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
