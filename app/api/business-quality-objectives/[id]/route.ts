@@ -5,15 +5,17 @@ import { getCurrentUserBusinessArea } from '@/lib/auth';
 // GET a single business quality objective
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const userBusinessArea = getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const objective = await prisma.businessQualityObjective.findUnique({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id) }
     });
     if (!objective || objective.business_area !== userBusinessArea) {
       return NextResponse.json({ error: 'Business quality objective not found' }, { status: 404 });
@@ -31,9 +33,11 @@ export async function GET(
 // PUT (update) a business quality objective
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const userBusinessArea = getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -41,7 +45,7 @@ export async function PUT(
 
     // Check if objective exists and user has access
     const existingObjective = await prisma.businessQualityObjective.findUnique({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id) }
     });
 
     if (!existingObjective || existingObjective.business_area !== userBusinessArea) {
@@ -57,7 +61,7 @@ export async function PUT(
     }
 
     const objective = await prisma.businessQualityObjective.update({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       data: {
         ...updateData,
         business_area: userBusinessArea, // Force business area to user's area
@@ -80,9 +84,11 @@ export async function PUT(
 // DELETE a business quality objective
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const userBusinessArea = getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -90,7 +96,7 @@ export async function DELETE(
 
     // Check if objective exists and user has access
     const existingObjective = await prisma.businessQualityObjective.findUnique({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id) }
     });
 
     if (!existingObjective || existingObjective.business_area !== userBusinessArea) {
@@ -98,7 +104,7 @@ export async function DELETE(
     }
 
     await prisma.businessQualityObjective.delete({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id) }
     });
     return NextResponse.json(
       { message: 'Business quality objective deleted successfully' },
