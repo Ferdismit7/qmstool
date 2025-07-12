@@ -19,6 +19,9 @@ frontend:
         - ls -la node_modules/tailwindcss
         - ls -la node_modules/postcss
         - ls -la node_modules/autoprefixer
+        - echo "Verifying TypeScript dependencies..."
+        - ls -la node_modules/@types/react
+        - ls -la node_modules/typescript
     build:
       commands:
         - echo Building Next.js app...
