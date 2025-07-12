@@ -6,6 +6,8 @@ import {prisma }from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
+    // TEMP DEBUG: Log all environment variables
+    console.log('All env:', process.env);
     console.log('Login attempt started');
     const { email, password } = await request.json();
     console.log('Login attempt for email:', email);
