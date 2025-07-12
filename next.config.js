@@ -6,19 +6,9 @@ const nextConfig = {
   },
   // Amplify compatibility
   output: 'standalone',
-  // Next.js 15 specific optimizations
-  logging: {
-    fetches: {
-      fullUrl: true,
-    },
-  },
   // Handle static assets
   images: {
     unoptimized: true,
-  },
-  // Ensure PostCSS and TailwindCSS are properly configured
-  experimental: {
-    optimizePackageImports: ['react-icons'],
   },
 }
 

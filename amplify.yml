@@ -5,8 +5,6 @@ frontend:
       commands:
         - echo Installing dependencies...
         - npm ci
-        - echo Checking TailwindCSS installation...
-        - npx tailwindcss --version
         - echo Checking Prisma installation...
         - npx prisma --version
         - echo Generating Prisma client...
@@ -17,6 +15,10 @@ frontend:
         - printenv NODE_ENV
         - echo "Checking DATABASE_URL..."
         - echo "Checking JWT_SECRET..."
+        - echo "Verifying CSS dependencies..."
+        - ls -la node_modules/tailwindcss
+        - ls -la node_modules/postcss
+        - ls -la node_modules/autoprefixer
     build:
       commands:
         - echo Building Next.js app...
