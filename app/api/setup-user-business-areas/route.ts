@@ -17,12 +17,14 @@ export async function GET() {
     `);
 
     // Check if table was created successfully
-    const [tableExists] = await query(`
+    const tableExistsResult = await query(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
       WHERE table_schema = DATABASE() 
       AND table_name = 'user_business_areas'
     `);
+
+    const tableExists = tableExistsResult[0] as { count: number };
 
     if (tableExists.count > 0) {
       return NextResponse.json({

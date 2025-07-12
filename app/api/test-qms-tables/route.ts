@@ -11,33 +11,37 @@ export async function GET() {
     console.log('QMS tables found:', tables);
 
     // Test if qms_assessments table exists and has data
-    const assessmentsCount = await query(`
+    const assessmentsCountResult = await query(`
       SELECT COUNT(*) as count FROM qms_assessments
     `);
 
-    console.log('Assessments count:', assessmentsCount);
+    console.log('Assessments count:', assessmentsCountResult);
 
     // Test if qms_assessment_items table exists
-    const itemsCount = await query(`
+    const itemsCountResult = await query(`
       SELECT COUNT(*) as count FROM qms_assessment_items
     `);
 
-    console.log('Items count:', itemsCount);
+    console.log('Items count:', itemsCountResult);
 
     // Test if qms_approval table exists
-    const approvalCount = await query(`
+    const approvalCountResult = await query(`
       SELECT COUNT(*) as count FROM qms_approval
     `);
 
-    console.log('Approval count:', approvalCount);
+    console.log('Approval count:', approvalCountResult);
+
+    const assessmentsCount = assessmentsCountResult[0] as { count: number } || { count: 0 };
+    const itemsCount = itemsCountResult[0] as { count: number } || { count: 0 };
+    const approvalCount = approvalCountResult[0] as { count: number } || { count: 0 };
 
     return NextResponse.json({
       success: true,
       data: {
         tables: tables,
-        assessmentsCount: assessmentsCount[0]?.count || 0,
-        itemsCount: itemsCount[0]?.count || 0,
-        approvalCount: approvalCount[0]?.count || 0
+        assessmentsCount: assessmentsCount.count,
+        itemsCount: itemsCount.count,
+        approvalCount: approvalCount.count
       }
     });
   } catch (error) {

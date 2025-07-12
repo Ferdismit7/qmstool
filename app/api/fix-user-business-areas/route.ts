@@ -30,13 +30,15 @@ export async function GET() {
     for (const user of users) {
       try {
         // Check if user already has entries in user_business_areas
-        const existingEntries = await query(`
+        const existingEntriesResult = await query(`
           SELECT COUNT(*) as count 
           FROM user_business_areas 
           WHERE user_id = ?
         `, [user.id]);
 
-        if (existingEntries[0].count === 0) {
+        const existingEntries = existingEntriesResult[0] as { count: number };
+
+        if (existingEntries.count === 0) {
           // User doesn't have entries, add their primary business area
           await query(`
             INSERT INTO user_business_areas (user_id, business_area)
@@ -53,19 +55,22 @@ export async function GET() {
     }
 
     // Get summary of what's in the tables now
-    const userBusinessAreasCount = await query(`
+    const userBusinessAreasCountResult = await query(`
       SELECT COUNT(*) as count FROM user_business_areas
     `);
 
-    const usersCount = await query(`
+    const usersCountResult = await query(`
       SELECT COUNT(*) as count FROM users WHERE business_area IS NOT NULL
     `);
+
+    const userBusinessAreasCount = userBusinessAreasCountResult[0] as { count: number };
+    const usersCount = usersCountResult[0] as { count: number };
 
     return NextResponse.json({
       message: 'User business areas fix completed',
       fixedUsers: fixedUsers,
-      totalUsers: usersCount[0].count,
-      totalUserBusinessAreas: userBusinessAreasCount[0].count,
+      totalUsers: usersCount.count,
+      totalUserBusinessAreas: userBusinessAreasCount.count,
       errors: errors,
       users: users.map((user: unknown) => ({
         id: (user as { id: number }).id,

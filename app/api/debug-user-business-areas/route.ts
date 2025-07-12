@@ -26,15 +26,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user_business_areas table exists
-    const [tableExists] = await query(`
+    const tableExistsResult = await query(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
       WHERE table_schema = DATABASE() 
       AND table_name = 'user_business_areas'
     `);
 
+    const tableExists = tableExistsResult[0] as { count: number };
     let userBusinessAreas: { business_area: string }[] = [];
-    const tableExistsBool = (tableExists as unknown as { count: number }).count > 0;
+    const tableExistsBool = tableExists.count > 0;
 
     if (tableExistsBool) {
       // Get all business areas for this user

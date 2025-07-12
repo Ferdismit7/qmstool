@@ -8,13 +8,15 @@ export async function GET() {
     console.log('Database connection test:', connection);
 
     // Check if table exists
-    const tableExists = await query(`
+    const tableExistsResult = await query(`
       SELECT COUNT(*) as count 
       FROM information_schema.tables 
       WHERE table_schema = DATABASE() 
       AND table_name = 'racm_matrix'
     `);
-    console.log('Table exists check:', tableExists);
+    console.log('Table exists check:', tableExistsResult);
+
+    const tableExists = tableExistsResult[0] as { count: number };
 
     // Get table structure
     const tableStructure = await query(`
@@ -26,7 +28,7 @@ export async function GET() {
     console.log('Table structure:', tableStructure);
 
     // Create table if it doesn't exist
-    if (tableExists[0].count === 0) {
+    if (tableExists.count === 0) {
       console.log('Creating racm_matrix table...');
       await query(`
         CREATE TABLE racm_matrix (
@@ -53,7 +55,7 @@ export async function GET() {
 
     return NextResponse.json({
       connection: 'success',
-      tableExists: tableExists[0].count > 0,
+      tableExists: tableExists.count > 0,
       tableStructure
     });
   } catch (error) {
