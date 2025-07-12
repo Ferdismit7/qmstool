@@ -5,7 +5,7 @@ const nextConfig = {
     ENABLE_AI_FEATURES: process.env.ENABLE_AI_FEATURES,
   },
   // Amplify compatibility
-  output: 'standalone',
+  //output: 'standalone',
   // Handle static assets
   images: {
     unoptimized: true,
