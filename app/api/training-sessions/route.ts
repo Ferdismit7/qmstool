@@ -61,8 +61,11 @@ export async function POST(request: NextRequest) {
       VALUES (?, ?, ?, ?)
     `, [business_area, sessions, new Date(session_date), remarks || '']);
 
+    // Get the inserted ID from the result
+    const insertResult = result as unknown as { insertId: number };
+
     return NextResponse.json({ 
-      id: result.insertId,
+      id: insertResult.insertId,
       business_area,
       sessions,
       session_date,

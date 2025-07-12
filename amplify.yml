@@ -22,6 +22,8 @@ frontend:
         - echo "Verifying TypeScript dependencies..."
         - ls -la node_modules/@types/react
         - ls -la node_modules/typescript
+        - echo "Verifying ESLint dependencies..."
+        - ls -la node_modules/eslint
     build:
       commands:
         - echo Building Next.js app...
