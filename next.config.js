@@ -12,21 +12,13 @@ const nextConfig = {
       fullUrl: true,
     },
   },
-  // Remove experimental flag that's now standard in v15
-  // experimental: {
-  //   outputFileTracingRoot: undefined,
-  // },
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: '/api/:path*',
-      },
-    ];
-  },
   // Handle static assets
   images: {
     unoptimized: true,
+  },
+  // Ensure PostCSS and TailwindCSS are properly configured
+  experimental: {
+    optimizePackageImports: ['react-icons'],
   },
 }
 
