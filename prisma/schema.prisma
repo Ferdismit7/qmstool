@@ -156,6 +156,8 @@ model BusinessAreas {
   racm_matrix                  RacmMatrix[]
   trainingsessions             TrainingSession[]
   users                        User[]
+
+  @@map("businessareas")
 }
 
 model BusinessProcessVersions {
