@@ -28,7 +28,7 @@ export async function GET() {
       'user_business_areas'
     ];
     
-    const existingTableNames = tables.map((t: any) => t.TABLE_NAME.toLowerCase());
+    const existingTableNames = tables.map((t: Record<string, unknown>) => (t.TABLE_NAME as string).toLowerCase());
     const missingTables = expectedTables.filter(table => !existingTableNames.includes(table));
     const foundTables = expectedTables.filter(table => existingTableNames.includes(table));
     
