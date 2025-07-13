@@ -28,6 +28,7 @@ frontend:
       commands:
         - echo Building Next.js app...
         - npm run build
+        - echo "DATABASE_URL is set to ${DATABASE_URL}"
         - echo Build completed successfully
         - echo Checking build output...
         - ls -la .next/

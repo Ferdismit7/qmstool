@@ -3,9 +3,11 @@ const nextConfig = {
   reactStrictMode: true,
   env: {
     ENABLE_AI_FEATURES: process.env.ENABLE_AI_FEATURES,
+    DATABASE_URL: process.env.DATABASE_URL ?? "",
+    JWT_SECRET: process.env.JWT_SECRET ?? "",
   },
   // Amplify compatibility
-  output: 'standalone',
+  //output: 'standalone',
   // Handle static assets
   images: {
     unoptimized: true,
