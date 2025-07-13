@@ -12,12 +12,35 @@ export interface QueryResult<T = unknown> {
   [key: string]: T;
 }
 
-// Create a connection pool
-const pool = mysql.createPool({
+// Parse DATABASE_URL to extract connection details
+function parseDatabaseUrl(url: string) {
+  const regex = /mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)/;
+  const match = url.match(regex);
+  
+  if (!match) {
+    throw new Error('Invalid DATABASE_URL format');
+  }
+  
+  return {
+    host: match[3],
+    user: match[1],
+    password: decodeURIComponent(match[2]),
+    database: match[5],
+    port: parseInt(match[4])
+  };
+}
+
+// Create a connection pool using DATABASE_URL
+const dbConfig = process.env.DATABASE_URL ? parseDatabaseUrl(process.env.DATABASE_URL) : {
   host: process.env.MYSQL_HOST,
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE,
+  port: 3306
+};
+
+const pool = mysql.createPool({
+  ...dbConfig,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
