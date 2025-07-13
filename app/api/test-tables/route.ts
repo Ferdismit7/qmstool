@@ -35,7 +35,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       message: 'Database tables check completed',
-      allTables: tables.map((t: any) => t.TABLE_NAME),
+      allTables: tables.map((t: Record<string, unknown>) => t.TABLE_NAME as string),
       expectedTables,
       foundTables,
       missingTables,
