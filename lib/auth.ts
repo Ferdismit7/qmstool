@@ -19,6 +19,8 @@ export interface JWTPayload {
  */
 export const getUserFromToken = (request: NextRequest): JWTPayload | null => {
   try {
+    console.log('getUserFromToken called');
+    
     // Check if JWT_SECRET is available (for build-time safety)
     if (!process.env.JWT_SECRET) {
       console.warn('JWT_SECRET not available');
@@ -27,22 +29,29 @@ export const getUserFromToken = (request: NextRequest): JWTPayload | null => {
 
     // First try to get token from cookies (for server-side requests)
     let token = request.cookies.get('authToken')?.value;
+    console.log('Token from cookies:', token ? 'Found' : 'Not found');
     
     // If not in cookies, try Authorization header (for client-side requests)
     if (!token) {
       const authHeader = request.headers.get('authorization');
+      console.log('Authorization header:', authHeader);
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        console.log('Token from Authorization header:', token ? 'Found' : 'Not found');
       }
     }
     
     if (!token) {
+      console.log('No token found in cookies or headers');
       return null;
     }
 
+    console.log('Attempting to verify JWT token...');
     const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
+    console.log('JWT verification successful:', decoded);
     return decoded;
-  } catch {
+  } catch (error) {
+    console.log('JWT verification failed:', error);
     return null;
   }
 };
@@ -54,8 +63,15 @@ export const getUserFromToken = (request: NextRequest): JWTPayload | null => {
  */
 export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise<string[]> => {
   try {
+    console.log('getCurrentUserBusinessAreas called');
+    console.log('Request headers:', Object.fromEntries(request.headers.entries()));
+    console.log('Request cookies:', request.cookies.getAll());
+    
     const user = getUserFromToken(request);
+    console.log('User from token:', user);
+    
     if (!user) {
+      console.log('No user found from token');
       return [];
     }
 
