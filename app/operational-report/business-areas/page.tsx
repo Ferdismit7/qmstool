@@ -19,7 +19,7 @@ const BusinessAreasPage = () => {
         const res = await fetch("/api/business-areas");
         const data = await res.json();
         setBusinessAreas(data.data || []);
-      } catch (error) {
+      } catch {
         setBusinessAreas([]);
       } finally {
         setLoading(false);

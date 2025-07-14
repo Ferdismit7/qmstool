@@ -149,7 +149,7 @@ const reportSections: { section: string; items: ReportItem[] }[] = [
   },
 ];
 
-type TableCell = { content: string; colSpan?: number; styles?: any };
+type TableCell = { content: string; colSpan?: number; styles?: Record<string, unknown> };
 
 const BusinessAreaReportPage = () => {
   const router = useRouter();
