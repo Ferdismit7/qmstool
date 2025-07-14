@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -149,11 +148,7 @@ const reportSections: { section: string; items: ReportItem[] }[] = [
   },
 ];
 
-const tableHeaders = [
-  { label: "", colspan: 2 },
-  { label: "Status", colspan: 1 },
-  { label: "%", colspan: 1 },
-];
+type TableCell = { content: string; colSpan?: number; styles?: any };
 
 const OperationalReportPage = () => {
   const handleDownloadPDF = () => {
@@ -166,7 +161,7 @@ const OperationalReportPage = () => {
     doc.text("Business Area: All", 14, 22);
     doc.setFont('helvetica', 'normal');
 
-    let tableBody: any[][] = [];
+    const tableBody: TableCell[][] = [];
     // Add the Operationalisation row
     tableBody.push([
       { content: "Operationalisation", styles: { fillColor: [0, 34, 102], textColor: 255, fontStyle: 'bold' } },
@@ -236,12 +231,12 @@ const OperationalReportPage = () => {
               <td className="px-4 py-2 font-bold">Status</td>
               <td className="px-4 py-2 font-bold">%</td>
             </tr>
-            {reportSections.map((section, idx) => (
+            {reportSections.map((section) => (
               <>
                 <tr key={section.section} className="bg-brand-gray3 text-black">
                   <td colSpan={4} className="font-bold px-4 py-2">{section.section}</td>
                 </tr>
-                {section.items.map((item, i) => (
+                {section.items.map((item) => (
                   <tr key={item.label} className="border-b border-gray-200">
                     <td className="px-4 py-2 font-semibold w-1/4">{item.label}</td>
                     <td className="px-4 py-2 w-2/4">{item.description}</td>

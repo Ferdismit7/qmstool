@@ -149,6 +149,8 @@ const reportSections: { section: string; items: ReportItem[] }[] = [
   },
 ];
 
+type TableCell = { content: string; colSpan?: number; styles?: any };
+
 const BusinessAreaReportPage = () => {
   const router = useRouter();
   const params = useParams();
@@ -164,7 +166,7 @@ const BusinessAreaReportPage = () => {
     doc.text(`Business Area: ${businessArea}`, 14, 22);
     doc.setFont('helvetica', 'normal');
 
-    let tableBody: any[][] = [];
+    const tableBody: TableCell[][] = [];
     // Add the Operationalisation row
     tableBody.push([
       { content: "Operationalisation", styles: { fillColor: [0, 34, 102], textColor: 255, fontStyle: 'bold' } },
