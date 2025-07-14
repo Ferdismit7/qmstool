@@ -230,26 +230,35 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <h1 className="text-2xl font-bold text-brand-white">Quality Management Systems</h1>
           <div className="flex items-center gap-4">
             {user && (
-              <Link
-                href="/dashboard"
-                className="text-white hover:text-blue-400 transition-colors"
-                aria-label="Go to home page"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-6 h-6"
+              <>
+                <Link
+                  href="/dashboard"
+                  className="text-white hover:text-blue-400 transition-colors"
+                  aria-label="Go to home page"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-                  />
-                </svg>
-              </Link>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-6 h-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+                    />
+                  </svg>
+                </Link>
+                <Link
+                  href="/operational-report/business-areas"
+                  className="ml-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 font-medium text-sm transition-colors"
+                  aria-label="View Business Areas"
+                >
+                  Business Areas
+                </Link>
+              </>
             )}
             {user && (
               <Link
