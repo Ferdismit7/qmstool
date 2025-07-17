@@ -20,6 +20,7 @@ interface RiskManagementControl {
   control_effectiveness: 'High' | 'Medium' | 'Low';
   residual_risk: number;
   status: 'Open' | 'Under Review' | 'Closed';
+  doc_status: 'Not Started' | 'On-Track' | 'Completed' | 'Minor Challenges' | 'Major Challenges';
 }
 
 export default function EditRiskManagementPage({ params }: { params: Promise<{ id: string }> }) {

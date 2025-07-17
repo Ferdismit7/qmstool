@@ -19,6 +19,7 @@ interface BusinessQualityObjective {
   review_date: string;
   progress: string;
   status_percentage: number;
+  doc_status: string;
 }
 
 export default function EditBusinessQualityObjectivePage({

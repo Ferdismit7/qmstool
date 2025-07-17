@@ -65,7 +65,6 @@ export default function BusinessDocumentTable({ documents, loading, onEdit, onDe
     'Minor Challenges': 'bg-orange-500 text-white',
     'Major Challenges': 'bg-red-500 text-white',
     'Not Started': 'bg-gray-500 text-white',
-    'In Progress': 'bg-blue-500 text-white',
   };
   const statusPercentageColor: Record<string, string> = {
     'Completed': 'bg-green-500 text-white',
@@ -73,7 +72,6 @@ export default function BusinessDocumentTable({ documents, loading, onEdit, onDe
     'Minor Challenges': 'bg-orange-500 text-white',
     'Major Challenges': 'bg-red-500 text-white',
     'Not Started': 'bg-gray-500 text-white',
-    'In Progress': 'bg-blue-500 text-white',
   };
 
   return (

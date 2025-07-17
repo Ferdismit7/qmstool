@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
       control_owner,
       control_effectiveness,
       residual_risk,
-      status
+      status,
+      doc_status
     } = body;
 
     // Validate required fields
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
       control_effectiveness,
       residual_risk,
       status,
+      doc_status,
       business_area: userBusinessArea
     });
 
@@ -100,7 +102,8 @@ export async function POST(request: NextRequest) {
         control_owner: control_owner || null,
         control_effectiveness: control_effectiveness || null,
         residual_risk: residual_risk || null,
-        status: status || null
+        status: status || null,
+        doc_status: doc_status || null
       }
     });
 
@@ -144,7 +147,8 @@ export async function PUT(request: NextRequest) {
       control_owner,
       control_effectiveness,
       residual_risk,
-      status
+      status,
+      doc_status
     } = body;
 
     // Validate required fields
@@ -193,6 +197,7 @@ export async function PUT(request: NextRequest) {
         control_effectiveness: control_effectiveness || null,
         residual_risk: residual_risk || null,
         status: status || null,
+        doc_status: doc_status || null,
         updated_at: new Date()
       }
     });

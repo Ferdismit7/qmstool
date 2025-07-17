@@ -39,6 +39,8 @@ interface BusinessQualityObjective {
   progress: string;
   /** Percentage of completion */
   status_percentage: number;
+  /** Document status */
+  doc_status: string;
 }
 
 /**
@@ -52,6 +54,17 @@ const progressStatusStyles = {
   'Minor Challenges': 'bg-orange-500 text-white',
   'Major Challenges': 'bg-red-500 text-white',
   'Completed': 'bg-green-500 text-white',
+} as const;
+
+/**
+ * Styles for different status values
+ * @constant
+ */
+const statusStyles = {
+  'Completed': 'bg-green-500 text-white',
+  'New': 'bg-blue-500 text-white',
+  'In progress': 'bg-yellow-500 text-white',
+  'To be reviewed': 'bg-orange-500 text-white',
 } as const;
 
 /**
@@ -170,6 +183,7 @@ export default function BusinessQualityObjectivesTable() {
     { key: 'review_date', label: 'Review Date' },
     { key: 'progress', label: 'Progress' },
     { key: 'status_percentage', label: 'Status %' },
+    { key: 'doc_status', label: 'Status' },
   ];
 
   return (
@@ -285,6 +299,27 @@ export default function BusinessQualityObjectivesTable() {
                         onClick={() => handleCellClick(cellId)}
                       >
                         {value}%
+                      </div>
+                    </td>
+                  );
+                }
+
+                // Special rendering for status column
+                if (col.key === 'doc_status') {
+                  return (
+                    <td
+                      key={cellId}
+                      className={`py-2 px-0 text-brand-white group relative${expandedCell === cellId ? ' expanded' : ''}`}
+                      data-cell-id={cellId}
+                      style={expandedCell === cellId ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}
+                    >
+                      <div
+                        className={`status-cell-content text-xs text-center font-medium cursor-pointer rounded-full ${statusStyles[value as keyof typeof statusStyles] || 'bg-gray-500 text-white'}`}
+                        tabIndex={0}
+                        aria-expanded={expandedCell === cellId}
+                        onClick={() => handleCellClick(cellId)}
+                      >
+                        {value}
                       </div>
                     </td>
                   );

@@ -335,9 +335,10 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
             className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           >
             <option value="">Select Status</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
+            <option value="To be reviewed">To be reviewed</option>
+            <option value="New">New</option>
+            <option value="In progress">In progress</option>
           </select>
         </div>
 
@@ -354,9 +355,10 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
             className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           >
             <option value="">Select Progress</option>
-            <option value="Not Started">Not Started</option>
-            <option value="In Progress">In Progress</option>
             <option value="Completed">Completed</option>
+            <option value="On-Track">On-Track</option>
+            <option value="Minor Challenges">Minor Challenges</option>
+            <option value="Major Challenges">Major Challenges</option>
           </select>
         </div>
 

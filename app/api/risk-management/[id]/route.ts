@@ -55,7 +55,8 @@ export async function PUT(
       control_owner,
       control_effectiveness,
       residual_risk,
-      status
+      status,
+      doc_status
     } = data;
 
     const result = await query(`
@@ -63,12 +64,12 @@ export async function PUT(
         process_name = ?, activity_description = ?, issue_description = ?,
         issue_type = ?, likelihood = ?, impact = ?, control_description = ?,
         control_type = ?, control_owner = ?, control_effectiveness = ?,
-        residual_risk = ?, status = ?, updated_at = NOW()
+        residual_risk = ?, status = ?, doc_status = ?, updated_at = NOW()
       WHERE id = ? AND business_area = ?
     `, [
       process_name, activity_description, issue_description, issue_type,
       likelihood, impact, control_description, control_type, control_owner,
-      control_effectiveness, residual_risk, status, id, userBusinessArea
+      control_effectiveness, residual_risk, status, doc_status, id, userBusinessArea
     ]);
 
     if ((result as unknown as { affectedRows: number }).affectedRows === 0) {

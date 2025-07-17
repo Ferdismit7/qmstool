@@ -38,6 +38,8 @@ interface RiskManagementControl {
   residual_risk?: number;
   /** Current status of the control */
   status?: 'Open' | 'Under Review' | 'Closed';
+  /** Progress status of the control */
+  doc_status?: 'Not Started' | 'On-Track' | 'Completed' | 'Minor Challenges' | 'Major Challenges';
 }
 
 /**
@@ -94,6 +96,7 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
     control_effectiveness: 'Medium',
     residual_risk: 1,
     status: 'Open',
+    doc_status: 'Not Started',
     ...control
   });
 
@@ -430,6 +433,25 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
             <option value="Open">Open</option>
             <option value="Under Review">Under Review</option>
             <option value="Closed">Closed</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-brand-gray3 mb-2">
+            Progress
+          </label>
+          <select
+            name="doc_status"
+            value={formData.doc_status || ''}
+            onChange={handleChange}
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+          >
+            <option value="">Select Progress</option>
+            <option value="Not Started">Not Started</option>
+            <option value="On-Track">On-Track</option>
+            <option value="Completed">Completed</option>
+            <option value="Minor Challenges">Minor Challenges</option>
+            <option value="Major Challenges">Major Challenges</option>
           </select>
         </div>
       </div>

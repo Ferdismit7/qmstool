@@ -345,11 +345,10 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
           >
             <option value="">Select progress</option>
             <option value="Not Started">Not Started</option>
-            <option value="In Progress">In Progress</option>
             <option value="On-Track">On-Track</option>
+            <option value="Completed">Completed</option>
             <option value="Minor Challenges">Minor Challenges</option>
             <option value="Major Challenges">Major Challenges</option>
-            <option value="Completed">Completed</option>
           </select>
           {errors.progress && (
             <p className="mt-1 text-sm text-red-500">{errors.progress}</p>

@@ -30,9 +30,9 @@ interface PerformanceMonitoringTableProps {
 // Add progress status styles
 const progressStatusStyles = {
   'Completed': 'bg-green-500 text-white',
-  'In Progress': 'bg-blue-500 text-white',
-  'Not Started': 'bg-orange-500 text-white',
-  'Pending': 'bg-red-500 text-white',
+  'On-Track': 'bg-blue-500 text-white',
+  'Minor Challenges': 'bg-yellow-500 text-white',
+  'Major Challenges': 'bg-red-500 text-white',
 } as const;
 
 const columns = [

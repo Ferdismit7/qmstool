@@ -37,7 +37,22 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { category, sub_business_area, qms_main_objectives, qms_objective_description, kpi_or_sla_targets, performance_monitoring, proof_of_measuring, proof_of_reporting, frequency, responsible_person_team, review_date, progress, status_percentage } = body;
+    const { 
+      category, 
+      sub_business_area, 
+      qms_main_objectives, 
+      qms_objective_description, 
+      kpi_or_sla_targets, 
+      performance_monitoring, 
+      proof_of_measuring, 
+      proof_of_reporting, 
+      frequency, 
+      responsible_person_team, 
+      review_date, 
+      progress, 
+      status_percentage,
+      doc_status 
+    } = body;
 
     // Use the first business area for new records
     const userBusinessArea = userBusinessAreas[0];
@@ -57,6 +72,7 @@ export async function POST(request: NextRequest) {
         review_date: review_date ? new Date(review_date) : null,
         progress,
         status_percentage,
+        doc_status,
         business_area: userBusinessArea
       }
     });

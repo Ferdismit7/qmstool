@@ -37,6 +37,8 @@ interface RiskManagementControl {
   residual_risk: number;
   /** Current status of the control */
   status: 'Open' | 'Under Review' | 'Closed';
+  /** Progress status of the control */
+  doc_status: 'Not Started' | 'On-Track' | 'Completed' | 'Minor Challenges' | 'Major Challenges';
   /** Creation timestamp */
   created_at: string;
   /** Last update timestamp */
@@ -69,6 +71,18 @@ const statusStyles = {
 } as const;
 
 /**
+ * Styles for different progress statuses
+ * @constant
+ */
+const progressStyles = {
+  'Not Started': 'bg-gray-500 text-white',
+  'On-Track': 'bg-blue-500 text-white',
+  'Completed': 'bg-green-500 text-white',
+  'Minor Challenges': 'bg-orange-500 text-white',
+  'Major Challenges': 'bg-red-500 text-white',
+} as const;
+
+/**
  * Styles for different control effectiveness levels
  * @constant
  */
@@ -96,6 +110,7 @@ const columns = [
   { key: 'control_effectiveness', label: 'Control Effectiveness' },
   { key: 'residual_risk', label: 'Residual Risk' },
   { key: 'status', label: 'Status' },
+  { key: 'doc_status', label: 'Progress' },
 ];
 
 /**
@@ -238,6 +253,27 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
                     >
                       <div
                         className={`status-cell-content text-xs text-center font-medium cursor-pointer rounded-full ${statusStyles[value as keyof typeof statusStyles] || 'bg-gray-500 text-white'}`}
+                        tabIndex={0}
+                        aria-expanded={expandedCell === cellId}
+                        onClick={() => handleCellClick(cellId)}
+                      >
+                        {value}
+                      </div>
+                    </td>
+                  );
+                }
+
+                // Special rendering for progress column
+                if (col.key === 'doc_status') {
+                  return (
+                    <td
+                      key={cellId}
+                      className={`py-2 px-0 text-brand-white group relative${expandedCell === cellId ? ' expanded' : ''}`}
+                      data-cell-id={cellId}
+                      style={expandedCell === cellId ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}
+                    >
+                      <div
+                        className={`status-cell-content text-xs text-center font-medium cursor-pointer rounded-full ${progressStyles[value as keyof typeof progressStyles] || 'bg-gray-500 text-white'}`}
                         tabIndex={0}
                         aria-expanded={expandedCell === cellId}
                         onClick={() => handleCellClick(cellId)}

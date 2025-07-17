@@ -53,7 +53,7 @@ export async function PUT(
     }
 
     const data = await request.json();
-    const { business_area, ...updateData } = data;
+    const { business_area, id: requestId, ...updateData } = data;
 
     // Ensure user can't change business area
     if (business_area && business_area !== userBusinessArea) {
@@ -65,9 +65,6 @@ export async function PUT(
       data: {
         ...updateData,
         business_area: userBusinessArea, // Force business area to user's area
-        businessareas: {
-          connect: { business_area: userBusinessArea }
-        },
         review_date: updateData.review_date ? new Date(updateData.review_date) : null
       }
     });

@@ -38,6 +38,8 @@ interface BusinessQualityObjective {
   progress: string;
   /** Percentage completion of the objective (0-100) */
   status_percentage: number;
+  /** Document status of the objective */
+  doc_status: string;
 }
 
 /**
@@ -97,6 +99,7 @@ export default function BusinessQualityObjectiveForm({ objective, mode }: Props)
     review_date: '',
     progress: '',
     status_percentage: 0,
+    doc_status: '',
     ...objective
   });
 
@@ -437,10 +440,10 @@ export default function BusinessQualityObjectiveForm({ objective, mode }: Props)
             className="w-full px-4 py-2 rounded-lg bg-brand-gray1 text-brand-white border border-brand-gray2 focus:outline-none focus:border-brand-primary"
           >
             <option value="">Select Progress</option>
-            <option value="Not Started">Not Started</option>
-            <option value="In Progress">In Progress</option>
             <option value="Completed">Completed</option>
-            <option value="On Hold">On Hold</option>
+            <option value="On-Track">On-Track</option>
+            <option value="Minor Challenges">Minor Challenges</option>
+            <option value="Major Challenges">Major Challenges</option>
           </select>
         </div>
 
@@ -458,6 +461,25 @@ export default function BusinessQualityObjectiveForm({ objective, mode }: Props)
             max="100"
             className="w-full px-4 py-2 rounded-lg bg-brand-gray1 text-brand-white border border-brand-gray2 focus:outline-none focus:border-brand-primary"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-brand-white mb-2">
+            Status
+          </label>
+          <select
+            name="doc_status"
+            value={formData.doc_status}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 rounded-lg bg-brand-gray1 text-brand-white border border-brand-gray2 focus:outline-none focus:border-brand-primary"
+          >
+            <option value="">Select Status</option>
+            <option value="Completed">Completed</option>
+            <option value="New">New</option>
+            <option value="In progress">In progress</option>
+            <option value="To be reviewed">To be reviewed</option>
+          </select>
         </div>
       </div>
     </form>
