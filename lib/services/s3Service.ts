@@ -21,10 +21,21 @@ export interface UploadFileParams {
 export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: string; url: string }> => {
   const { file, fileName, contentType, businessArea, documentType, recordId } = params;
   
+  console.log('S3 upload started with params:', {
+    fileName,
+    contentType,
+    businessArea,
+    documentType,
+    recordId,
+    fileSize: file.length
+  });
+  
   // Create organized file path
   const timestamp = Date.now();
   const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
   const key = `${documentType}/${businessArea}/${recordId ? `${recordId}_` : ''}${timestamp}_${sanitizedFileName}`;
+  
+  console.log('Generated S3 key:', key);
   
   const command = new PutObjectCommand({
     Bucket: 'qms-tool-documents-qms-1',
@@ -40,12 +51,24 @@ export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: s
     },
   });
 
-  await s3Client.send(command);
-  
-  // Return both the key and the public URL
-  const url = `https://qms-tool-documents-qms-1.s3.amazonaws.com/${key}`;
-  
-  return { key, url };
+  try {
+    console.log('Sending S3 command...');
+    await s3Client.send(command);
+    console.log('S3 upload successful');
+    
+    // Return both the key and the public URL
+    const url = `https://qms-tool-documents-qms-1.s3.amazonaws.com/${key}`;
+    
+    return { key, url };
+  } catch (error) {
+    console.error('S3 upload failed:', error);
+    console.error('S3 error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'Unknown',
+      code: (error as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode
+    });
+    throw error;
+  }
 };
 
 export const getSignedDownloadUrl = async (key: string): Promise<string> => {
