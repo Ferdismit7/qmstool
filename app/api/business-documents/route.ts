@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
 
+// Helper function to get local time in UTC+2 timezone
+const getLocalTime = () => {
+  const now = new Date();
+  // Add 2 hours to UTC to get your local time
+  const localTime = new Date(now.getTime() + (2 * 60 * 60 * 1000));
+  return localTime;
+};
+
 // GET all business documents for user's business areas
 export async function GET(request: NextRequest) {
   try {
@@ -28,7 +36,13 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json(documents);
+    // Convert BigInt to Number for JSON serialization
+    const serializedDocuments = documents.map(doc => ({
+      ...doc,
+      file_size: (doc as any).file_size ? Number((doc as any).file_size) : null
+    }));
+
+    return NextResponse.json(serializedDocuments);
   } catch (error) {
     console.error('Error in GET /api/business-documents:', error);
     return NextResponse.json({ 
@@ -51,6 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
+    console.log('Received data in POST API:', data); // Debug log
     const {
       sub_business_area,
       document_name,
@@ -65,6 +80,11 @@ export async function POST(request: NextRequest) {
       document_owner,
       remarks,
       review_date,
+      file_url,
+      file_name,
+      file_size,
+      file_type,
+      uploaded_at,
     } = data;
 
     // Validate required fields
@@ -78,24 +98,33 @@ export async function POST(request: NextRequest) {
     // Use the first business area for new records
     const userBusinessArea = userBusinessAreas[0];
 
+    const createData = {
+      business_area: userBusinessArea,
+      sub_business_area: sub_business_area,
+      document_name: document_name,
+      name_and_numbering: name_and_numbering,
+      document_type: document_type,
+      version: version || '1.0',
+      progress: progress || 'NOT_STARTED',
+      doc_status: doc_status || 'DRAFT',
+      status_percentage: status_percentage,
+      priority: priority,
+      target_date: target_date ? new Date(target_date) : null,
+      document_owner: document_owner,
+      update_date: new Date(),
+      remarks: remarks,
+      review_date: review_date ? new Date(review_date) : null,
+      file_url: file_url,
+      file_name: file_name,
+      file_size: file_size,
+      file_type: file_type,
+      uploaded_at: file_url ? getLocalTime() : null, // Set timestamp in local timezone
+    };
+    
+    console.log('Creating document with data:', createData); // Debug log
+    
     const document = await prisma.businessDocumentRegister.create({
-      data: {
-        business_area: userBusinessArea,
-        sub_business_area: sub_business_area,
-        document_name: document_name,
-        name_and_numbering: name_and_numbering,
-        document_type: document_type,
-        version: version || '1.0',
-        progress: progress || 'NOT_STARTED',
-        doc_status: doc_status || 'DRAFT',
-        status_percentage: status_percentage,
-        priority: priority,
-        target_date: target_date ? new Date(target_date) : null,
-        document_owner: document_owner,
-        update_date: new Date(),
-        remarks: remarks,
-        review_date: review_date ? new Date(review_date) : null
-      },
+      data: createData,
       include: {
         businessareas: true
       }
@@ -130,6 +159,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const data = await request.json();
+    console.log('Received data in PUT API:', data); // Debug log
     const {
       sub_business_area,
       document_name,
@@ -144,8 +174,37 @@ export async function PUT(request: NextRequest) {
       document_owner,
       remarks,
       review_date,
+      file_url,
+      file_name,
+      file_size,
+      file_type,
+      uploaded_at,
     } = data;
 
+    const updateData = {
+      sub_business_area: sub_business_area,
+      document_name: document_name,
+      name_and_numbering: name_and_numbering,
+      document_type: document_type,
+      version: version,
+      progress: progress,
+      doc_status: doc_status,
+      status_percentage: status_percentage,
+      priority: priority,
+      target_date: target_date ? new Date(target_date) : null,
+      document_owner: document_owner,
+      update_date: new Date(),
+      remarks: remarks,
+      review_date: review_date ? new Date(review_date) : null,
+      file_url: file_url,
+      file_name: file_name,
+      file_size: file_size,
+      file_type: file_type,
+      uploaded_at: file_url ? getLocalTime() : null, // Set timestamp in local timezone
+    };
+    
+    console.log('Updating document with data:', updateData); // Debug log
+    
     const result = await prisma.businessDocumentRegister.updateMany({
       where: {
         id: Number(id),
@@ -153,22 +212,7 @@ export async function PUT(request: NextRequest) {
           in: userBusinessAreas
         }
       },
-      data: {
-        sub_business_area: sub_business_area,
-        document_name: document_name,
-        name_and_numbering: name_and_numbering,
-        document_type: document_type,
-        version: version,
-        progress: progress,
-        doc_status: doc_status,
-        status_percentage: status_percentage,
-        priority: priority,
-        target_date: target_date ? new Date(target_date) : null,
-        document_owner: document_owner,
-        update_date: new Date(),
-        remarks: remarks,
-        review_date: review_date ? new Date(review_date) : null
-      }
+      data: updateData
     });
 
     if (result.count === 0) {
@@ -188,7 +232,13 @@ export async function PUT(request: NextRequest) {
       }
     });
 
-    return NextResponse.json(document);
+    // Convert BigInt to Number for JSON serialization
+    const serializedDocument = {
+      ...document,
+      file_size: document && (document as any).file_size ? Number((document as any).file_size) : null
+    };
+
+    return NextResponse.json(serializedDocument);
   } catch (error) {
     console.error('Error updating document:', error);
     return NextResponse.json({ 

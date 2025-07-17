@@ -14,69 +14,69 @@ export default function SidebarNav() {
           <FiLayers className="text-brand-primary" size={32} />
         </span>
       </div>
-      <nav className="flex-1 py-8 px-2">
+      <nav className="flex-1 py-2 px-2">
         <ul className="space-y-2">
           <li>
-            <Link href="/processes" className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold shadow text-lg transition-all
+            <Link href="/processes" className={`flex items-center gap-3 px-3 py-2 rounded-lg font-medium shadow text-sm transition-all
               ${pathname === '/processes' ? 'bg-brand-primary/60 text-brand-white' : 'hover:bg-brand-primary/60 text-brand-white'}`}
             >
-              <FiLayers size={22} />
+              <FiLayers size={18} />
               Business Process Registry
             </Link>
           </li>
           <li>
-            <Link href="/documents" className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold shadow text-lg transition-all
+            <Link href="/documents" className={`flex items-center gap-3 px-3 py-2 rounded-lg font-medium shadow text-sm transition-all
               ${pathname === '/documents' ? 'bg-brand-primary/60 text-brand-white' : 'hover:bg-brand-primary/60 text-brand-white'}`}
             >
-              <FiFileText size={22} />
+              <FiFileText size={18} />
               Business Document Registry
             </Link>
           </li>
           <li>
-            <Link href="/business-quality-objectives" className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold shadow text-lg transition-all
+            <Link href="/business-quality-objectives" className={`flex items-center gap-3 px-3 py-2 rounded-lg font-medium shadow text-sm transition-all
               ${pathname === '/business-quality-objectives' ? 'bg-brand-primary/60 text-brand-white' : 'hover:bg-brand-primary/60 text-brand-white'}`}
             >
-              <FiTarget size={22} />
+              <FiTarget size={18} />
               Business Quality Objectives
             </Link>
           </li>
           <li>
-            <Link href="/performance-monitoring" className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold shadow text-lg transition-all
+            <Link href="/performance-monitoring" className={`flex items-center gap-3 px-3 py-2 rounded-lg font-medium shadow text-sm transition-all
               ${pathname === '/performance-monitoring' ? 'bg-brand-primary/60 text-brand-white' : 'hover:bg-brand-primary/60 text-brand-white'}`}
             >
-              <FiActivity size={22} />
+              <FiActivity size={18} />
               Performance Monitoring
             </Link>
           </li>
           <li>
-            <Link href="/risk-management" className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold shadow text-lg transition-all
+            <Link href="/risk-management" className={`flex items-center gap-3 px-3 py-2 rounded-lg font-medium shadow text-sm transition-all
               ${pathname === '/risk-management' ? 'bg-brand-primary/60 text-brand-white' : 'hover:bg-brand-primary/60 text-brand-white'}`}
             >
-              <FiAlertTriangle size={22} />
+              <FiAlertTriangle size={18} />
               Risk Management
             </Link>
           </li>
           <li>
-            <Link href="/qms-status-overview" className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold shadow text-lg transition-all
+            <Link href="/qms-status-overview" className={`flex items-center gap-3 px-3 py-2 rounded-lg font-medium shadow text-sm transition-all
               ${pathname === '/qms-status-overview' ? 'bg-brand-primary/60 text-brand-white' : 'hover:bg-brand-primary/60 text-brand-white'}`}
             >
-              <FiBarChart2 size={22} />
+              <FiBarChart2 size={18} />
               QMS Status Overview
             </Link>
           </li>
           <li>
-            <Link href="/qms-assessments" className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold shadow text-lg transition-all
+            <Link href="/qms-assessments" className={`flex items-center gap-3 px-3 py-2 rounded-lg font-medium shadow text-sm transition-all
               ${pathname === '/qms-assessments' ? 'bg-brand-primary/60 text-brand-white' : 'hover:bg-brand-primary/60 text-brand-white'}`}
             >
-              <FiList size={22} />
+              <FiList size={18} />
               View Assessments
             </Link>
           </li>
           <li>
-            <Link href="/operations-summary" className={`flex items-center gap-4 px-4 py-3 rounded-xl font-semibold shadow text-lg transition-all
+            <Link href="/operations-summary" className={`flex items-center gap-3 px-3 py-2 rounded-lg font-medium shadow text-sm transition-all
               ${pathname === '/operations-summary' ? 'bg-brand-primary/60 text-brand-white' : 'hover:bg-brand-primary/60 text-brand-white'}`}
             >
-              <FiBarChart2 size={22} />
+              <FiBarChart2 size={18} />
               Operations Summary
             </Link>
           </li>

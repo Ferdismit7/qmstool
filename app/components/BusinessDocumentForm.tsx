@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { BusinessDocument } from '../types/businessDocument';
+import FileUpload from './FileUpload';
 
 /**
  * Props for the BusinessDocumentForm component
@@ -67,6 +68,17 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     remarks: '',
     review_date: '',
   });
+
+  const [fileData, setFileData] = useState<{
+    file?: File;
+    uploadedFile?: {
+      key: string;
+      url: string;
+      fileName: string;
+      fileSize: number;
+      fileType: string;
+    };
+  }>({});
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [userBusinessAreas, setUserBusinessAreas] = useState<string[]>([]);
@@ -151,6 +163,55 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
   };
 
   /**
+   * Handles file upload
+   */
+  const handleFileUpload = async (file: File) => {
+    setFileData({ file });
+    
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+      uploadFormData.append('businessArea', formData.business_area || '');
+      uploadFormData.append('documentType', 'business-documents');
+      if (editData?.id) {
+        uploadFormData.append('recordId', editData.id.toString());
+      }
+
+      const response = await fetch('/api/upload-file', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setFileData({
+          file,
+          uploadedFile: result.data
+        });
+      } else {
+        const error = await response.json();
+        setErrors(prev => ({
+          ...prev,
+          file: error.error || 'Failed to upload file'
+        }));
+      }
+    } catch (error) {
+      console.error('File upload error:', error);
+      setErrors(prev => ({
+        ...prev,
+        file: 'Failed to upload file'
+      }));
+    }
+  };
+
+  /**
+   * Handles file removal
+   */
+  const handleFileRemove = () => {
+    setFileData({});
+  };
+
+  /**
    * Handles form submission
    * @param {React.FormEvent} e - The form submission event
    */
@@ -169,6 +230,14 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
       target_date: formData.target_date || null,
       review_date: formData.review_date || null,
       remarks: formData.remarks || null,
+      // Add file data if uploaded
+      ...(fileData.uploadedFile && {
+        file_url: fileData.uploadedFile.key,
+        file_name: fileData.uploadedFile.fileName,
+        file_size: fileData.uploadedFile.fileSize,
+        file_type: fileData.uploadedFile.fileType,
+        // Let the server set the timestamp to ensure consistency
+      }),
     };
 
     try {
@@ -191,6 +260,7 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
           remarks: '',
           review_date: '',
         });
+        setFileData({});
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -464,6 +534,23 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
             onChange={handleChange}
             className="w-full rounded-md border border-brand-gray2 bg-brand-dark/60 text-brand-white px-4 py-2 focus:border-blue-500 focus:ring-blue-500 outline-none"
           />
+        </div>
+        <div>
+          <FileUpload
+            onFileUpload={handleFileUpload}
+            onFileRemove={handleFileRemove}
+            currentFile={fileData.uploadedFile ? {
+              name: fileData.uploadedFile.fileName,
+              size: fileData.uploadedFile.fileSize,
+              url: fileData.uploadedFile.url
+            } : undefined}
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+            maxSize={10 * 1024 * 1024} // 10MB
+            label="Upload Document File"
+          />
+          {errors.file && (
+            <p className="mt-1 text-sm text-red-500">{errors.file}</p>
+          )}
         </div>
       </div>
       <div className="flex justify-end space-x-4">

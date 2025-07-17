@@ -15,4 +15,10 @@ export interface BusinessDocument {
   update_date: string;
   remarks: string | null;
   review_date: string | null;
+  // File upload fields
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  file_type?: string;
+  uploaded_at?: string;
 } 
