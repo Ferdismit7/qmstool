@@ -30,6 +30,10 @@ export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: s
     fileSize: file.length
   });
   
+  // Get bucket name from environment variable
+  const bucketName = process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1';
+  console.log('Using S3 bucket:', bucketName);
+  
   // Create organized file path
   const timestamp = Date.now();
   const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
@@ -38,7 +42,7 @@ export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: s
   console.log('Generated S3 key:', key);
   
   const command = new PutObjectCommand({
-    Bucket: 'qms-tool-documents-qms-1',
+    Bucket: bucketName,
     Key: key,
     Body: file,
     ContentType: contentType,
@@ -57,7 +61,7 @@ export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: s
     console.log('S3 upload successful');
     
     // Return both the key and the public URL
-    const url = `https://qms-tool-documents-qms-1.s3.amazonaws.com/${key}`;
+    const url = `https://${bucketName}.s3.amazonaws.com/${key}`;
     
     return { key, url };
   } catch (error) {
@@ -72,8 +76,9 @@ export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: s
 };
 
 export const getSignedDownloadUrl = async (key: string): Promise<string> => {
+  const bucketName = process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1';
   const command = new GetObjectCommand({
-    Bucket: 'qms-tool-documents-qms-1',
+    Bucket: bucketName,
     Key: key,
   });
 
@@ -81,8 +86,9 @@ export const getSignedDownloadUrl = async (key: string): Promise<string> => {
 };
 
 export const deleteFileFromS3 = async (key: string): Promise<void> => {
+  const bucketName = process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1';
   const command = new DeleteObjectCommand({
-    Bucket: 'qms-tool-documents-qms-1',
+    Bucket: bucketName,
     Key: key,
   });
 
@@ -90,7 +96,8 @@ export const deleteFileFromS3 = async (key: string): Promise<void> => {
 };
 
 export const getFileUrl = (key: string): string => {
-  return `https://qms-tool-documents-qms-1.s3.amazonaws.com/${key}`;
+  const bucketName = process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1';
+  return `https://${bucketName}.s3.amazonaws.com/${key}`;
 };
 
 export const getFileSize = (bytes: number): string => {
