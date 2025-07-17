@@ -7,10 +7,19 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Upload file API called');
     
-    // Check environment variables
-    console.log('Checking AWS credentials...');
+    // Check environment variables with detailed logging
+    console.log('Environment variables check:');
+    console.log('- ACCESS_KEY_ID exists:', !!process.env.ACCESS_KEY_ID);
+    console.log('- SECRET_ACCESS_KEY exists:', !!process.env.SECRET_ACCESS_KEY);
+    console.log('- S3_BUCKET_NAME exists:', !!process.env.S3_BUCKET_NAME);
+    console.log('- REGION exists:', !!process.env.REGION);
+    console.log('- S3_BUCKET_NAME value:', process.env.S3_BUCKET_NAME);
+    console.log('- REGION value:', process.env.REGION);
+    
     if (!process.env.ACCESS_KEY_ID || !process.env.SECRET_ACCESS_KEY) {
       console.error('Missing AWS credentials');
+      console.error('ACCESS_KEY_ID length:', process.env.ACCESS_KEY_ID?.length || 0);
+      console.error('SECRET_ACCESS_KEY length:', process.env.SECRET_ACCESS_KEY?.length || 0);
       return NextResponse.json(
         { error: 'AWS credentials not configured' },
         { status: 500 }
