@@ -53,7 +53,7 @@ export async function PUT(
     }
 
     const data = await request.json();
-    const { business_area, id: _, ...updateData } = data;
+    const { business_area, ...updateData } = data;
 
     // Ensure user can't change business area
     if (business_area && business_area !== userBusinessArea) {
