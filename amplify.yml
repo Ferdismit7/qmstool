@@ -16,10 +16,10 @@ frontend:
         - echo "Checking DATABASE_URL..."
         - echo "Checking JWT_SECRET..."
         - echo "Checking AWS credentials..."
-        - echo "ACCESS_KEY_ID exists: $([ -n \"$ACCESS_KEY_ID\" ] && echo yes || echo no)"
-        - echo "SECRET_ACCESS_KEY exists: $([ -n \"$SECRET_ACCESS_KEY\" ] && echo yes || echo no)"
-        - echo "S3_BUCKET_NAME exists: $([ -n \"$S3_BUCKET_NAME\" ] && echo yes || echo no)"
-        - echo "REGION exists: $([ -n \"$REGION\" ] && echo yes || echo no)"
+        - echo "ACCESS_KEY_ID exists: ${ACCESS_KEY_ID}"
+        - echo "SECRET_ACCESS_KEY exists: ${SECRET_ACCESS_KEY}"
+        - echo "S3_BUCKET_NAME exists: ${S3_BUCKET_NAME}"
+        - echo "REGION exists: ${REGION}"
         - echo "Verifying CSS dependencies..."
         - ls -la node_modules/tailwindcss
         - ls -la node_modules/postcss
