@@ -6,6 +6,11 @@ const nextConfig = {
     DATABASE_URL: process.env.DATABASE_URL ?? "",
     JWT_SECRET: process.env.JWT_SECRET ?? "",
     TZ: "Europe/Stockholm",
+    // AWS S3 Configuration
+    ACCESS_KEY_ID: process.env.ACCESS_KEY_ID ?? "",
+    SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY ?? "",
+    S3_BUCKET_NAME: process.env.S3_BUCKET_NAME ?? "",
+    REGION: process.env.REGION ?? "eu-north-1",
   },
   // Amplify compatibility
   //output: 'standalone',
