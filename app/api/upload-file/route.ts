@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadFileToS3 } from '@/lib/services/s3Service';
 
+type DocumentType = 'business-processes' | 'business-documents' | 'quality-objectives' | 'performance-monitoring' | 'risk-management';
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -19,6 +21,22 @@ export async function POST(request: NextRequest) {
     if (!businessArea || !documentType) {
       return NextResponse.json(
         { error: 'Business area and document type are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate document type
+    const validDocumentTypes: DocumentType[] = [
+      'business-processes',
+      'business-documents', 
+      'quality-objectives',
+      'performance-monitoring',
+      'risk-management'
+    ];
+
+    if (!validDocumentTypes.includes(documentType as DocumentType)) {
+      return NextResponse.json(
+        { error: 'Invalid document type' },
         { status: 400 }
       );
     }
@@ -62,7 +80,7 @@ export async function POST(request: NextRequest) {
       fileName: file.name,
       contentType: file.type,
       businessArea,
-      documentType: documentType as any,
+      documentType: documentType as DocumentType,
       recordId
     });
 

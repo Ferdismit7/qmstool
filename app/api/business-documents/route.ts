@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     // Convert BigInt to Number for JSON serialization
     const serializedDocuments = documents.map(doc => ({
       ...doc,
-      file_size: (doc as any).file_size ? Number((doc as any).file_size) : null
+      file_size: (doc as { file_size?: bigint | null }).file_size ? Number((doc as { file_size?: bigint | null }).file_size) : null
     }));
 
     return NextResponse.json(serializedDocuments);
@@ -84,7 +84,6 @@ export async function POST(request: NextRequest) {
       file_name,
       file_size,
       file_type,
-      uploaded_at,
     } = data;
 
     // Validate required fields
@@ -116,7 +115,7 @@ export async function POST(request: NextRequest) {
       review_date: review_date ? new Date(review_date) : null,
       file_url: file_url,
       file_name: file_name,
-      file_size: file_size,
+      file_size: file_size ? BigInt(file_size) : null,
       file_type: file_type,
       uploaded_at: file_url ? getLocalTime() : null, // Set timestamp in local timezone
     };
@@ -178,7 +177,6 @@ export async function PUT(request: NextRequest) {
       file_name,
       file_size,
       file_type,
-      uploaded_at,
     } = data;
 
     const updateData = {
@@ -198,7 +196,7 @@ export async function PUT(request: NextRequest) {
       review_date: review_date ? new Date(review_date) : null,
       file_url: file_url,
       file_name: file_name,
-      file_size: file_size,
+      file_size: file_size ? BigInt(file_size) : null,
       file_type: file_type,
       uploaded_at: file_url ? getLocalTime() : null, // Set timestamp in local timezone
     };
@@ -235,7 +233,7 @@ export async function PUT(request: NextRequest) {
     // Convert BigInt to Number for JSON serialization
     const serializedDocument = {
       ...document,
-      file_size: document && (document as any).file_size ? Number((document as any).file_size) : null
+      file_size: document && (document as { file_size?: bigint | null }).file_size ? Number((document as { file_size?: bigint | null }).file_size) : null
     };
 
     return NextResponse.json(serializedDocument);
