@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { FaPlus, FaEye, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
 import { CenteredLoadingSpinner } from '@/app/components/ui/LoadingSpinner';
 import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
 import Notification from '@/app/components/Notification';
+import RiskManagementForm from '@/app/components/RiskManagementForm';
+import RiskControlView from '@/app/components/RiskControlView';
 
 interface RiskManagementControl {
   id: number;
@@ -53,18 +54,15 @@ const progressStyles = {
   'Major Challenges': 'bg-red-500 text-white',
 } as const;
 
-const effectivenessStyles = {
-  'High': 'bg-green-500 text-white',
-  'Medium': 'bg-orange-500 text-white',
-  'Low': 'bg-red-500 text-white',
-} as const;
+
 
 export default function RiskManagementPage() {
-  const router = useRouter();
   const [controls, setControls] = useState<RiskManagementControl[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedCard, setExpandedCard] = useState<number | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingControl, setEditingControl] = useState<RiskManagementControl | undefined>();
+  const [viewingControl, setViewingControl] = useState<RiskManagementControl | undefined>();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [controlToDelete, setControlToDelete] = useState<RiskManagementControl | null>(null);
   const [notification, setNotification] = useState<{
@@ -96,8 +94,17 @@ export default function RiskManagementPage() {
     fetchControls();
   }, []);
 
+  // Cleanup body scroll when component unmounts
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const handleEdit = (control: RiskManagementControl) => {
-    router.push(`/risk-management/${control.id}/edit`);
+    setEditingControl(control);
+    setViewingControl(undefined);
+    setShowForm(true);
   };
 
   const handleDeleteClick = (control: RiskManagementControl) => {
@@ -146,14 +153,24 @@ export default function RiskManagementPage() {
     }
   };
 
-  const toggleCardExpansion = (controlId: number) => {
-    setExpandedCard(expandedCard === controlId ? null : controlId);
+  const handleAddControl = () => {
+    setEditingControl(undefined);
+    setViewingControl(undefined);
+    setShowForm(true);
+  };
+
+  const handleViewControl = (control: RiskManagementControl) => {
+    setViewingControl(control);
+    setEditingControl(undefined);
+    setShowForm(true);
+    // Prevent body scrolling when modal is open
+    document.body.style.overflow = 'hidden';
   };
 
   if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-full bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -161,12 +178,57 @@ export default function RiskManagementPage() {
             <p className="text-brand-gray3">Manage your risk assessment and control matrix</p>
           </div>
           <button
-            onClick={() => router.push('/risk-management/new')}
+            onClick={handleAddControl}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-blue text-brand-white hover:bg-brand-blue/90 transition-colors"
           >
             <FaPlus /> Add Risk Control
           </button>
         </div>
+
+        {showForm && viewingControl && (
+          <RiskControlView
+            control={viewingControl}
+            onClose={() => {
+              setShowForm(false);
+              setViewingControl(undefined);
+              // Restore body scrolling when modal is closed
+              document.body.style.overflow = 'unset';
+            }}
+          />
+        )}
+
+        {showForm && editingControl && (
+          <div className="mb-8 p-6 bg-brand-dark/30 rounded-lg border border-brand-gray2">
+            <h2 className="text-xl font-semibold text-brand-white mb-4">Edit Risk Control</h2>
+            <RiskManagementForm
+              control={editingControl}
+              onSuccess={() => {
+                setShowForm(false);
+                setEditingControl(undefined);
+                fetchControls();
+              }}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingControl(undefined);
+              }}
+            />
+          </div>
+        )}
+
+        {showForm && !editingControl && !viewingControl && (
+          <div className="mb-8 p-6 bg-brand-dark/30 rounded-lg border border-brand-gray2">
+            <h2 className="text-xl font-semibold text-brand-white mb-4">Add New Risk Control</h2>
+            <RiskManagementForm
+              onSuccess={() => {
+                setShowForm(false);
+                fetchControls();
+              }}
+              onCancel={() => {
+                setShowForm(false);
+              }}
+            />
+          </div>
+        )}
 
         {loading ? (
           <CenteredLoadingSpinner />
@@ -174,7 +236,7 @@ export default function RiskManagementPage() {
           <div className="text-center py-12">
             <div className="text-gray-400 text-lg">No risk management controls found.</div>
             <button
-              onClick={() => router.push('/risk-management/new')}
+              onClick={handleAddControl}
               className="mt-4 px-6 py-2 bg-brand-blue text-brand-white rounded-lg hover:bg-brand-blue/90 transition-colors"
             >
               Create Your First Control
@@ -185,10 +247,8 @@ export default function RiskManagementPage() {
             {controls.map((control) => (
               <div
                 key={control.id}
-                className={`bg-gray-800 rounded-lg shadow-lg border border-gray-700 hover:border-gray-600 transition-all duration-200 cursor-pointer ${
-                  expandedCard === control.id ? 'ring-2 ring-brand-blue' : ''
-                }`}
-                onClick={() => toggleCardExpansion(control.id)}
+                className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 hover:border-gray-600 transition-all duration-200 cursor-pointer"
+                onClick={() => handleViewControl(control)}
               >
                 {/* Card Header */}
                 <div className="p-4 border-b border-gray-700">
@@ -264,89 +324,6 @@ export default function RiskManagementPage() {
                         <span className="text-brand-white ml-1">{control.inherent_risk_impact}</span>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                {/* Expanded Details */}
-                {expandedCard === control.id && (
-                  <div className="p-4 border-t border-gray-700 bg-gray-750">
-                    <div className="space-y-4">
-                      <div>
-                        <span className="text-xs text-gray-400 uppercase tracking-wide">Control Description</span>
-                        <p className="text-sm text-gray-200 mt-1">
-                          {control.control_description}
-                        </p>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase tracking-wide">Control Type</span>
-                          <p className="text-sm text-gray-200 mt-1">{control.control_type}</p>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase tracking-wide">Control Owner</span>
-                          <p className="text-sm text-gray-200 mt-1">{control.control_owner}</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase tracking-wide">Effectiveness</span>
-                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full mt-1 ${effectivenessStyles[control.control_effectiveness] || 'bg-gray-500 text-white'}`}>
-                            {control.control_effectiveness}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase tracking-wide">Progress</span>
-                          <p className="text-sm text-gray-200 mt-1">{control.control_progress}%</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase tracking-wide">Residual Risk Likelihood</span>
-                          <p className="text-sm text-gray-200 mt-1">{control.residual_risk_likeliness}</p>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase tracking-wide">Residual Risk Impact</span>
-                          <p className="text-sm text-gray-200 mt-1">{control.residual_risk_impact}</p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <span className="text-xs text-gray-400 uppercase tracking-wide">Residual Risk Overall Score</span>
-                        <p className="text-sm text-gray-200 mt-1">{control.residual_risk_overall_score}</p>
-                      </div>
-
-                      <div>
-                        <span className="text-xs text-gray-400 uppercase tracking-wide">Issue Type</span>
-                        <p className="text-sm text-gray-200 mt-1">{control.issue_type}</p>
-                      </div>
-
-                      {control.control_target_date && (
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase tracking-wide">Target Date</span>
-                          <p className="text-sm text-gray-200 mt-1">{new Date(control.control_target_date).toLocaleDateString()}</p>
-                        </div>
-                      )}
-
-                      <div className="text-xs text-gray-500">
-                        <div>Created: {new Date(control.created_at).toLocaleDateString()}</div>
-                        <div>Updated: {new Date(control.updated_at).toLocaleDateString()}</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Expand/Collapse Indicator */}
-                <div className="p-2 border-t border-gray-700 bg-gray-750">
-                  <div className="flex justify-center">
-                    <FaEye 
-                      className={`text-gray-400 transition-transform duration-200 ${
-                        expandedCard === control.id ? 'rotate-180' : ''
-                      }`} 
-                      size={12} 
-                    />
                   </div>
                 </div>
               </div>

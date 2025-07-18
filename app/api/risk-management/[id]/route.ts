@@ -95,6 +95,21 @@ export async function PUT(
       SELECT * FROM racm_matrix WHERE id = ? AND business_area = ? AND deleted_at IS NULL
     `, [id, userBusinessArea]);
 
+    // Create history record for the update
+    await query(`
+      INSERT INTO racm_matrix_history (
+        racm_matrix_id, 
+        inherent_risk_score, 
+        residual_risk_overall_score, 
+        change_type, 
+        change_date
+      ) VALUES (?, ?, ?, 'updated', NOW())
+    `, [
+      id, 
+      updatedControl.inherent_risk_score, 
+      updatedControl.residual_risk_overall_score
+    ]);
+
     return NextResponse.json(updatedControl);
   } catch (error) {
     console.error('Error updating risk management control:', error);

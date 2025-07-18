@@ -151,6 +151,22 @@ model PerformanceMonitoringControl {
   @@map("performancemonitoringcontrol")
 }
 
+model RacmMatrixHistory {
+  id                        Int            @id @default(autoincrement())
+  racm_matrix_id            Int
+  inherent_risk_score       Int?
+  residual_risk_overall_score Int?
+  change_date               DateTime       @default(now()) @db.Timestamp(0)
+  change_type               String         @db.VarChar(20) // 'created', 'updated'
+  created_at                DateTime       @default(now()) @db.Timestamp(0)
+  
+  racmMatrix                RacmMatrix     @relation(fields: [racm_matrix_id], references: [id], onDelete: Cascade)
+
+  @@index([racm_matrix_id], map: "fk_rmh_racm_matrix_id")
+  @@index([change_date], map: "idx_change_date")
+  @@map("racm_matrix_history")
+}
+
 model RacmMatrix {
   id                        Int            @id @default(autoincrement())
   process_name              String         @db.VarChar(255)
@@ -183,6 +199,7 @@ model RacmMatrix {
   residual_risk_overall_score Int?
   businessareas             BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_rm_business_area")
   deletedBy                 User?          @relation("RacmMatrixDeletedBy", fields: [deleted_by], references: [id])
+  history                   RacmMatrixHistory[]
 
   @@index([business_area], map: "fk_rm_business_area")
   @@index([deleted_at], map: "idx_deleted_at")

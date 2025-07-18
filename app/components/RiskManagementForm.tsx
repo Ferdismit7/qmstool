@@ -65,6 +65,12 @@ interface RiskManagementControl {
 interface RiskManagementFormProps {
   /** Optional existing control data for editing mode */
   control?: RiskManagementControl;
+  /** Callback function when form is successfully submitted */
+  onSuccess?: () => void;
+  /** Callback function when form is cancelled */
+  onCancel?: () => void;
+  /** Whether the form is in view-only mode */
+  isViewMode?: boolean;
 }
 
 /**
@@ -93,7 +99,7 @@ interface RiskManagementFormProps {
  * 
  * @returns {JSX.Element} A form for creating or editing risk management controls
  */
-export default function RiskManagementForm({ control }: RiskManagementFormProps) {
+export default function RiskManagementForm({ control, onSuccess, onCancel, isViewMode = false }: RiskManagementFormProps) {
   const router = useRouter();
   const [userBusinessAreas, setUserBusinessAreas] = useState<string[]>([]);
   const [formData, setFormData] = useState<RiskManagementControl>({
@@ -216,8 +222,12 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
         throw new Error(errorData.error || 'Failed to save risk management control');
       }
 
-      router.push('/risk-management');
-      router.refresh();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/risk-management');
+        router.refresh();
+      }
     } catch (error) {
       console.error('Error:', error);
       alert(error instanceof Error ? error.message : 'Failed to save risk management control');
@@ -248,18 +258,20 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
       <div className="flex justify-end space-x-4 mb-6">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={onCancel || (() => router.back())}
           className="px-6 py-2 rounded-lg bg-brand-dark/30 border border-brand-gray3 text-brand-white hover:bg-brand-white/40 transition-colors"
         >
-          Cancel
+          {isViewMode ? 'Close' : 'Cancel'}
         </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-6 py-2 rounded-lg bg-brand-dark/30 border border-brand-gray3 text-white hover:bg-brand-white/40 transition-colors disabled:opacity-50"
-        >
-          {loading ? 'Saving...' : control ? 'Update' : 'Create'}
-        </button>
+        {!isViewMode && (
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-6 py-2 rounded-lg bg-brand-dark/30 border border-brand-gray3 text-white hover:bg-brand-white/40 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Saving...' : control ? 'Update' : 'Create'}
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -272,7 +284,8 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
             value={formData.business_area}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+            disabled={isViewMode}
+            className={`w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1 ${isViewMode ? 'opacity-75 cursor-not-allowed' : ''}`}
           >
             <option value="">Select Business Area</option>
             {userBusinessAreas.map(area => (
@@ -293,7 +306,8 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
             value={formData.process_name}
             onChange={handleChange}
             required
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+            disabled={isViewMode}
+            className={`w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1 ${isViewMode ? 'opacity-75 cursor-not-allowed' : ''}`}
           />
         </div>
 
@@ -306,7 +320,8 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
             value={formData.activity_description}
             onChange={handleChange}
             rows={3}
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+            disabled={isViewMode}
+            className={`w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1 ${isViewMode ? 'opacity-75 cursor-not-allowed' : ''}`}
           />
         </div>
 
@@ -320,7 +335,8 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
             onChange={handleChange}
             required
             rows={3}
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+            disabled={isViewMode}
+            className={`w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1 ${isViewMode ? 'opacity-75 cursor-not-allowed' : ''}`}
           />
         </div>
 
@@ -333,7 +349,8 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
             name="issue_type"
             value={formData.issue_type}
             onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+            disabled={isViewMode}
+            className={`w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1 ${isViewMode ? 'opacity-75 cursor-not-allowed' : ''}`}
           />
         </div>
 
@@ -348,7 +365,8 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
             onChange={handleChange}
             min="1"
             max="5"
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+            disabled={isViewMode}
+            className={`w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1 ${isViewMode ? 'opacity-75 cursor-not-allowed' : ''}`}
           />
         </div>
 
@@ -400,7 +418,8 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
             name="control_type"
             value={formData.control_type || ''}
             onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+            disabled={isViewMode}
+            className={`w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1 ${isViewMode ? 'opacity-75 cursor-not-allowed' : ''}`}
           >
             <option value="">Select Type</option>
             <option value="Preventive">Preventive</option>
@@ -418,7 +437,8 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
             name="control_owner"
             value={formData.control_owner}
             onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+            disabled={isViewMode}
+            className={`w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1 ${isViewMode ? 'opacity-75 cursor-not-allowed' : ''}`}
           />
         </div>
 

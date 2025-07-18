@@ -135,6 +135,17 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Create history record for the new entry
+    await prisma.racmMatrixHistory.create({
+      data: {
+        racm_matrix_id: result.id,
+        inherent_risk_score: result.inherent_risk_score,
+        residual_risk_overall_score: result.residual_risk_overall_score,
+        change_type: 'created',
+        change_date: new Date()
+      }
+    });
+
     console.log('Insert result:', result);
     return NextResponse.json(result);
   } catch (error) {
@@ -202,7 +213,8 @@ export async function PUT(request: NextRequest) {
         id: Number(id),
         business_area: {
           in: userBusinessAreas
-        }
+        },
+        deleted_at: null
       }
     });
 
@@ -218,7 +230,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized to modify business area' }, { status: 403 });
     }
 
-    await prisma.racmMatrix.update({
+    const updatedControl = await prisma.racmMatrix.update({
       where: { id: Number(id) },
       data: {
         process_name,
@@ -245,6 +257,17 @@ export async function PUT(request: NextRequest) {
         file_size: file_size || null,
         file_type: file_type || null,
         updated_at: new Date()
+      }
+    });
+
+    // Create history record for the update
+    await prisma.racmMatrixHistory.create({
+      data: {
+        racm_matrix_id: Number(id),
+        inherent_risk_score: updatedControl.inherent_risk_score,
+        residual_risk_overall_score: updatedControl.residual_risk_overall_score,
+        change_type: 'updated',
+        change_date: new Date()
       }
     });
 
