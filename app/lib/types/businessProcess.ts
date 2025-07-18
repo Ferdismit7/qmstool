@@ -32,9 +32,24 @@ export interface BusinessProcessRegister {
   updateDate: Date;
   remarks: string;
   reviewDate: Date;
+  deletedAt?: Date | null;
+  deletedBy?: number | null;
 }
 
 export type BusinessProcessRegisterInput = Omit<BusinessProcessRegister, 'id'>;
+
+// Soft delete types
+export interface SoftDeleteRequest {
+  id: number;
+  userId: number;
+}
+
+export interface SoftDeleteResponse {
+  success: boolean;
+  message: string;
+  deletedAt: Date;
+  deletedBy: number;
+}
 
 // Constants
 export const PROGRESS_STATUS = {
@@ -60,4 +75,5 @@ export const PRIORITY = {
 // API Configuration
 export const API_ENDPOINTS = {
   BUSINESS_PROCESSES: '/api/business-processes',
+  SOFT_DELETE_PROCESS: '/api/business-processes/soft-delete',
 } as const; 

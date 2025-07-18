@@ -20,12 +20,12 @@ interface RiskManagementControl {
   issue_description: string;
   /** Type of issue being addressed */
   issue_type?: string;
-  /** Likelihood score (1-5) */
-  likelihood?: number;
-  /** Impact score (1-5) */
-  impact?: number;
-  /** Calculated risk score (likelihood * impact) */
-  risk_score?: number;
+  /** Inherent risk likelihood score (1-5) */
+  inherent_risk_likeliness?: number;
+  /** Inherent risk impact score (1-5) */
+  inherent_risk_impact?: number;
+  /** Calculated inherent risk score (likelihood * impact) */
+  inherent_risk_score?: number;
   /** Description of the control measure */
   control_description?: string;
   /** Type of control measure */
@@ -34,12 +34,28 @@ interface RiskManagementControl {
   control_owner?: string;
   /** Effectiveness rating of the control */
   control_effectiveness?: 'High' | 'Medium' | 'Low';
-  /** Remaining risk after control implementation */
-  residual_risk?: number;
+  /** Residual risk likelihood score (1-5) */
+  residual_risk_likeliness?: number;
   /** Current status of the control */
   status?: 'Open' | 'Under Review' | 'Closed';
   /** Progress status of the control */
   doc_status?: 'Not Started' | 'On-Track' | 'Completed' | 'Minor Challenges' | 'Major Challenges';
+  /** Control progress percentage */
+  control_progress?: number;
+  /** Control target date */
+  control_target_date?: string;
+  /** Residual risk impact score (1-5) */
+  residual_risk_impact?: number;
+  /** Residual risk overall score */
+  residual_risk_overall_score?: number;
+  /** File upload URL */
+  file_url?: string;
+  /** File name */
+  file_name?: string;
+  /** File size */
+  file_size?: number;
+  /** File type */
+  file_type?: string;
 }
 
 /**
@@ -50,8 +66,6 @@ interface RiskManagementFormProps {
   /** Optional existing control data for editing mode */
   control?: RiskManagementControl;
 }
-
-
 
 /**
  * RiskManagementForm Component
@@ -88,32 +102,48 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
     activity_description: '',
     issue_description: '',
     issue_type: '',
-    likelihood: 1,
-    impact: 1,
+    inherent_risk_likeliness: 1,
+    inherent_risk_impact: 1,
     control_description: '',
     control_type: 'Preventive',
     control_owner: '',
     control_effectiveness: 'Medium',
-    residual_risk: 1,
+    residual_risk_likeliness: 1,
     status: 'Open',
     doc_status: 'Not Started',
+    control_progress: 0,
+    residual_risk_impact: 1,
+    residual_risk_overall_score: 1,
     ...control
   });
 
   const [loading, setLoading] = useState(false);
-  const [calculatedRiskScore, setCalculatedRiskScore] = useState<number | null>(null);
+  const [calculatedInherentRiskScore, setCalculatedInherentRiskScore] = useState<number | null>(null);
+  const [calculatedResidualRiskScore, setCalculatedResidualRiskScore] = useState<number | null>(null);
 
   /**
-   * Effect to calculate risk score when likelihood or impact changes
+   * Effect to calculate inherent risk score when likelihood or impact changes
    */
   useEffect(() => {
-    if (formData.likelihood !== undefined && formData.likelihood !== null && 
-        formData.impact !== undefined && formData.impact !== null) {
-      setCalculatedRiskScore((formData.likelihood || 0) * (formData.impact || 0));
+    if (formData.inherent_risk_likeliness !== undefined && formData.inherent_risk_likeliness !== null && 
+        formData.inherent_risk_impact !== undefined && formData.inherent_risk_impact !== null) {
+      setCalculatedInherentRiskScore((formData.inherent_risk_likeliness || 0) * (formData.inherent_risk_impact || 0));
     } else {
-      setCalculatedRiskScore(null);
+      setCalculatedInherentRiskScore(null);
     }
-  }, [formData.likelihood, formData.impact]);
+  }, [formData.inherent_risk_likeliness, formData.inherent_risk_impact]);
+
+  /**
+   * Effect to calculate residual risk score when residual likelihood or impact changes
+   */
+  useEffect(() => {
+    if (formData.residual_risk_likeliness !== undefined && formData.residual_risk_likeliness !== null && 
+        formData.residual_risk_impact !== undefined && formData.residual_risk_impact !== null) {
+      setCalculatedResidualRiskScore((formData.residual_risk_likeliness || 0) * (formData.residual_risk_impact || 0));
+    } else {
+      setCalculatedResidualRiskScore(null);
+    }
+  }, [formData.residual_risk_likeliness, formData.residual_risk_impact]);
 
   /**
    * Fetch user's business areas on component mount
@@ -163,8 +193,12 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
     setLoading(true);
 
     try {
-      // Remove risk_score from the data being sent
-      const { ...formDataToSubmit } = formData;
+      // Prepare data with calculated scores
+      const formDataToSubmit = {
+        ...formData,
+        inherent_risk_score: calculatedInherentRiskScore,
+        residual_risk_overall_score: calculatedResidualRiskScore
+      };
 
       const url = control ? `/api/risk-management/${control.id}` : '/api/risk-management';
       const method = control ? 'PUT' : 'POST';
@@ -200,9 +234,10 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    const numericFields = ['inherent_risk_likeliness', 'inherent_risk_impact', 'residual_risk_likeliness', 'residual_risk_impact', 'control_progress'];
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'likelihood' || name === 'impact' || name === 'residual_risk' 
+      [name]: numericFields.includes(name)
         ? Number(value) || null
         : value
     }));
@@ -304,12 +339,12 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
 
         <div>
           <label className="block text-sm font-medium text-brand-gray3 mb-2">
-            Likelihood (1-5)
+            Inherent Risk Likelihood (1-5)
           </label>
           <input
             type="number"
-            name="likelihood"
-            value={formData.likelihood || ''}
+            name="inherent_risk_likeliness"
+            value={formData.inherent_risk_likeliness || ''}
             onChange={handleChange}
             min="1"
             max="5"
@@ -319,12 +354,12 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
 
         <div>
           <label className="block text-sm font-medium text-brand-gray3 mb-2">
-            Impact (1-5)
+            Inherent Risk Impact (1-5)
           </label>
           <input
             type="number"
-            name="impact"
-            value={formData.impact || ''}
+            name="inherent_risk_impact"
+            value={formData.inherent_risk_impact || ''}
             onChange={handleChange}
             min="1"
             max="5"
@@ -334,11 +369,11 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
 
         <div>
           <label className="block text-sm font-medium text-brand-gray3 mb-2">
-            Risk Score (Calculated)
+            Inherent Risk Score (Calculated)
           </label>
           <input
             type="number"
-            value={calculatedRiskScore || ''}
+            value={calculatedInherentRiskScore || ''}
             readOnly
             className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           />
@@ -406,15 +441,70 @@ export default function RiskManagementForm({ control }: RiskManagementFormProps)
 
         <div>
           <label className="block text-sm font-medium text-brand-gray3 mb-2">
-            Residual Risk (1-5)
+            Control Progress (%)
           </label>
           <input
             type="number"
-            name="residual_risk"
-            value={formData.residual_risk || ''}
+            name="control_progress"
+            value={formData.control_progress || ''}
+            onChange={handleChange}
+            min="0"
+            max="100"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-brand-gray3 mb-2">
+            Control Target Date
+          </label>
+          <input
+            type="date"
+            name="control_target_date"
+            value={formData.control_target_date || ''}
+            onChange={handleChange}
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-brand-gray3 mb-2">
+            Residual Risk Likelihood (1-5)
+          </label>
+          <input
+            type="number"
+            name="residual_risk_likeliness"
+            value={formData.residual_risk_likeliness || ''}
             onChange={handleChange}
             min="1"
             max="5"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-brand-gray3 mb-2">
+            Residual Risk Impact (1-5)
+          </label>
+          <input
+            type="number"
+            name="residual_risk_impact"
+            value={formData.residual_risk_impact || ''}
+            onChange={handleChange}
+            min="1"
+            max="5"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-brand-gray3 mb-2">
+            Residual Risk Overall Score (Calculated)
+          </label>
+          <input
+            type="number"
+            value={calculatedResidualRiskScore || ''}
+            readOnly
             className="w-full px-4 py-2 rounded-lg border border-brand-gray3 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           />
         </div>

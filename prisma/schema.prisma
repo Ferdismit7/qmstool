@@ -30,9 +30,14 @@ model BusinessProcessRegister {
   file_size         BigInt?
   file_type         String?        @db.VarChar(100)
   uploaded_at       DateTime?      @default(now()) @db.Timestamp(0)
+  deleted_at        DateTime?      @db.Timestamp(0)
+  deleted_by        Int?
   businessareas     BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bpr_business_area")
+  deletedBy         User?          @relation("BusinessProcessDeletedBy", fields: [deleted_by], references: [id])
 
   @@index([business_area], map: "fk_bpr_business_area")
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
   @@map("businessprocessregister")
 }
 
@@ -59,9 +64,14 @@ model BusinessQualityObjective {
   file_size                 BigInt?
   file_type                 String?        @db.VarChar(100)
   uploaded_at               DateTime?      @default(now()) @db.Timestamp(0)
+  deleted_at                DateTime?      @db.Timestamp(0)
+  deleted_by                Int?
   businessareas             BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bqo_business_area")
+  deletedBy                 User?          @relation("BusinessQualityObjectiveDeletedBy", fields: [deleted_by], references: [id])
 
   @@index([business_area], map: "fk_bqo_business_area")
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
   @@map("businessqualityobjectives")
 }
 
@@ -99,9 +109,14 @@ model BusinessDocumentRegister {
   file_size          BigInt?
   file_type          String?        @db.VarChar(100)
   uploaded_at        DateTime?      @default(now()) @db.Timestamp(0)
+  deleted_at         DateTime?      @db.Timestamp(0)
+  deleted_by         Int?
   businessareas      BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bdr_business_area")
+  deletedBy          User?          @relation("BusinessDocumentDeletedBy", fields: [deleted_by], references: [id])
 
   @@index([business_area], map: "fk_bdr_business_area")
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
   @@map("businessdocumentregister")
 }
 
@@ -125,39 +140,53 @@ model PerformanceMonitoringControl {
   file_size           BigInt?
   file_type           String?        @db.VarChar(100)
   uploaded_at         DateTime?      @default(now()) @db.Timestamp(0)
+  deleted_at          DateTime?      @db.Timestamp(0)
+  deleted_by          Int?
   businessareas       BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_pmc_business_area")
+  deletedBy           User?          @relation("PerformanceMonitoringDeletedBy", fields: [deleted_by], references: [id])
 
   @@index([business_area], map: "fk_pmc_business_area")
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
   @@map("performancemonitoringcontrol")
 }
 
 model RacmMatrix {
-  id                    Int            @id @default(autoincrement())
-  process_name          String         @db.VarChar(255)
-  activity_description  String?        @db.Text
-  issue_description     String         @db.Text
-  issue_type            String?        @db.VarChar(100)
-  likelihood            Int?
-  impact                Int?
-  risk_score            Int?
-  control_description   String?        @db.Text
-  control_type          String?        @db.VarChar(20)
-  control_owner         String?        @db.VarChar(255)
-  control_effectiveness String?        @db.VarChar(20)
-  residual_risk         Int?
-  status                String?        @db.VarChar(20)
-  created_at            DateTime?      @default(now()) @db.Timestamp(0)
-  updated_at            DateTime?      @default(now()) @updatedAt @db.Timestamp(0)
-  business_area         String?        @db.VarChar(50)
-  doc_status            String?        @db.VarChar(20)
-  file_url              String?        @db.VarChar(500)
-  file_name             String?        @db.VarChar(255)
-  file_size             BigInt?
-  file_type             String?        @db.VarChar(100)
-  uploaded_at           DateTime?      @default(now()) @db.Timestamp(0)
-  businessareas         BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_rm_business_area")
+  id                        Int            @id @default(autoincrement())
+  process_name              String         @db.VarChar(255)
+  activity_description      String?        @db.Text
+  issue_description         String         @db.Text
+  issue_type                String?        @db.VarChar(100)
+  inherent_risk_likeliness  Int?
+  inherent_risk_impact      Int?
+  inherent_risk_score       Int?
+  control_description       String?        @db.Text
+  control_type              String?        @db.VarChar(20)
+  control_owner             String?        @db.VarChar(255)
+  control_effectiveness     String?        @db.VarChar(20)
+  residual_risk_likeliness  Int?
+  status                    String?        @db.VarChar(20)
+  created_at                DateTime?      @default(now()) @db.Timestamp(0)
+  updated_at                DateTime?      @default(now()) @updatedAt @db.Timestamp(0)
+  business_area             String?        @db.VarChar(50)
+  doc_status                String?        @db.VarChar(20)
+  file_url                  String?        @db.VarChar(500)
+  file_name                 String?        @db.VarChar(255)
+  file_size                 BigInt?
+  file_type                 String?        @db.VarChar(100)
+  uploaded_at               DateTime?      @default(now()) @db.Timestamp(0)
+  deleted_at                DateTime?      @db.Timestamp(0)
+  deleted_by                Int?
+  control_progress          Decimal?       @db.Decimal(5, 0)
+  control_target_date       DateTime?      @db.Date
+  residual_risk_impact      Int?
+  residual_risk_overall_score Int?
+  businessareas             BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_rm_business_area")
+  deletedBy                 User?          @relation("RacmMatrixDeletedBy", fields: [deleted_by], references: [id])
 
   @@index([business_area], map: "fk_rm_business_area")
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
   @@map("racm_matrix")
 }
 
@@ -170,6 +199,11 @@ model User {
   created_at          DateTime?             @default(now()) @db.Timestamp(0)
   user_business_areas user_business_areas[]
   businessareas       BusinessAreas?        @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_use_business_area")
+  deletedBusinessProcesses BusinessProcessRegister[] @relation("BusinessProcessDeletedBy")
+  deletedBusinessDocuments BusinessDocumentRegister[] @relation("BusinessDocumentDeletedBy")
+  deletedBusinessQualityObjectives BusinessQualityObjective[] @relation("BusinessQualityObjectiveDeletedBy")
+  deletedPerformanceMonitoring PerformanceMonitoringControl[] @relation("PerformanceMonitoringDeletedBy")
+  deletedRacmMatrix RacmMatrix[] @relation("RacmMatrixDeletedBy")
 
   @@index([business_area], map: "fk_use_business_area")
   @@map("users")

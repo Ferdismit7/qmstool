@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
+import Notification from './Notification';
 
 /**
  * Interface representing a Business Quality Objective
@@ -91,6 +93,19 @@ export default function BusinessQualityObjectivesTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [objectiveToDelete, setObjectiveToDelete] = useState<BusinessQualityObjective | null>(null);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
   const tableWrapperRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -121,18 +136,53 @@ export default function BusinessQualityObjectivesTable() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this objective?')) return;
+  const handleDeleteClick = (objective: BusinessQualityObjective) => {
+    setObjectiveToDelete(objective);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!objectiveToDelete) return;
 
     try {
-      const response = await fetch(`/api/business-quality-objectives/${id}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/business-quality-objectives/soft-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: objectiveToDelete.id }),
       });
 
-      if (!response.ok) throw new Error('Failed to delete objective');
-      setObjectives(objectives.filter(obj => obj.id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete objective');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete objective');
+      }
+
+      await response.json();
+      
+      // Show success notification
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Success',
+        message: 'Objective successfully deleted'
+      });
+      
+      // Remove from local state
+      setObjectives(objectives.filter(obj => obj.id !== objectiveToDelete.id));
+      
+      // Close modal
+      setShowDeleteModal(false);
+      setObjectiveToDelete(null);
+      
+    } catch (error) {
+      console.error('Delete failed:', error);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to delete objective'
+      });
     }
   };
 
@@ -187,7 +237,8 @@ export default function BusinessQualityObjectivesTable() {
   ];
 
   return (
-    <div ref={tableWrapperRef} className="overflow-x-auto pl-0 rounded-lg border border-brand-dark/20 shadow-lg bg-gray-800/40 backdrop-blur-sm" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4B5563 #1F2937' }}>
+    <>
+      <div ref={tableWrapperRef} className="overflow-x-auto pl-0 rounded-lg border border-brand-dark/20 shadow-lg bg-gray-800/40 backdrop-blur-sm" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4B5563 #1F2937' }}>
       <style jsx global>{`
         .cell-content {
           position: relative;
@@ -358,7 +409,7 @@ export default function BusinessQualityObjectivesTable() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(objective.id);
+                                              handleDeleteClick(objective);
                     }}
                     className="text-red-400 hover:text-red-300 text-xs"
                   >
@@ -371,5 +422,27 @@ export default function BusinessQualityObjectivesTable() {
         </tbody>
       </table>
     </div>
-  );
+    
+    {/* Delete Confirmation Modal */}
+    <DeleteConfirmationModal
+      isOpen={showDeleteModal}
+      onClose={() => {
+        setShowDeleteModal(false);
+        setObjectiveToDelete(null);
+      }}
+      onConfirm={handleDeleteConfirm}
+      itemName={objectiveToDelete?.qms_main_objectives || ''}
+      itemType="business quality objective"
+    />
+
+    {/* Notification */}
+    <Notification
+      isOpen={notification.isOpen}
+      onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      type={notification.type}
+      title={notification.title}
+      message={notification.message}
+    />
+  </>
+);
 } 

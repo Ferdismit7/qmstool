@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { BusinessDocument } from '../types/businessDocument';
 import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
+import Notification from './Notification';
 
 interface BusinessDocumentTableProps {
   documents: BusinessDocument[];
@@ -14,6 +16,19 @@ interface BusinessDocumentTableProps {
 
 export default function BusinessDocumentTable({ documents, loading, onEdit, onDelete, refresh }: BusinessDocumentTableProps) {
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<BusinessDocument | null>(null);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
   const tableWrapperRef = useRef<HTMLDivElement>(null);
 
   const handleCellClick = (cellId: string) => {
@@ -33,19 +48,53 @@ export default function BusinessDocumentTable({ documents, loading, onEdit, onDe
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [expandedCell]);
 
-  const deleteDocument = async (id: string, documentName: string) => {
-    if (!window.confirm(`Are you sure you want to delete this ${documentName}?`)) return;
+  const handleDeleteClick = (document: BusinessDocument) => {
+    setDocumentToDelete(document);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!documentToDelete) return;
+
     try {
-      const response = await fetch(`/api/business-documents?id=${id}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/business-documents/soft-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: documentToDelete.id }),
       });
-      if (!response.ok) throw new Error('Failed to delete document');
-      if (refresh) {
-        refresh();
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete document');
       }
+
+      await response.json();
+      
+      // Show success notification
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Success',
+        message: 'Document successfully deleted'
+      });
+      
+      // Refresh the table
+      if (refresh) refresh();
+      
+      // Close modal
+      setShowDeleteModal(false);
+      setDocumentToDelete(null);
+      
     } catch (error) {
-      console.error('Error deleting document:', error);
-      alert('Failed to delete document');
+      console.error('Delete failed:', error);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to delete document'
+      });
     }
   };
 
@@ -75,7 +124,8 @@ export default function BusinessDocumentTable({ documents, loading, onEdit, onDe
   };
 
   return (
-    <div ref={tableWrapperRef} className="overflow-x-auto pl-0 rounded-lg border border-brand-dark/50 shadow-lg backdrop-blur-sm" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4B5563 #1F2937' }}>
+    <>
+      <div ref={tableWrapperRef} className="overflow-x-auto pl-0 rounded-lg border border-brand-dark/50 shadow-lg backdrop-blur-sm" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4B5563 #1F2937' }}>
       <style jsx global>{`
         .cell-content {
           position: relative;
@@ -299,7 +349,7 @@ export default function BusinessDocumentTable({ documents, loading, onEdit, onDe
                     onClick={(e) => {
                       e.stopPropagation();
                       if (onDelete) onDelete(document.id.toString());
-                      else deleteDocument(document.id.toString(), document.document_name);
+                      else handleDeleteClick(document);
                     }}
                     className="text-red-400 hover:text-red-300 text-xs"
                   >
@@ -312,5 +362,27 @@ export default function BusinessDocumentTable({ documents, loading, onEdit, onDe
         </tbody>
       </table>
     </div>
-  );
+    
+    {/* Delete Confirmation Modal */}
+    <DeleteConfirmationModal
+      isOpen={showDeleteModal}
+      onClose={() => {
+        setShowDeleteModal(false);
+        setDocumentToDelete(null);
+      }}
+      onConfirm={handleDeleteConfirm}
+      itemName={documentToDelete?.document_name || ''}
+      itemType="business document"
+    />
+
+    {/* Notification */}
+    <Notification
+      isOpen={notification.isOpen}
+      onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      type={notification.type}
+      title={notification.title}
+      message={notification.message}
+    />
+  </>
+);
 }

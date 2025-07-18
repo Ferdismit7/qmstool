@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useRouter, useParams } from "next/navigation";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -238,25 +239,25 @@ const BusinessAreaReportPage = () => {
               <td className="px-4 py-2 font-bold">%</td>
             </tr>
             {reportSections.map((section) => (
-              <>
-                <tr key={section.section} className="bg-brand-gray3 text-black">
+              <React.Fragment key={section.section}>
+                <tr className="bg-brand-gray3 text-black">
                   <td colSpan={4} className="font-bold px-4 py-2">{section.section}</td>
                 </tr>
-                {section.items.map((item) => (
-                  <tr key={item.label} className="border-b border-gray-200">
-                    <td className="px-4 py-2 font-semibold w-1/4">{item.label}</td>
-                    <td className="px-4 py-2 w-2/4">{item.description}</td>
-                    <td className="px-4 py-2 w-1/8">
+                {section.items.map((item, itemIndex) => (
+                  <tr key={`${section.section}-${item.label}-${itemIndex}`} className="border-b border-gray-200">
+                    <td className="px-4 py-2 font-semibold w-1/4 text-black">{item.label}</td>
+                    <td className="px-4 py-2 w-2/4 text-black">{item.description}</td>
+                    <td className="px-4 py-2 w-1/8 text-black">
                       {item.placeholder ? (
                         <span className="italic text-gray-400">Coming Soon</span>
                       ) : (
                         item.status
                       )}
                     </td>
-                    <td className="px-4 py-2 w-1/8">{item.percent}</td>
+                    <td className="px-4 py-2 w-1/8 text-black">{item.percent}</td>
                   </tr>
                 ))}
-              </>
+              </React.Fragment>
             ))}
           </tbody>
         </table>

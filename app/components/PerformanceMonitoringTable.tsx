@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { CenteredLoadingSpinner } from './ui/LoadingSpinner';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
+import Notification from './Notification';
 
 interface PerformanceMonitoringControl {
   id: number;
@@ -53,19 +55,68 @@ const columns = [
 
 export default function PerformanceMonitoringTable({ controls, loading, onEdit, refresh }: PerformanceMonitoringTableProps) {
   const [expandedCell, setExpandedCell] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [controlToDelete, setControlToDelete] = useState<PerformanceMonitoringControl | null>(null);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
   const tableWrapperRef = useRef<HTMLDivElement>(null);
 
-  // Delete control
-  const deleteControl = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this control?')) return;
+  const handleDeleteClick = (control: PerformanceMonitoringControl) => {
+    setControlToDelete(control);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!controlToDelete) return;
+
     try {
-      const response = await fetch(`/api/performance-monitoring/${id}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/performance-monitoring/soft-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: controlToDelete.id }),
       });
-      if (!response.ok) throw new Error('Failed to delete control');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete control');
+      }
+
+      await response.json();
+      
+      // Show success notification
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Success',
+        message: 'Performance monitoring control successfully deleted'
+      });
+      
+      // Refresh the table
       if (refresh) refresh();
-    } catch (err) {
-      console.error('Error deleting control:', err);
+      
+      // Close modal
+      setShowDeleteModal(false);
+      setControlToDelete(null);
+      
+    } catch (error) {
+      console.error('Delete failed:', error);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to delete control'
+      });
     }
   };
 
@@ -89,7 +140,8 @@ export default function PerformanceMonitoringTable({ controls, loading, onEdit, 
   if (!controls) return <div>No data.</div>;
 
   return (
-    <div ref={tableWrapperRef} className="overflow-x-auto pl-0 rounded-lg border border-brand-dark/20 shadow-lg bg-gray-800/40 backdrop-blur-sm" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4B5563 #1F2937' }}>
+    <>
+      <div ref={tableWrapperRef} className="overflow-x-auto pl-0 rounded-lg border border-brand-dark/20 shadow-lg bg-gray-800/40 backdrop-blur-sm" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4B5563 #1F2937' }}>
       <style jsx global>{`
         .cell-content {
           position: relative;
@@ -235,7 +287,7 @@ export default function PerformanceMonitoringTable({ controls, loading, onEdit, 
                   <button
                     onClick={e => {
                       e.stopPropagation();
-                      deleteControl(control.id);
+                                              handleDeleteClick(control);
                     }}
                     className="text-red-400 hover:text-red-300 text-xs"
                   >
@@ -248,5 +300,27 @@ export default function PerformanceMonitoringTable({ controls, loading, onEdit, 
         </tbody>
       </table>
     </div>
-  );
+    
+    {/* Delete Confirmation Modal */}
+    <DeleteConfirmationModal
+      isOpen={showDeleteModal}
+      onClose={() => {
+        setShowDeleteModal(false);
+        setControlToDelete(null);
+      }}
+      onConfirm={handleDeleteConfirm}
+      itemName={controlToDelete?.Name_reports || ''}
+      itemType="performance monitoring control"
+    />
+
+    {/* Notification */}
+    <Notification
+      isOpen={notification.isOpen}
+      onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+      type={notification.type}
+      title={notification.title}
+      message={notification.message}
+    />
+  </>
+);
 } 

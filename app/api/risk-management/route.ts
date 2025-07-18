@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
       where: {
         business_area: {
           in: userBusinessAreas
-        }
+        },
+        deleted_at: null // Filter out soft deleted records
       },
       orderBy: {
         created_at: 'desc'
@@ -47,15 +48,24 @@ export async function POST(request: NextRequest) {
       activity_description,
       issue_description,
       issue_type,
-      likelihood,
-      impact,
+      inherent_risk_likeliness,
+      inherent_risk_impact,
+      inherent_risk_score,
       control_description,
       control_type,
       control_owner,
       control_effectiveness,
-      residual_risk,
+      residual_risk_likeliness,
       status,
-      doc_status
+      doc_status,
+      control_progress,
+      control_target_date,
+      residual_risk_impact,
+      residual_risk_overall_score,
+      file_url,
+      file_name,
+      file_size,
+      file_type
     } = body;
 
     // Validate required fields
@@ -76,15 +86,24 @@ export async function POST(request: NextRequest) {
       activity_description,
       issue_description,
       issue_type,
-      likelihood,
-      impact,
+      inherent_risk_likeliness,
+      inherent_risk_impact,
+      inherent_risk_score,
       control_description,
       control_type,
       control_owner,
       control_effectiveness,
-      residual_risk,
+      residual_risk_likeliness,
       status,
       doc_status,
+      control_progress,
+      control_target_date,
+      residual_risk_impact,
+      residual_risk_overall_score,
+      file_url,
+      file_name,
+      file_size,
+      file_type,
       business_area: userBusinessArea
     });
 
@@ -95,15 +114,24 @@ export async function POST(request: NextRequest) {
         activity_description: activity_description || null,
         issue_description,
         issue_type: issue_type || null,
-        likelihood: likelihood || null,
-        impact: impact || null,
+        inherent_risk_likeliness: inherent_risk_likeliness || null,
+        inherent_risk_impact: inherent_risk_impact || null,
+        inherent_risk_score: inherent_risk_score || null,
         control_description: control_description || null,
         control_type: control_type || null,
         control_owner: control_owner || null,
         control_effectiveness: control_effectiveness || null,
-        residual_risk: residual_risk || null,
+        residual_risk_likeliness: residual_risk_likeliness || null,
         status: status || null,
-        doc_status: doc_status || null
+        doc_status: doc_status || null,
+        control_progress: control_progress || null,
+        control_target_date: control_target_date || null,
+        residual_risk_impact: residual_risk_impact || null,
+        residual_risk_overall_score: residual_risk_overall_score || null,
+        file_url: file_url || null,
+        file_name: file_name || null,
+        file_size: file_size || null,
+        file_type: file_type || null
       }
     });
 
@@ -140,15 +168,24 @@ export async function PUT(request: NextRequest) {
       activity_description,
       issue_description,
       issue_type,
-      likelihood,
-      impact,
+      inherent_risk_likeliness,
+      inherent_risk_impact,
+      inherent_risk_score,
       control_description,
       control_type,
       control_owner,
       control_effectiveness,
-      residual_risk,
+      residual_risk_likeliness,
       status,
-      doc_status
+      doc_status,
+      control_progress,
+      control_target_date,
+      residual_risk_impact,
+      residual_risk_overall_score,
+      file_url,
+      file_name,
+      file_size,
+      file_type
     } = body;
 
     // Validate required fields
@@ -189,15 +226,24 @@ export async function PUT(request: NextRequest) {
         activity_description: activity_description || null,
         issue_description,
         issue_type: issue_type || null,
-        likelihood: likelihood || null,
-        impact: impact || null,
+        inherent_risk_likeliness: inherent_risk_likeliness || null,
+        inherent_risk_impact: inherent_risk_impact || null,
+        inherent_risk_score: inherent_risk_score || null,
         control_description: control_description || null,
         control_type: control_type || null,
         control_owner: control_owner || null,
         control_effectiveness: control_effectiveness || null,
-        residual_risk: residual_risk || null,
+        residual_risk_likeliness: residual_risk_likeliness || null,
         status: status || null,
         doc_status: doc_status || null,
+        control_progress: control_progress || null,
+        control_target_date: control_target_date || null,
+        residual_risk_impact: residual_risk_impact || null,
+        residual_risk_overall_score: residual_risk_overall_score || null,
+        file_url: file_url || null,
+        file_name: file_name || null,
+        file_size: file_size || null,
+        file_type: file_type || null,
         updated_at: new Date()
       }
     });

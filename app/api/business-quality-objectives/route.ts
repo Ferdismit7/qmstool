@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
       where: {
         business_area: {
           in: userBusinessAreas
-        }
+        },
+        deleted_at: null // Filter out soft deleted records
       },
       orderBy: {
         id: 'desc'

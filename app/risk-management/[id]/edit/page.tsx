@@ -11,16 +11,27 @@ interface RiskManagementControl {
   activity_description: string;
   issue_description: string;
   issue_type: string;
-  likelihood: number;
-  impact: number;
-  risk_score: number;
+  inherent_risk_likeliness: number;
+  inherent_risk_impact: number;
+  inherent_risk_score: number;
   control_description: string;
   control_type: 'Preventive' | 'Detective' | 'Corrective';
   control_owner: string;
   control_effectiveness: 'High' | 'Medium' | 'Low';
-  residual_risk: number;
+  residual_risk_likeliness: number;
   status: 'Open' | 'Under Review' | 'Closed';
   doc_status: 'Not Started' | 'On-Track' | 'Completed' | 'Minor Challenges' | 'Major Challenges';
+  control_progress: number;
+  control_target_date: string;
+  residual_risk_impact: number;
+  residual_risk_overall_score: number;
+  file_url: string;
+  file_name: string;
+  file_size: number;
+  file_type: string;
+  uploaded_at: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function EditRiskManagementPage({ params }: { params: Promise<{ id: string }> }) {

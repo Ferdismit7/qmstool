@@ -17,6 +17,7 @@ module.exports = {
         brand: {
           primary: '#e11b22',    // Red
           dark: '#003366',       // Navy
+          blue: '#3b82f6',       // Blue
           accent1: '#fcd3c1',    // Light Peach
           accent2: '#c1e6ed',    // Light Blue
           white: '#ffffff',      // White
@@ -31,5 +32,7 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/line-clamp'),
+  ],
 } 

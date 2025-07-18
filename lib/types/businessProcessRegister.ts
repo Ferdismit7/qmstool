@@ -14,6 +14,8 @@ export interface BusinessProcessRegister {
   updateDate: Date;
   remarks: string;
   reviewDate: Date;
+  deletedAt?: Date | null;
+  deletedBy?: number | null;
 }
 
 export type BusinessProcessRegisterInput = Omit<BusinessProcessRegister, 'id'>;

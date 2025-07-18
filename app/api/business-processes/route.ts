@@ -39,6 +39,8 @@ const transformBusinessProcess = (dbProcess: unknown) => {
     update_date: Date | null;
     remarks: string | null;
     review_date: Date | null;
+    deleted_at: Date | null;
+    deleted_by: number | null;
   };
   return {
     id: p.id,
@@ -56,6 +58,8 @@ const transformBusinessProcess = (dbProcess: unknown) => {
     updateDate: p.update_date?.toISOString() || null,
     remarks: p.remarks,
     reviewDate: p.review_date?.toISOString() || null,
+    deletedAt: p.deleted_at,
+    deletedBy: p.deleted_by,
   };
 };
 
@@ -90,7 +94,8 @@ export async function GET(request: NextRequest) {
       where: {
         business_area: {
           in: userBusinessAreas
-        }
+        },
+        deleted_at: null // Only show non-deleted records
       },
       include: {
         businessareas: true

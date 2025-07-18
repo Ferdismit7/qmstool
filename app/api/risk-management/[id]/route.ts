@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const [result] = await query(`
-      SELECT * FROM racm_matrix WHERE id = ? AND business_area = ?
+      SELECT * FROM racm_matrix WHERE id = ? AND business_area = ? AND deleted_at IS NULL
     `, [id, userBusinessArea]);
     
     if (!result) {
@@ -48,28 +48,43 @@ export async function PUT(
       activity_description,
       issue_description,
       issue_type,
-      likelihood,
-      impact,
+      inherent_risk_likeliness,
+      inherent_risk_impact,
+      inherent_risk_score,
       control_description,
       control_type,
       control_owner,
       control_effectiveness,
-      residual_risk,
+      residual_risk_likeliness,
       status,
-      doc_status
+      doc_status,
+      control_progress,
+      control_target_date,
+      residual_risk_impact,
+      residual_risk_overall_score,
+      file_url,
+      file_name,
+      file_size,
+      file_type
     } = data;
 
     const result = await query(`
       UPDATE racm_matrix SET
         process_name = ?, activity_description = ?, issue_description = ?,
-        issue_type = ?, likelihood = ?, impact = ?, control_description = ?,
-        control_type = ?, control_owner = ?, control_effectiveness = ?,
-        residual_risk = ?, status = ?, doc_status = ?, updated_at = NOW()
-      WHERE id = ? AND business_area = ?
+        issue_type = ?, inherent_risk_likeliness = ?, inherent_risk_impact = ?, 
+        inherent_risk_score = ?, control_description = ?, control_type = ?, 
+        control_owner = ?, control_effectiveness = ?, residual_risk_likeliness = ?, 
+        status = ?, doc_status = ?, control_progress = ?, control_target_date = ?,
+        residual_risk_impact = ?, residual_risk_overall_score = ?, file_url = ?,
+        file_name = ?, file_size = ?, file_type = ?, updated_at = NOW()
+      WHERE id = ? AND business_area = ? AND deleted_at IS NULL
     `, [
       process_name, activity_description, issue_description, issue_type,
-      likelihood, impact, control_description, control_type, control_owner,
-      control_effectiveness, residual_risk, status, doc_status, id, userBusinessArea
+      inherent_risk_likeliness, inherent_risk_impact, inherent_risk_score,
+      control_description, control_type, control_owner, control_effectiveness,
+      residual_risk_likeliness, status, doc_status, control_progress,
+      control_target_date, residual_risk_impact, residual_risk_overall_score,
+      file_url, file_name, file_size, file_type, id, userBusinessArea
     ]);
 
     if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
@@ -77,7 +92,7 @@ export async function PUT(
     }
 
     const [updatedControl] = await query(`
-      SELECT * FROM racm_matrix WHERE id = ? AND business_area = ?
+      SELECT * FROM racm_matrix WHERE id = ? AND business_area = ? AND deleted_at IS NULL
     `, [id, userBusinessArea]);
 
     return NextResponse.json(updatedControl);

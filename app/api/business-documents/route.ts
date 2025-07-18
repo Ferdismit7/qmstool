@@ -26,7 +26,8 @@ export async function GET(request: NextRequest) {
       where: {
         business_area: {
           in: userBusinessAreas
-        }
+        },
+        deleted_at: null // Filter out soft deleted records
       },
       include: {
         businessareas: true
@@ -208,7 +209,8 @@ export async function PUT(request: NextRequest) {
         id: Number(id),
         business_area: {
           in: userBusinessAreas
-        }
+        },
+        deleted_at: null // Only update non-deleted records
       },
       data: updateData
     });
@@ -269,7 +271,8 @@ export async function DELETE(request: NextRequest) {
         id: Number(id),
         business_area: {
           in: userBusinessAreas
-        }
+        },
+        deleted_at: null // Only delete non-deleted records
       }
     });
 

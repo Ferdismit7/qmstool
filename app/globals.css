@@ -5,4 +5,40 @@
 */
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
+
+/* CSS Custom Properties for brand colors */
+:root {
+  --color-brand-primary: #e11b22;
+  --color-brand-dark: #003366;
+  --color-brand-accent1: #fcd3c1;
+  --color-brand-accent2: #c1e6ed;
+  --color-brand-white: #ffffff;
+  --color-brand-gray1: #4d4d4f;
+  --color-brand-gray2: #8a8c8e;
+  --color-brand-gray3: #c7c8ca;
+  --color-brand-black1: #000000d9;
+}
+
+/* Global styles */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Calibri', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  background-color: #4d4d4f;
+  color: #ffffff;
+}
+
+/* Ensure proper rendering */
+* {
+  box-sizing: border-box;
+}
+
+/* Custom utility classes */
+.bg-gray-750 {
+  background-color: #374151;
+} 
