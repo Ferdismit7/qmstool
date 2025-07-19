@@ -2,22 +2,37 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
-import SidebarNav from './SidebarNav';
+import SidebarNav, { MobileMenuButton } from './SidebarNav';
 import LogoutButton from './LogoutButton';
 import Link from 'next/link';
 
-const SIDEBAR_WIDTH = 'w-56'; // 14rem
+
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Check if we should show the sidebar (exclude dashboard and auth pages)
   const shouldShowSidebar = pathname !== '/dashboard' && pathname !== '/auth';
+
+  // Handle sidebar toggle
+  const handleSidebarToggle = () => {
+    console.log('Sidebar toggle clicked, current state:', sidebarOpen);
+    setSidebarOpen(prev => {
+      const newState = !prev;
+      console.log('Setting sidebar state to:', newState);
+      return newState;
+    });
+  };
+
+  // Handle sidebar close
+  const handleSidebarClose = () => {
+    console.log('Sidebar close called, current state:', sidebarOpen);
+    setSidebarOpen(false);
+  };
 
   // Helper function to get token from all possible sources
   const getAuthToken = () => {
@@ -187,21 +202,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return initial;
   };
 
-  // GUARD: Don't render anything until auth is known
-  if (isLoading) return null;
-  if (!user && pathname !== '/auth') return null;
-
   // Show loading state while checking authentication
   if (isLoading) {
     return (
       <div className="flex h-full bg-brand-gray1">
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="relative z-10 flex h-16 flex-shrink-0 items-center justify-between border-b border-brand-gray2/50 bg-brand-gray1 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-2xl font-bold text-brand-white">Quality Management Systems</h1>
-            <div className="flex items-center gap-4">
-              <div className="animate-pulse bg-brand-gray2 h-6 w-6 rounded"></div>
-              <div className="animate-pulse bg-brand-gray2 h-8 w-8 rounded-full"></div>
-              <LogoutButton />
+          <header className="relative z-10 flex-shrink-0 border-b border-brand-gray2/50 bg-brand-gray1">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 sm:py-3">
+                <div className="flex items-center mb-4 sm:mb-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-brand-white truncate">Quality Management Systems</h1>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="animate-pulse bg-brand-gray2 h-6 w-6 rounded"></div>
+                  <div className="animate-pulse bg-brand-gray2 h-8 w-8 rounded-full"></div>
+                  <LogoutButton />
+                </div>
+              </div>
             </div>
           </header>
           <main className="flex-1 overflow-y-auto bg-brand-gray1 p-4">
@@ -212,64 +229,108 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Redirect to auth if no user and not on auth page
+  if (!user && pathname !== '/auth') {
+    router.replace('/auth');
+    return (
+      <div className="flex h-full bg-brand-gray1">
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <header className="relative z-10 flex-shrink-0 border-b border-brand-gray2/50 bg-brand-gray1">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 sm:py-3">
+                <div className="flex items-center mb-4 sm:mb-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-brand-white truncate">Quality Management Systems</h1>
+                </div>
+              </div>
+            </div>
+          </header>
+          <main className="flex-1 overflow-y-auto bg-brand-gray1 p-4">
+            <div className="flex items-center justify-center h-full">
+              <div className="text-brand-white">Redirecting to login...</div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full bg-brand-gray1">
-      {/* Fixed-width Sidebar */}
-      {shouldShowSidebar && (
-        <aside className={`h-full ${SIDEBAR_WIDTH} flex-shrink-0`}>
-          <SidebarNav />
-        </aside>
-      )}
+      {/* Responsive Sidebar - Always render but control visibility */}
+      <SidebarNav 
+        isOpen={shouldShowSidebar ? sidebarOpen : false} 
+        onClose={handleSidebarClose} 
+      />
 
       {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Header */}
-        <header
-          className={`relative z-10 flex h-16 flex-shrink-0 items-center justify-between border-b border-brand-gray2/50 bg-brand-gray1 px-4 sm:px-6 lg:px-8`}
-        >
-          <h1 className="text-2xl font-bold text-brand-white">Quality Management Systems</h1>
-          <div className="flex items-center gap-4">
-            {user && (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="text-white hover:text-blue-400 transition-colors"
-                  aria-label="Go to home page"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-6 h-6"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+        {/* Responsive Header Banner */}
+        <header className="relative z-10 flex-shrink-0 border-b border-brand-gray2/50 bg-brand-gray1">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 sm:py-3">
+              {/* Logo/Title Section */}
+              <div className="flex items-center mb-4 sm:mb-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-brand-white truncate">
+                  Quality Management Systems
+                </h1>
+              </div>
+
+              {/* Navigation Buttons */}
+              {user && (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                  {/* Mobile Menu Button */}
+                  {shouldShowSidebar && (
+                    <MobileMenuButton 
+                      onClick={handleSidebarToggle} 
+                      isOpen={sidebarOpen} 
                     />
-                  </svg>
-                </Link>
-                <Link
-                  href="/operational-report/business-areas"
-                  className="ml-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 font-medium text-sm transition-colors"
-                  aria-label="View Business Areas"
-                >
-                  Business Areas
-                </Link>
-              </>
-            )}
-            {user && (
-              <Link
-                href="/profile/edit"
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
-                aria-label="Edit user profile"
-              >
-                {getInitials(user.username)}
-              </Link>
-            )}
-            <LogoutButton />
+                  )}
+
+                  {/* Home and Business Areas - Stack on mobile, inline on desktop */}
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Link
+                      href="/dashboard"
+                      className="flex items-center justify-center w-10 h-10 sm:w-8 sm:h-8 rounded-lg sm:rounded-full bg-brand-gray2/50 hover:bg-brand-gray2 text-white hover:text-blue-400 transition-colors"
+                      aria-label="Go to home page"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-5 h-5 sm:w-6 sm:h-6"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+                        />
+                      </svg>
+                    </Link>
+                    <Link
+                      href="/operational-report/business-areas"
+                      className="px-3 py-2 sm:px-3 sm:py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 font-medium text-sm transition-colors whitespace-nowrap"
+                      aria-label="View Business Areas"
+                    >
+                      Business Areas
+                    </Link>
+                  </div>
+
+                  {/* Profile and Logout - Always on the right */}
+                  <div className="flex items-center gap-2 sm:gap-3 ml-auto sm:ml-0">
+                    <Link
+                      href="/profile/edit"
+                      className="flex items-center justify-center w-10 h-10 sm:w-8 sm:h-8 rounded-lg sm:rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
+                      aria-label="Edit user profile"
+                    >
+                      {getInitials(user.username)}
+                    </Link>
+                    <LogoutButton />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
         

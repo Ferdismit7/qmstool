@@ -16,7 +16,7 @@ export async function GET(
 
     // First verify the risk management control exists and user has access, and get creation date
     const [control] = await query(`
-      SELECT id, created_at, inherent_risk_score, residual_risk_overall_score FROM racm_matrix 
+      SELECT id, created_at, inherent_risk_score FROM racm_matrix 
       WHERE id = ? AND business_area = ? AND deleted_at IS NULL
     `, [id, userBusinessArea]);
     
@@ -24,13 +24,12 @@ export async function GET(
       return NextResponse.json({ error: 'Risk management control not found' }, { status: 404 });
     }
 
-    // Fetch history data
+    // Fetch history data (only inherent risk scores)
     const historyData = await query(`
       SELECT 
         id,
         racm_matrix_id,
         inherent_risk_score,
-        residual_risk_overall_score,
         change_date,
         change_type,
         created_at
@@ -43,7 +42,6 @@ export async function GET(
     return NextResponse.json({
       creation: {
         inherent_risk_score: control.inherent_risk_score,
-        residual_risk_overall_score: control.residual_risk_overall_score,
         created_at: control.created_at
       },
       history: historyData

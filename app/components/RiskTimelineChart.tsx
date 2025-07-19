@@ -28,7 +28,6 @@ interface RiskHistoryData {
   id: number;
   racm_matrix_id: number;
   inherent_risk_score: number | null;
-  residual_risk_overall_score: number | null;
   change_date: string;
   change_type: 'created' | 'updated';
   created_at: string;
@@ -36,7 +35,6 @@ interface RiskHistoryData {
 
 interface RiskCreationData {
   inherent_risk_score: number | null;
-  residual_risk_overall_score: number | null;
   created_at: string;
 }
 
@@ -80,13 +78,10 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
       return { labels: [], datasets: [] };
     }
 
-    console.log('Timeline data:', timelineData);
-    
-    // Create the creation point
+    // Create the creation point (baseline from racm_matrix)
     const creationPoint = {
       change_date: timelineData.creation.created_at,
       inherent_risk_score: timelineData.creation.inherent_risk_score,
-      residual_risk_overall_score: timelineData.creation.residual_risk_overall_score,
       change_type: 'created'
     };
 
@@ -97,14 +92,11 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
     const sortedData = allData.sort((a, b) => 
       new Date(a.change_date).getTime() - new Date(b.change_date).getTime()
     );
-    console.log('Sorted data:', sortedData);
 
     // Get all unique dates from the data
     const allDates = sortedData.map(record => new Date(record.change_date));
     const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
     const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
-    
-    console.log('Date range:', { minDate, maxDate });
 
     // Create labels for each month from min date to max date
     const labels: string[] = [];
@@ -116,16 +108,11 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
       currentDate.setMonth(currentDate.getMonth() + 1);
     }
 
-    console.log('Generated labels:', labels);
-
-    // Generate scores for each month - only show data points where changes actually occurred
+    // Generate scores for each month with continuity logic
     const inherentScores: (number | null)[] = [];
-    const residualScores: (number | null)[] = [];
+    let currentScore: number | null = null;
 
     for (let i = 0; i < labels.length; i++) {
-      let inherentScore: number | null = null;
-      let residualScore: number | null = null;
-
       // Check if there's a record for this specific month
       const currentMonthDate = new Date(minDate);
       currentMonthDate.setMonth(currentMonthDate.getMonth() + i);
@@ -140,18 +127,14 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
       });
 
       if (recordsForThisMonth.length > 0) {
-        // Use the most recent record for this month
+        // Use the most recent record for this month (latest change)
         const mostRecentRecord = recordsForThisMonth[recordsForThisMonth.length - 1];
-        inherentScore = mostRecentRecord.inherent_risk_score;
-        residualScore = mostRecentRecord.residual_risk_overall_score;
+        currentScore = mostRecentRecord.inherent_risk_score;
       }
+      // If no record for this month, keep the previous score (continuity)
 
-      inherentScores.push(inherentScore);
-      residualScores.push(residualScore);
+      inherentScores.push(currentScore);
     }
-    
-    console.log('Generated inherent scores:', inherentScores);
-    console.log('Generated residual scores:', residualScores);
 
     const chartData = {
       labels: labels,
@@ -164,20 +147,10 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
           tension: 0.1,
           pointRadius: 4,
           pointHoverRadius: 6,
-        },
-        {
-          label: 'Residual Risk Score',
-          data: residualScores,
-          borderColor: 'rgb(54, 162, 235)',
-          backgroundColor: 'rgba(54, 162, 235, 0.5)',
-          tension: 0.1,
-          pointRadius: 4,
-          pointHoverRadius: 6,
         }
       ]
     };
     
-    console.log('Generated chart data:', chartData);
     return chartData;
   };
 
@@ -245,7 +218,7 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
         },
         ticks: {
           color: '#ffffff',
-          stepSize: 5
+          stepSize: 2
         },
         grid: {
           color: 'rgba(255, 255, 255, 0.1)'
@@ -284,8 +257,6 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
   }
 
   const chartData = generateTimelineData();
-  
-  console.log('Rendering chart with data:', chartData);
 
   // Create a simple test chart data to verify Chart.js is working
   const testChartData = {
@@ -303,14 +274,7 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-      <div className="mb-4 text-white">
-        <h3 className="text-lg font-semibold mb-2">Debug Info:</h3>
-        <p>History data length: {timelineData?.history.length || 0}</p>
-        <p>Chart data labels: {chartData.labels.length}</p>
-        <p>Chart data datasets: {chartData.datasets.length}</p>
-      </div>
-      
-      <div className="h-80">
+      <div className="h-96">
         {chartData.labels.length > 0 ? (
           <Line data={chartData} options={chartOptions} />
         ) : (
@@ -327,7 +291,6 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
       </div>
       <div className="mt-4 text-sm text-gray-400">
         <p>• Inherent Risk Score: Risk level before controls are applied</p>
-        <p>• Residual Risk Score: Risk level after controls are implemented</p>
         <p>• Timeline shows monthly progression of risk scores</p>
       </div>
     </div>

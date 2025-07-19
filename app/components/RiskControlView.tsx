@@ -154,98 +154,73 @@ export default function RiskControlView({ control, onClose }: RiskControlViewPro
         </div>
       </div>
 
-      {/* Details Grid */}
+      {/* Details Grid - Activity and Control side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="space-y-6">
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4">Activity Details</h3>
-            <div className="space-y-4">
-              <div>
-                <span className="text-sm text-gray-400 uppercase tracking-wide">Activity Description</span>
-                <p className="text-white mt-1">{control.activity_description || 'Not specified'}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-400 uppercase tracking-wide">Issue Description</span>
-                <p className="text-white mt-1">{control.issue_description}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-400 uppercase tracking-wide">Issue Type</span>
-                <p className="text-white mt-1">{control.issue_type || 'Not specified'}</p>
-              </div>
+        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+          <h3 className="text-lg font-semibold text-white mb-4">Activity Details</h3>
+          <div className="space-y-4">
+            <div>
+              <span className="text-sm text-gray-400 uppercase tracking-wide">Activity Description</span>
+              <p className="text-white mt-1">{control.activity_description || 'Not specified'}</p>
             </div>
-          </div>
-
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4">Control Information</h3>
-            <div className="space-y-4">
-              <div>
-                <span className="text-sm text-gray-400 uppercase tracking-wide">Control Description</span>
-                <p className="text-white mt-1">{control.control_description || 'Not specified'}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-sm text-gray-400 uppercase tracking-wide">Control Type</span>
-                  <p className="text-white mt-1">{control.control_type || 'Not specified'}</p>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-400 uppercase tracking-wide">Control Owner</span>
-                  <p className="text-white mt-1">{control.control_owner || 'Not specified'}</p>
-                </div>
-              </div>
-              <div>
-                <span className="text-sm text-gray-400 uppercase tracking-wide">Progress</span>
-                <div className="flex items-center mt-1">
-                  <div className="w-full bg-gray-700 rounded-full h-2 mr-3">
-                    <div 
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${control.control_progress}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-white font-semibold">{control.control_progress}%</span>
-                </div>
-              </div>
-              {control.control_target_date && (
-                <div>
-                  <span className="text-sm text-gray-400 uppercase tracking-wide">Target Date</span>
-                  <p className="text-white mt-1">{new Date(control.control_target_date).toLocaleDateString()}</p>
-                </div>
-              )}
+            <div>
+              <span className="text-sm text-gray-400 uppercase tracking-wide">Issue Description</span>
+              <p className="text-white mt-1">{control.issue_description}</p>
+            </div>
+            <div>
+              <span className="text-sm text-gray-400 uppercase tracking-wide">Issue Type</span>
+              <p className="text-white mt-1">{control.issue_type || 'Not specified'}</p>
             </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Timeline Chart */}
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4">Risk Score Timeline</h3>
-            <RiskTimelineChart 
-              riskId={control.id} 
-              processName={control.process_name} 
-            />
-          </div>
-
-          {/* Metadata */}
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold text-white mb-4">Record Information</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Created:</span>
-                <span className="text-white">{new Date(control.created_at).toLocaleDateString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Last Updated:</span>
-                <span className="text-white">{new Date(control.updated_at).toLocaleDateString()}</span>
-              </div>
-              {control.file_name && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Attached File:</span>
-                  <span className="text-blue-400">{control.file_name}</span>
-                </div>
-              )}
+        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+          <h3 className="text-lg font-semibold text-white mb-4">Control Information</h3>
+          <div className="space-y-4">
+            <div>
+              <span className="text-sm text-gray-400 uppercase tracking-wide">Control Description</span>
+              <p className="text-white mt-1">{control.control_description || 'Not specified'}</p>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-sm text-gray-400 uppercase tracking-wide">Control Type</span>
+                <p className="text-white mt-1">{control.control_type || 'Not specified'}</p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-400 uppercase tracking-wide">Control Owner</span>
+                <p className="text-white mt-1">{control.control_owner || 'Not specified'}</p>
+              </div>
+            </div>
+            <div>
+              <span className="text-sm text-gray-400 uppercase tracking-wide">Progress</span>
+              <div className="flex items-center mt-1">
+                <div className="w-full bg-gray-700 rounded-full h-2 mr-3">
+                  <div 
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${control.control_progress}%` }}
+                  ></div>
+                </div>
+                <span className="text-white font-semibold">{control.control_progress}%</span>
+              </div>
+            </div>
+            {control.control_target_date && (
+              <div>
+                <span className="text-sm text-gray-400 uppercase tracking-wide">Target Date</span>
+                <p className="text-white mt-1">{new Date(control.control_target_date).toLocaleDateString()}</p>
+              </div>
+            )}
           </div>
-                 </div>
-       </div>
+        </div>
+      </div>
+
+      {/* Risk Score Timeline - Full Width at Bottom */}
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <h3 className="text-lg font-semibold text-white mb-4">Risk Score Timeline</h3>
+        <RiskTimelineChart 
+          riskId={control.id} 
+          processName={control.process_name} 
+        />
+      </div>
      </div>
    </div>
  );
