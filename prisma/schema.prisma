@@ -312,6 +312,39 @@ model QMSSection {
   @@map("qms_sections")
 }
 
+model ThirdPartyEvaluation {
+  id                        Int      @id @default(autoincrement())
+  supplier_name             String   @db.VarChar(100)
+  business_area             String   @db.VarChar(100)
+  evaluation_system_in_place String  @db.VarChar(20)
+  document_reference        String?  @db.Text
+  last_evaluation_date      DateTime? @db.Date
+  status_percentage         Decimal? @db.Decimal(5, 0)
+  doc_status                String   @db.VarChar(20)
+  progress                  String   @db.VarChar(20)
+  notes                     String?  @db.Text
+  created_at                DateTime @default(now()) @db.Timestamp(0)
+  updated_at                DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  @@map("third_party_evaluations")
+}
+
+model CustomerFeedbackSystem {
+  id                  Int      @id @default(autoincrement())
+  business_area       String   @db.VarChar(100)
+  has_feedback_system String   @db.VarChar(20)
+  document_reference  String?  @db.Text
+  last_review_date    DateTime? @db.Date
+  status_percentage   Decimal? @db.Decimal(5, 0)
+  doc_status          String   @db.VarChar(20)
+  progress            String   @db.VarChar(20)
+  notes               String?  @db.Text
+  created_at          DateTime @default(now()) @db.Timestamp(0)
+  updated_at          DateTime @default(now()) @updatedAt @db.Timestamp(0)
+
+  @@map("customer_feedback_systems")
+}
+
 model QMSStatusOption {
   code    QMSStatus @id
   meaning String?   @db.VarChar(100)

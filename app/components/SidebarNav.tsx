@@ -61,6 +61,16 @@ export default function SidebarNav({ isOpen = false, onClose }: SidebarNavProps)
       label: 'Risk Management'
     },
     {
+      href: '/third-party-evaluations',
+      icon: FiBarChart2,
+      label: 'Third-Party Evaluations'
+    },
+    {
+      href: '/customer-feedback-systems',
+      icon: FiBarChart2,
+      label: 'Customer Feedback Systems'
+    },
+    {
       href: '/qms-status-overview',
       icon: FiBarChart2,
       label: 'QMS Status Overview'
