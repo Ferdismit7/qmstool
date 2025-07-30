@@ -25,10 +25,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get('authToken')?.value;
+  // Check for token in cookies first
+  let token = request.cookies.get('authToken')?.value;
+  console.log('Token from cookies:', token ? 'Found' : 'Not found');
+
+  // If not in cookies, check Authorization header
+  if (!token) {
+    const authHeader = request.headers.get('authorization');
+    console.log('Authorization header:', authHeader);
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      console.log('Token from Authorization header:', token ? 'Found' : 'Not found');
+    }
+  }
 
   if (!token) {
-    console.log('No token found, redirecting to auth');
+    console.log('No token found in cookies or headers, redirecting to auth');
     return NextResponse.redirect(new URL('/auth', request.url));
   }
 

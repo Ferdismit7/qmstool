@@ -6,8 +6,6 @@ import SidebarNav, { MobileMenuButton } from './SidebarNav';
 import LogoutButton from './LogoutButton';
 import Link from 'next/link';
 
-
-
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -150,11 +148,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     };
 
     // Add a small delay to ensure DOM is ready and cookies are accessible
-    // Use a shorter delay for better user experience
     const timer = setTimeout(initializeAuth, 50);
     
     return () => clearTimeout(timer);
-  }, [fetchUserData]); // Add fetchUserData to dependencies
+  }, [fetchUserData]);
 
   // Listen for storage changes (when authToken is updated)
   useEffect(() => {
@@ -188,13 +185,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('tokenChange', handleTokenChange);
     };
-  }, [fetchUserData]); // Add fetchUserData to dependencies
+  }, [fetchUserData]);
 
   useEffect(() => {
     if (!isLoading && !user && pathname !== '/auth') {
       router.replace('/auth');
     }
-  }, [isLoading, user, pathname, router]); // Add router to dependencies
+  }, [isLoading, user, pathname, router]);
 
   const getInitials = (username: string) => {
     const initial = username.charAt(0).toUpperCase();

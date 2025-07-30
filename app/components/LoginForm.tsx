@@ -7,6 +7,24 @@ interface LoginFormProps {
   onToggleForm: () => void;
 }
 
+// Helper function to store token in all locations for consistency
+const storeToken = (token: string, rememberMe: boolean = false) => {
+  if (rememberMe) {
+    localStorage.setItem('authToken', token);
+  } else {
+    sessionStorage.setItem('authToken', token);
+  }
+  
+  // Also store in cookie for server-side access
+  // Use more compatible cookie settings for production
+  const expires = rememberMe ? '; expires=Fri, 31 Dec 9999 23:59:59 GMT' : '';
+  const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const secureFlag = isSecure ? '; secure' : '';
+  document.cookie = `authToken=${token}; path=/; samesite=lax${secureFlag}${expires}`;
+  
+  console.log('Token stored in', rememberMe ? 'localStorage' : 'sessionStorage', 'and session cookie');
+};
+
 const LoginForm = ({ onToggleForm }: LoginFormProps) => {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -45,16 +63,8 @@ const LoginForm = ({ onToggleForm }: LoginFormProps) => {
       sessionStorage.removeItem('authToken');
       document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 
-      if (formData.rememberMe) {
-        localStorage.setItem('authToken', data.token);
-        document.cookie = `authToken=${data.token}; path=/; max-age=2592000;`;
-        console.log('Token stored in localStorage and persistent cookie (remember me enabled)');
-      } else {
-        sessionStorage.setItem('authToken', data.token);
-        document.cookie = `authToken=${data.token}; path=/;`;
-        localStorage.removeItem('authToken'); // Extra safety: always remove from localStorage
-        console.log('Token stored in sessionStorage and session cookie (remember me disabled)');
-      }
+      // Use the consistent token storage function
+      storeToken(data.token, formData.rememberMe);
 
       // Dispatch custom event to notify Layout component of user change
       window.dispatchEvent(new Event('tokenChange'));
