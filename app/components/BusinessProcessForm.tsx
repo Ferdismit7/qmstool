@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 type BusinessProcess = {
   id?: number;
+  business_area: string;
   sub_business_area: string;
   process_name: string;
   document_name: string;
@@ -34,14 +35,15 @@ export default function BusinessProcessForm({ mode, process }: Props) {
       target_date: process.target_date ? new Date(process.target_date).toISOString().split('T')[0] : '',
       review_date: process.review_date ? new Date(process.review_date).toISOString().split('T')[0] : ''
     } : {
+      business_area: '',
       sub_business_area: '',
       process_name: '',
       document_name: '',
       version: '1.0',
-      progress: 'NOT_STARTED',
-      doc_status: 'DRAFT',
+      progress: '',
+      doc_status: '',
       status_percentage: 0,
-      priority: 'MEDIUM',
+      priority: 'Medium',
       target_date: '',
       process_owner: '',
       remarks: '',
@@ -72,7 +74,7 @@ export default function BusinessProcessForm({ mode, process }: Props) {
           if (mode === 'create' && userData.businessAreas.length > 0) {
             setFormData(prev => ({
               ...prev,
-              sub_business_area: userData.businessAreas[0]
+              business_area: userData.businessAreas[0]
             }));
           }
         } else {
@@ -97,21 +99,39 @@ export default function BusinessProcessForm({ mode, process }: Props) {
       
       const method = mode === 'create' ? 'POST' : 'PUT';
       
-      console.log('Submitting form data:', formData);
+      // Transform snake_case form data to camelCase for API
+      const apiData = {
+        businessArea: formData.business_area,
+        subBusinessArea: formData.sub_business_area,
+        processName: formData.process_name,
+        documentName: formData.document_name,
+        version: formData.version,
+        progress: formData.progress,
+        docStatus: formData.doc_status,
+        statusPercentage: formData.status_percentage,
+        priority: formData.priority,
+        targetDate: formData.target_date,
+        processOwner: formData.process_owner,
+        remarks: formData.remarks,
+        reviewDate: formData.review_date
+      };
+      
+      console.log('Submitting API data:', apiData);
       
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(apiData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save business process');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save business process');
       }
 
-      router.push('/business-processes');
+      router.push('/processes');
       router.refresh();
     } catch (error) {
       console.error('Error:', error);
@@ -152,13 +172,13 @@ export default function BusinessProcessForm({ mode, process }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label htmlFor="sub_business_area" className="block text-sm font-medium text-brand-gray3 mb-2">
-            Sub Business Area
+          <label htmlFor="business_area" className="block text-sm font-medium text-brand-gray3 mb-2">
+            Business Area
           </label>
           <select
-            id="sub_business_area"
-            name="sub_business_area"
-            value={formData.sub_business_area}
+            id="business_area"
+            name="business_area"
+            value={formData.business_area}
             onChange={handleChange}
             required
             className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
@@ -168,6 +188,21 @@ export default function BusinessProcessForm({ mode, process }: Props) {
               <option key={area} value={area}>{area}</option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label htmlFor="sub_business_area" className="block text-sm font-medium text-brand-gray3 mb-2">
+            Sub Business Area
+          </label>
+          <input
+            type="text"
+            id="sub_business_area"
+            name="sub_business_area"
+            value={formData.sub_business_area}
+            onChange={handleChange}
+            placeholder="Enter sub business area"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white placeholder:text-brand-gray3 placeholder:italic focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+          />
         </div>
 
         <div>
@@ -227,11 +262,12 @@ export default function BusinessProcessForm({ mode, process }: Props) {
             onChange={handleChange}
             className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           >
-            <option value="NOT_STARTED">Not Started</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="ON_TRACK">On Track</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="DELAYED">Delayed</option>
+            <option value="">Select progress</option>
+            <option value="Not Started">Not Started</option>
+            <option value="On-Track">On-Track</option>
+            <option value="Completed">Completed</option>
+            <option value="Minor Challenges">Minor Challenges</option>
+            <option value="Major Challenges">Major Challenges</option>
           </select>
         </div>
 
@@ -246,11 +282,11 @@ export default function BusinessProcessForm({ mode, process }: Props) {
             onChange={handleChange}
             className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           >
-            <option value="DRAFT">Draft</option>
-            <option value="REVIEW">Review</option>
-            <option value="APPROVED">Approved</option>
-            <option value="PUBLISHED">Published</option>
-            <option value="ARCHIVED">Archived</option>
+            <option value="">Select status</option>
+            <option value="To be reviewed">To be reviewed</option>
+            <option value="In progress">In progress</option>
+            <option value="New">New</option>
+            <option value="Completed">Completed</option>
           </select>
         </div>
 
@@ -282,10 +318,10 @@ export default function BusinessProcessForm({ mode, process }: Props) {
             onChange={handleChange}
             className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
           >
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
-            <option value="CRITICAL">Critical</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="Critical">Critical</option>
           </select>
         </div>
 

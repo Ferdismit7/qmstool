@@ -1,35 +1,66 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import BusinessDocumentForm from '../components/BusinessDocumentForm';
-import BusinessDocumentTable from '../components/BusinessDocumentTable';
-import { BusinessDocument } from '../types/businessDocument';
-import { FaPlus } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import Notification from '../components/Notification';
 
-const DOC_STATUS = ['New', 'In Progress', 'Completed', 'To be reviewed'] as const;
-const PROGRESS_STATUS = ['Completed', 'On-Track', 'Minor Challenges', 'Major Challenges'] as const;
-const PRIORITY = ['Low', 'Medium', 'High'] as const;
+interface BusinessDocument {
+  id: number;
+  business_area: string;
+  sub_business_area?: string;
+  document_name: string;
+  name_and_numbering?: string;
+  document_type?: string;
+  version?: string;
+  progress?: string;
+  doc_status?: string;
+  status_percentage?: number;
+  priority?: string;
+  target_date?: string;
+  document_owner?: string;
+  update_date?: string;
+  remarks?: string;
+  review_date?: string;
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  file_type?: string;
+  uploaded_at?: string;
+}
 
 export default function DocumentsPage() {
-  const [showForm, setShowForm] = useState(false);
-  const [editData, setEditData] = useState<BusinessDocument | null>(null);
+  const router = useRouter();
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<BusinessDocument | null>(null);
+  const [notification, setNotification] = useState({
+    isOpen: false,
+    type: 'success' as 'success' | 'error',
+    title: '',
+    message: ''
+  });
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
-  // Fetch all documents
   const fetchDocuments = async () => {
-    setLoading(true);
-    setDocuments([]); // Clear old data before fetching new
     try {
-      const response = await fetch(`/api/business-documents?ts=${Date.now()}`);
-      if (!response.ok) throw new Error('Failed to fetch documents');
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch('/api/business-documents');
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents');
+      }
       const data = await response.json();
-      console.log('Fetched documents:', data); // Debug log
       setDocuments(data);
-    } catch {
-      // Optionally handle error
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch documents');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -37,206 +68,380 @@ export default function DocumentsPage() {
     fetchDocuments();
   }, []);
 
-  // Dashboard metrics
-  const totalDocuments = documents.length;
-  
-  // Calculate overall progress by averaging all document status percentages
-  const overallProgress = documents.length > 0
-    ? Math.round(
-        documents.reduce((sum, doc) => {
-          const percentage = Number(doc.status_percentage) || 0;
-          return sum + percentage;
-        }, 0) / documents.length
-      )
-    : 0;
-  
-  console.log('Calculated overall progress:', overallProgress); // Debug log
-
-  // Calculate counts for each option
-  const statusCounts = documents.reduce((acc, doc) => {
-    acc[doc.doc_status] = (acc[doc.doc_status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const progressCounts = documents.reduce((acc, doc) => {
-    acc[doc.progress] = (acc[doc.progress] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const priorityCounts = documents.reduce((acc, doc) => {
-    acc[doc.priority] = (acc[doc.priority] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const handleAdd = () => {
-    setEditData(null);
-    setShowForm(true);
-  };
-
-  const handleFormClose = () => setShowForm(false);
-
-  const handleFormSubmit = async (data: BusinessDocument) => {
-    try {
-      const method = editData ? 'PUT' : 'POST';
-      const url = editData 
-        ? `/api/business-documents?id=${editData.id}`
-        : '/api/business-documents';
-
-      console.log('Submitting data:', data);
-      console.log('Using URL:', url);
-      console.log('Using method:', method);
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Server error response:', errorData);
-        throw new Error(errorData.details || 'Failed to save document');
-      }
-      
-      const result = await response.json();
-      console.log('Server response:', result);
-      
-      setShowForm(false);
-      setEditData(null); // Clear edit data after successful save
-      await fetchDocuments(); // Refresh table after add/edit
-    } catch (error) {
-      console.error('Error saving document:', error);
-      alert('Failed to save document. Please try again.');
+  const getStatusColor = (status: string) => {
+    switch (status?.toUpperCase()) {
+      case 'ACTIVE':
+      case 'APPROVED':
+        return 'bg-green-100 text-green-800';
+      case 'DRAFT':
+      case 'IN_PROGRESS':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'REVIEW':
+      case 'PENDING':
+        return 'bg-blue-100 text-blue-800';
+      case 'EXPIRED':
+      case 'ARCHIVED':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleEdit = (document: BusinessDocument) => {
-    // Format dates for the form
-    const isValidDate = (date: unknown) => {
-      if (!date) return false;
-      const d = new Date(date as string);
-      return d instanceof Date && !isNaN(d.getTime());
-    };
-
-    const safeFormatDate = (date: unknown) => {
-      if (!isValidDate(date)) return '';
-      return new Date(date as string).toISOString().split('T')[0];
-    };
-
-    const formattedDocument = {
-      ...document,
-      target_date: safeFormatDate(document.target_date),
-      review_date: safeFormatDate(document.review_date),
-      update_date: safeFormatDate(document.update_date),
-      status_percentage: document.status_percentage
-    };
-    setEditData(formattedDocument);
-    setShowForm(true);
+  const getProgressColor = (progress: string) => {
+    switch (progress?.toUpperCase()) {
+      case 'COMPLETED':
+      case 'FINISHED':
+        return 'bg-green-100 text-green-800';
+      case 'IN_PROGRESS':
+      case 'ONGOING':
+        return 'bg-blue-100 text-blue-800';
+      case 'NOT_STARTED':
+      case 'PENDING':
+        return 'bg-gray-100 text-gray-800';
+      case 'ON_HOLD':
+      case 'SUSPENDED':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toUpperCase()) {
+      case 'CRITICAL':
+        return 'bg-red-100 text-red-800';
+      case 'HIGH':
+        return 'bg-orange-100 text-orange-800';
+      case 'MEDIUM':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'LOW':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleDeleteClick = (document: BusinessDocument) => {
+    setDocumentToDelete(document);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!documentToDelete) return;
+
+    try {
+      const response = await fetch(`/api/business-documents?id=${documentToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete document');
+      }
+
+      await fetchDocuments();
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Success',
+        message: 'Document deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to delete document'
+      });
+    } finally {
+      setShowDeleteModal(false);
+      setDocumentToDelete(null);
+    }
+  };
+
+  const handleDropdownToggle = (documentId: number) => {
+    setOpenDropdown(openDropdown === documentId ? null : documentId);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdown !== null) {
+        const target = event.target as Element;
+        if (!target.closest('.dropdown-overlay')) {
+          setOpenDropdown(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdown]);
+
+  const handleViewDocument = (documentId: number) => {
+    router.push(`/documents/${documentId}`);
+  };
+
+  const handleEditDocument = (documentId: number) => {
+    router.push(`/documents/${documentId}/edit`);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-800">Error: {error}</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-full">
-      <div className="w-full py-8">
-        <div className="w-full px-2">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-            <h1 className="text-3xl font-bold text-brand-white">Business Document Registry</h1>
-            <button
-              onClick={handleAdd}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-blue text-brand-white hover:bg-brand-blue/90 transition-colors"
-            >
-              <FaPlus /> Add Document
-            </button>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-brand-white">Business Document Registry</h1>
+          <p className="text-brand-gray3 mt-1">Manage and track all business documents</p>
+        </div>
+        <Link
+          href="/documents/new"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
+        >
+          <FiPlus size={16} />
+          Add Document
+        </Link>
+      </div>
 
-          {/* Dashboard Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-gray-800 rounded-lg p-6 flex items-center justify-between">
-              <div>
-                <h3 className="text-gray-400 text-sm font-medium mb-1">Overall Progress</h3>
-                <p className="text-4xl font-extrabold text-white">{overallProgress}%</p>
-              </div>
-              <div className="border-l border-gray-700 pl-6 ml-6">
-                <h3 className="text-gray-400 text-sm font-medium mb-1">Total Documents</h3>
-                <p className="text-4xl font-extrabold text-white">{totalDocuments}</p>
-            </div>
-            </div>
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h3 className="text-gray-400 text-sm font-medium mb-2">Priority</h3>
-              <ul>
-                {PRIORITY.map(priority => (
-                  <li key={priority} className="text-white text-sm">
-                    <span className="font-semibold">{priority}</span>
-                    <span className="ml-2 text-blue-300">{priorityCounts[priority] || 0}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h3 className="text-gray-400 text-sm font-medium mb-2">Status</h3>
-              <ul>
-                {DOC_STATUS.map(status => (
-                  <li key={status} className="text-white text-sm">
-                    <span className="font-semibold">{status}</span>
-                    <span className="ml-2 text-blue-300">{statusCounts[status] || 0}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h3 className="text-gray-400 text-sm font-medium mb-2">Progress</h3>
-              <ul>
-                {PROGRESS_STATUS.map(progress => (
-                  <li key={progress} className="text-white text-sm">
-                    <span className="font-semibold">{progress}</span>
-                    <span className="ml-2 text-blue-300">{progressCounts[progress] || 0}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+      {/* Business Documents Table */}
+      <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 overflow-hidden">
+        <div className="overflow-x-auto min-w-full">
+          <div className="inline-block min-w-full align-middle">
+            <table className="min-w-full divide-y divide-brand-gray1">
+              <thead className="bg-brand-gray1/50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    Business Area
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    Document Name
+                  </th>
+                  <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    Document Type
+                  </th>
+                  <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    Priority
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    Progress
+                  </th>
+                  <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    Target Date
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brand-gray1">
+                {documents.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-brand-gray3">
+                      No business documents found. Create your first document to get started.
+                    </td>
+                  </tr>
+                ) : (
+                  documents.map((document) => (
+                    <tr key={document.id} className="hover:bg-brand-gray1/30">
+                      <td className="px-4 py-3">
+                        <div>
+                          <div className="text-sm font-medium text-brand-white">
+                            {document.business_area}
+                          </div>
+                          {document.sub_business_area && (
+                            <div className="text-xs text-brand-gray3 mt-1">
+                              {document.sub_business_area}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm font-medium text-brand-white">
+                          {document.document_name}
+                        </div>
+                        {document.version && (
+                          <div className="text-xs text-brand-gray3 mt-1">
+                            v{document.version}
+                          </div>
+                        )}
+                      </td>
+                      <td className="hidden md:table-cell px-4 py-3">
+                        <div className="text-sm text-brand-white">
+                          {document.document_type || 'Not specified'}
+                        </div>
+                        {document.name_and_numbering && (
+                          <div className="text-xs text-brand-gray3 mt-1">
+                            {document.name_and_numbering}
+                          </div>
+                        )}
+                      </td>
+                      <td className="hidden lg:table-cell px-4 py-3">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(document.priority || '')}`}>
+                          {document.priority || 'Not set'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div>
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(document.doc_status || '')}`}>
+                            {document.doc_status || 'Not set'}
+                          </span>
+                          <div className="text-xs text-brand-gray3 mt-1">
+                            {document.status_percentage || 0}%
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(document.progress || '')}`}>
+                          {document.progress || 'Not set'}
+                        </span>
+                      </td>
+                      <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white">
+                        {document.target_date ? (() => {
+                          const date = new Date(document.target_date);
+                          // Adjust for timezone offset
+                          const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+                          const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
+                          return adjustedDate.toLocaleDateString('en-GB');
+                        })() : 'Not set'}
+                      </td>
+                      <td className="px-4 py-3">
+                        {/* Desktop Actions */}
+                        <div className="hidden md:flex items-center space-x-2">
+                          <button
+                            onClick={() => handleViewDocument(document.id)}
+                            className="text-blue-400 hover:text-blue-300 transition-colors"
+                            title="View Details"
+                          >
+                            <FiEye size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleEditDocument(document.id)}
+                            className="text-green-400 hover:text-green-300 transition-colors"
+                            title="Edit Document"
+                          >
+                            <FiEdit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(document)}
+                            className="text-red-400 hover:text-red-300 transition-colors"
+                            title="Delete Document"
+                          >
+                            <FiTrash2 size={16} />
+                          </button>
+                        </div>
 
-          {/* Form Modal */}
-          {showForm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-brand-dark/90 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl border border-brand-gray2">
-                <div className="p-4 sm:p-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl sm:text-2xl font-bold text-brand-white">
-                      {editData ? 'Edit Document' : 'Add New Document'}
-                    </h2>
-                    <button
-                      onClick={handleFormClose}
-                      className="text-brand-white hover:text-brand-gray2 text-2xl"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <BusinessDocumentForm 
-                    onAdd={handleFormSubmit} 
-                    onClose={handleFormClose} 
-                    editData={editData ?? undefined}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+                        {/* Mobile Actions Dropdown */}
+                        <div className="md:hidden relative">
+                          <button
+                            onClick={() => handleDropdownToggle(document.id)}
+                            className="text-brand-gray3 hover:text-brand-white transition-colors"
+                          >
+                            <FiMoreVertical size={16} />
+                          </button>
 
-          {/* Table */}
-          <div className="w-full overflow-x-auto">
-            <div className="w-full px-0 py-0 mb-1 bg-brand-dark/15 rounded-lg shadow overflow-hidden">
-            <BusinessDocumentTable
-              documents={documents}
-              loading={loading}
-              onEdit={handleEdit}
-              refresh={fetchDocuments}
-            />
-            </div>
+                          {/* Mobile Overlay */}
+                          {openDropdown === document.id && (
+                            <div className="dropdown-overlay fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                              <div 
+                                className="bg-brand-dark border border-brand-gray2 rounded-lg p-6 w-full max-w-sm"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <h3 className="text-lg font-semibold text-brand-white mb-4">
+                                  Actions for &ldquo;{document.document_name}&rdquo;
+                                </h3>
+                                <div className="space-y-3">
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleViewDocument(document.id);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
+                                  >
+                                    <FiEye size={18} />
+                                    View Details
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleEditDocument(document.id);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
+                                  >
+                                    <FiEdit2 size={18} />
+                                    Edit Document
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleDeleteClick(document);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                  >
+                                    <FiTrash2 size={18} />
+                                    Delete Document
+                                  </button>
+                                  <button
+                                    onClick={() => setOpenDropdown(null)}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-gray3 hover:bg-brand-gray1/50 rounded-lg transition-colors"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setDocumentToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        itemName={documentToDelete?.document_name || ''}
+        itemType="business document"
+      />
+
+      {/* Notification */}
+      <Notification
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+      />
     </div>
   );
 } 

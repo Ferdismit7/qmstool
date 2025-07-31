@@ -101,18 +101,18 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   return (
     <div className="w-full">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-medium text-brand-white mb-2">
         {label}
       </label>
       
       {currentFile ? (
-        <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+        <div className="border border-brand-gray2 rounded-lg p-4 bg-brand-gray1/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <FiFile className="text-blue-500 text-xl" />
+              <FiFile className="text-brand-primary text-xl" />
               <div>
-                <p className="text-sm font-medium text-gray-900">{currentFile.name}</p>
-                <p className="text-xs text-gray-500">{formatFileSize(currentFile.size)}</p>
+                <p className="text-sm font-medium text-brand-white">{currentFile.name}</p>
+                <p className="text-xs text-brand-gray3">{formatFileSize(currentFile.size)}</p>
               </div>
             </div>
             <div className="flex space-x-2">
@@ -121,7 +121,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                   href={currentFile.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
+                  className="p-2 text-brand-primary hover:text-brand-primary/80 transition-colors"
                   title="Download file"
                 >
                   <FiDownload size={16} />
@@ -131,7 +131,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 type="button"
                 onClick={onFileRemove}
                 disabled={disabled}
-                className="p-2 text-red-600 hover:text-red-800 transition-colors disabled:opacity-50"
+                className="p-2 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
                 title="Remove file"
               >
                 <FiX size={16} />
@@ -143,8 +143,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
         <div
           className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
             dragActive
-              ? 'border-blue-400 bg-blue-50'
-              : 'border-gray-300 hover:border-gray-400'
+              ? 'border-brand-primary bg-brand-primary/10'
+              : 'border-brand-gray2 hover:border-brand-gray1'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
@@ -152,21 +152,21 @@ const FileUpload: React.FC<FileUploadProps> = ({
           onDrop={handleDrop}
           onClick={() => !disabled && fileInputRef.current?.click()}
         >
-          <FiUpload className="mx-auto text-gray-400 text-3xl mb-4" />
-          <p className="text-sm text-gray-600 mb-2">
-            <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
+          <FiUpload className="mx-auto text-brand-gray3 text-3xl mb-4" />
+          <p className="text-sm text-brand-gray3 mb-2">
+            <span className="font-medium text-brand-primary">Click to upload</span> or drag and drop
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-brand-gray3">
             Accepted formats: {accept.replace(/\./g, '').toUpperCase()}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-brand-gray3">
             Max size: {(maxSize / 1024 / 1024).toFixed(1)}MB
           </p>
         </div>
       )}
 
       {error && (
-        <p className="mt-2 text-sm text-red-600">{error}</p>
+        <p className="mt-2 text-sm text-red-400">{error}</p>
       )}
 
       <input

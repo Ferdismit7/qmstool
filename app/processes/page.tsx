@@ -1,184 +1,470 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ProcessForm from '../components/ProcessForm';
-import BusinessProcessTable from '../components/BusinessProcessTable';
-import type { BusinessProcessRegister, BusinessProcessRegisterInput } from '@/lib/types/businessProcessRegister';
-import { DOC_STATUS, PRIORITY, PROGRESS_STATUS } from '@/lib/types/businessProcessRegister';
-import businessProcessService from '../lib/services/businessProcessService';
-import { FaPlus } from 'react-icons/fa';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import Notification from '../components/Notification';
 
-// Calculate metrics for the dashboard
-const calculateMetrics = (processes: BusinessProcessRegister[]) => {
-  const totalProcesses = processes.length;
-  
-  // Calculate overall progress with proper validation
-  const overallProgress = totalProcesses > 0
-    ? Math.round(processes.reduce((sum, p) => {
-        // Ensure percentage is a valid number and cap at 100%
-        const percentage = Math.min(Math.max(Number(p.statusPercentage) || 0, 0), 100);
-        return sum + percentage;
-      }, 0) / totalProcesses)
-    : 0;
-
-  const priorityCounts = processes.reduce((acc, p) => {
-    acc[p.priority] = (acc[p.priority] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const statusCounts = processes.reduce((acc, p) => {
-    acc[p.docStatus] = (acc[p.docStatus] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const progressCounts = processes.reduce((acc, p) => {
-    acc[p.progress] = (acc[p.progress] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  return {
-    totalProcesses,
-    overallProgress,
-    priorityCounts,
-    statusCounts,
-    progressCounts
-  };
-};
+interface BusinessProcess {
+  id: number;
+  businessArea: string;
+  subBusinessArea?: string;
+  processName: string;
+  documentName?: string;
+  version?: string;
+  progress?: string;
+  docStatus?: string;
+  statusPercentage?: number;
+  priority?: string;
+  targetDate?: string;
+  processOwner?: string;
+  updateDate?: string;
+  remarks?: string;
+  reviewDate?: string;
+}
 
 export default function ProcessesPage() {
-  const [showForm, setShowForm] = useState(false);
-  const [editData, setEditData] = useState<BusinessProcessRegister | undefined>(undefined);
-  const [processes, setProcesses] = useState<BusinessProcessRegister[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const [processes, setProcesses] = useState<BusinessProcess[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchProcesses = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await businessProcessService.fetchAll();
-      setProcesses(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch processes');
-      console.error('Error fetching processes:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [processToDelete, setProcessToDelete] = useState<BusinessProcess | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     fetchProcesses();
   }, []);
 
-  const handleAdd = () => {
-    setEditData(undefined);
-    setShowForm(true);
-  };
-
-  const handleEdit = (process: BusinessProcessRegister) => {
-    setEditData(process);
-    setShowForm(true);
-  };
-
-  const handleFormClose = () => {
-    setShowForm(false);
-    setEditData(undefined);
-  };
-
-  const handleFormSubmit = async (formData: BusinessProcessRegisterInput) => {
-    setError(null);
+  const fetchProcesses = async () => {
     try {
-      await businessProcessService.save(formData, editData?.id);
-      setShowForm(false);
-      await fetchProcesses();
-      setEditData(undefined);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to save process');
-      console.error('Error saving process:', error);
+      setIsLoading(true);
+      const response = await fetch('/api/business-processes');
+      if (!response.ok) {
+        throw new Error('Failed to fetch business processes');
+      }
+      const data = await response.json();
+      setProcesses(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const metrics = calculateMetrics(processes);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Completed':
+        return 'bg-green-100 text-green-800';
+      case 'On-Track':
+        return 'bg-blue-100 text-blue-800';
+      case 'Minor Challenges':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Major Challenges':
+        return 'bg-red-100 text-red-800';
+      case 'Not Started':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getProgressColor = (progress: string) => {
+    switch (progress) {
+      case 'Completed':
+        return 'bg-green-100 text-green-800';
+      case 'In progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'To be reviewed':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'New':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'High':
+        return 'bg-red-100 text-red-800';
+      case 'Medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleDeleteClick = (process: BusinessProcess) => {
+    setProcessToDelete(process);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!processToDelete) return;
+
+    try {
+      const response = await fetch('/api/business-processes/soft-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: processToDelete.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete business process');
+      }
+
+      // Show success notification
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Success',
+        message: 'Business process successfully deleted'
+      });
+
+      // Refresh the processes list
+      fetchProcesses();
+      
+      // Close modal
+      setShowDeleteModal(false);
+      setProcessToDelete(null);
+      
+    } catch (error) {
+      console.error('Error deleting business process:', error);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to delete business process'
+      });
+    }
+  };
+
+  const handleDropdownToggle = (processId: number) => {
+    setOpenDropdown(openDropdown === processId ? null : processId);
+  };
+
+  const handleViewProcess = (processId: number) => {
+    console.log('View process clicked:', processId);
+    setOpenDropdown(null);
+    router.push(`/processes/${processId}`);
+  };
+
+  const handleEditProcess = (processId: number) => {
+    console.log('Edit process clicked:', processId);
+    setOpenDropdown(null);
+    router.push(`/processes/${processId}/edit`);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Don't close if clicking inside the dropdown
+      const target = event.target as Element;
+      if (target.closest('.dropdown-overlay')) {
+        return;
+      }
+      
+      if (openDropdown !== null) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdown]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-800">Error: {error}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-full py-8 mx-auto p-2 space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-brand-white">Business Process Registry</h1>
-        <button
-          onClick={handleAdd}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-blue text-brand-white hover:bg-brand-blue/90 transition-colors"
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-brand-white">Business Process Registry</h1>
+          <p className="text-brand-gray3 mt-1">Manage and track all business processes</p>
+        </div>
+        <Link
+          href="/processes/new"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
         >
-          <FaPlus /> Add Process
-        </button>
+          <FiPlus size={16} />
+          Add Process
+        </Link>
       </div>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <span className="block sm:inline">{error}</span>
-        </div>
-      )}
+      {/* Business Processes Table */}
+      <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 overflow-hidden">
+        <div className="overflow-x-auto min-w-full">
+          <div className="inline-block min-w-full align-middle">
+            <table className="min-w-full divide-y divide-brand-gray1">
+            <thead className="bg-brand-gray1/50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  Business Area
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  Process Name
+                </th>
+                <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  Document
+                </th>
+                <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  Priority
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  Progress
+                </th>
+                <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  Target Date
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-brand-gray1">
+              {processes.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-brand-gray3">
+                    No business processes found. Create your first process to get started.
+                  </td>
+                </tr>
+              ) : (
+                processes.map((process) => (
+                  <tr key={process.id} className="hover:bg-brand-gray1/30">
+                    <td className="px-4 py-3">
+                      <div>
+                        <div className="text-sm font-medium text-brand-white">
+                          {process.businessArea}
+                        </div>
+                        {process.subBusinessArea && (
+                          <div className="text-xs text-brand-gray3 mt-1">
+                            {process.subBusinessArea}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm font-medium text-brand-white">
+                        {process.processName}
+                      </div>
+                    </td>
+                    <td className="hidden md:table-cell px-4 py-3">
+                      <div>
+                        <div className="text-sm text-brand-white">
+                          {process.documentName || 'Not specified'}
+                        </div>
+                        {process.version && (
+                          <div className="text-xs text-brand-gray3 mt-1">
+                            v{process.version}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="hidden lg:table-cell px-4 py-3">
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(process.priority || '')}`}>
+                        {process.priority || 'Not set'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div>
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(process.docStatus || '')}`}>
+                          {process.docStatus || 'Not set'}
+                        </span>
+                        <div className="text-xs text-brand-gray3 mt-1">
+                          {process.statusPercentage || 0}%
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(process.progress || '')}`}>
+                        {process.progress || 'Not set'}
+                      </span>
+                    </td>
+                    <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white">
+                      {process.targetDate ? (() => {
+                        const date = new Date(process.targetDate);
+                        // Adjust for timezone offset
+                        const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+                        const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
+                        return adjustedDate.toLocaleDateString('en-GB');
+                      })() : 'Not set'}
+                    </td>
+                    <td className="px-4 py-3">
+                      {/* Desktop view - always visible icons */}
+                      <div className="hidden md:flex items-center gap-2">
+                        <Link
+                          href={`/processes/${process.id}`}
+                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
+                          title="View details"
+                        >
+                          <FiEye size={16} />
+                        </Link>
+                        <Link
+                          href={`/processes/${process.id}/edit`}
+                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
+                          title="Edit process"
+                        >
+                          <FiEdit2 size={16} />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteClick(process)}
+                          className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
+                          title="Delete process"
+                        >
+                          <FiTrash2 size={16} />
+                        </button>
+                      </div>
 
-      {/* Dashboard Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gray-800 rounded-lg p-6 flex items-center justify-between">
-          <div>
-            <h3 className="text-gray-400 text-sm font-medium mb-1">Overall Progress</h3>
-            <p className="text-4xl font-extrabold text-white">{metrics.overallProgress}%</p>
+                                              {/* Mobile view - dropdown menu */}
+                        <div className="md:hidden relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDropdownToggle(process.id);
+                            }}
+                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
+                            title="More actions"
+                          >
+                            <FiMoreVertical size={16} />
+                          </button>
+                          
+                          {openDropdown === process.id && (
+                            <>
+                              {/* Overlay backdrop */}
+                              <div 
+                                className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                                onClick={() => setOpenDropdown(null)}
+                              />
+                              {/* Dropdown overlay */}
+                              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 dropdown-overlay">
+                                <div 
+                                  className="bg-brand-gray2 border border-brand-gray1 rounded-lg shadow-xl w-full max-w-sm"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div className="p-4">
+                                    <div className="text-lg font-semibold text-brand-white mb-4 text-center">
+                                      Actions for &ldquo;{process.processName}&rdquo;
+                                    </div>
+                                    <div className="space-y-2">
+                                      <button
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          console.log('View button clicked for process:', process.id);
+                                          handleViewProcess(process.id);
+                                        }}
+                                        className="flex items-center gap-3 px-4 py-3 text-brand-white hover:bg-brand-gray1 transition-colors rounded-lg w-full text-left"
+                                      >
+                                        <FiEye size={18} />
+                                        <span className="text-base">View Details</span>
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          console.log('Edit button clicked for process:', process.id);
+                                          handleEditProcess(process.id);
+                                        }}
+                                        className="flex items-center gap-3 px-4 py-3 text-brand-white hover:bg-brand-gray1 transition-colors rounded-lg w-full text-left"
+                                      >
+                                        <FiEdit2 size={18} />
+                                        <span className="text-base">Edit Process</span>
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteClick(process);
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-brand-gray1 transition-colors rounded-lg w-full text-left"
+                                      >
+                                        <FiTrash2 size={18} />
+                                        <span className="text-base">Delete Process</span>
+                                      </button>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-brand-gray1">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-center"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
           </div>
-          <div className="border-l border-gray-700 pl-6 ml-6">
-            <h3 className="text-gray-400 text-sm font-medium mb-1">Total Processes</h3>
-            <p className="text-4xl font-extrabold text-white">{metrics.totalProcesses}</p>
-          </div>
-        </div>
-        <div className="bg-gray-800 rounded-lg p-6">
-          <h3 className="text-gray-400 text-sm font-medium mb-2">Priority</h3>
-          <ul>
-            {Object.values(PRIORITY).map(priority => (
-              <li key={priority} className="text-white text-sm">
-                <span className="font-semibold">{priority}</span>
-                <span className="ml-2 text-blue-300">{metrics.priorityCounts[priority] || 0}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="bg-gray-800 rounded-lg p-6">
-          <h3 className="text-gray-400 text-sm font-medium mb-2">Status</h3>
-          <ul>
-            {Object.values(DOC_STATUS).map(status => (
-              <li key={status} className="text-white text-sm">
-                <span className="font-semibold">{status}</span>
-                <span className="ml-2 text-blue-300">{metrics.statusCounts[status] || 0}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="bg-gray-800 rounded-lg p-6">
-          <h3 className="text-gray-400 text-sm font-medium mb-2">Progress</h3>
-          <ul>
-            {Object.values(PROGRESS_STATUS).map(progress => (
-              <li key={progress} className="text-white text-sm">
-                <span className="font-semibold">{progress}</span>
-                <span className="ml-2 text-blue-300">{metrics.progressCounts[progress] || 0}</span>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
 
-      <BusinessProcessTable
-        processes={processes}
-        loading={loading}
-        onEdit={handleEdit}
-        refresh={fetchProcesses}
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setProcessToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        itemName={processToDelete?.processName || ''}
+        itemType="business process"
       />
 
-      {showForm && (
-        <ProcessForm
-          process={editData}
-          onSubmit={handleFormSubmit}
-          onCancel={handleFormClose}
-        />
-      )}
+      {/* Notification */}
+      <Notification
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+      />
     </div>
   );
 } 

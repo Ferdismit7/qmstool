@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiPlus, FiEdit2, FiTrash2, FiEye } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Notification from '../components/Notification';
 
@@ -22,6 +23,7 @@ interface ThirdPartyEvaluation {
 }
 
 export default function ThirdPartyEvaluationsPage() {
+  const router = useRouter();
   const [evaluations, setEvaluations] = useState<ThirdPartyEvaluation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +40,7 @@ export default function ThirdPartyEvaluationsPage() {
     title: '',
     message: ''
   });
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
   useEffect(() => {
     fetchEvaluations();
@@ -145,6 +148,32 @@ export default function ThirdPartyEvaluationsPage() {
         message: error instanceof Error ? error.message : 'Failed to delete evaluation'
       });
     }
+  };
+
+  const handleDropdownToggle = (evaluationId: number) => {
+    setOpenDropdown(openDropdown === evaluationId ? null : evaluationId);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdown !== null) {
+        const target = event.target as Element;
+        if (!target.closest('.dropdown-overlay')) {
+          setOpenDropdown(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdown]);
+
+  const handleViewEvaluation = (evaluationId: number) => {
+    router.push(`/third-party-evaluations/${evaluationId}`);
+  };
+
+  const handleEditEvaluation = (evaluationId: number) => {
+    router.push(`/third-party-evaluations/${evaluationId}/edit`);
   };
 
   if (isLoading) {
@@ -264,28 +293,94 @@ export default function ThirdPartyEvaluationsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/third-party-evaluations/${evaluation.id}`}
-                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                          title="View details"
+                      {/* Desktop Actions */}
+                      <div className="hidden md:flex items-center space-x-2">
+                        <button
+                          onClick={() => handleViewEvaluation(evaluation.id)}
+                          className="text-blue-400 hover:text-blue-300 transition-colors"
+                          title="View Details"
                         >
                           <FiEye size={16} />
-                        </Link>
-                        <Link
-                          href={`/third-party-evaluations/${evaluation.id}/edit`}
-                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                          title="Edit evaluation"
+                        </button>
+                        <button
+                          onClick={() => handleEditEvaluation(evaluation.id)}
+                          className="text-green-400 hover:text-green-300 transition-colors"
+                          title="Edit Evaluation"
                         >
                           <FiEdit2 size={16} />
-                        </Link>
+                        </button>
                         <button
                           onClick={() => handleDeleteClick(evaluation)}
-                          className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
-                          title="Delete evaluation"
+                          className="text-red-400 hover:text-red-300 transition-colors"
+                          title="Delete Evaluation"
                         >
                           <FiTrash2 size={16} />
                         </button>
+                      </div>
+
+                      {/* Mobile Actions Dropdown */}
+                      <div className="md:hidden relative">
+                        <button
+                          onClick={() => handleDropdownToggle(evaluation.id)}
+                          className="text-brand-gray3 hover:text-brand-white transition-colors"
+                        >
+                          <FiMoreVertical size={16} />
+                        </button>
+
+                        {/* Mobile Overlay */}
+                        {openDropdown === evaluation.id && (
+                          <div className="dropdown-overlay fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                            <div 
+                              className="bg-brand-dark border border-brand-gray2 rounded-lg p-6 w-full max-w-sm"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <h3 className="text-lg font-semibold text-brand-white mb-4">
+                                Actions for &ldquo;{evaluation.supplier_name}&rdquo;
+                              </h3>
+                              <div className="space-y-3">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleViewEvaluation(evaluation.id);
+                                  }}
+                                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
+                                >
+                                  <FiEye size={18} />
+                                  View Details
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleEditEvaluation(evaluation.id);
+                                  }}
+                                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
+                                >
+                                  <FiEdit2 size={18} />
+                                  Edit Evaluation
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDeleteClick(evaluation);
+                                  }}
+                                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                >
+                                  <FiTrash2 size={18} />
+                                  Delete Evaluation
+                                </button>
+                                <button
+                                  onClick={() => setOpenDropdown(null)}
+                                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-gray3 hover:bg-brand-gray1/50 rounded-lg transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>

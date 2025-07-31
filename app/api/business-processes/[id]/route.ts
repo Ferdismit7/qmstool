@@ -79,6 +79,23 @@ export async function GET(
   try {
     const { id } = await params;
     
+    // Check if id is "new" - this is not a valid ID for fetching
+    if (id === 'new') {
+      return NextResponse.json(
+        { error: 'Invalid process ID' },
+        { status: 400 }
+      );
+    }
+
+    // Validate that id is a number
+    const processId = Number(id);
+    if (isNaN(processId)) {
+      return NextResponse.json(
+        { error: 'Invalid process ID format' },
+        { status: 400 }
+      );
+    }
+
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
     if (userBusinessAreas.length === 0) {
@@ -90,7 +107,7 @@ export async function GET(
 
     const process = await prisma.businessProcessRegister.findFirst({
       where: {
-        id: Number(id),
+        id: processId,
         business_area: {
           in: userBusinessAreas
         }

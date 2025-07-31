@@ -10,6 +10,11 @@ export async function GET(
   try {
     const { id } = await params;
     
+    // Check if id is "new" or not a valid number
+    if (id === 'new' || isNaN(Number(id))) {
+      return NextResponse.json({ error: 'Invalid document ID' }, { status: 400 });
+    }
+    
     // Get user's business areas
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
@@ -22,7 +27,7 @@ export async function GET(
 
     // Create placeholders for IN clause
     const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [...userBusinessAreas, parseInt(id)];
+    const queryParams = [parseInt(id), ...userBusinessAreas];
 
     const [document] = await query(`
       SELECT bdr.*, ba.business_area 
@@ -76,7 +81,7 @@ export async function PUT(
 
     // Create placeholders for IN clause
     const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [...userBusinessAreas, parseInt(id)];
+    const queryParams = [parseInt(id), ...userBusinessAreas];
 
     // Check if document exists and user has access
     const [existingDocument] = await query(`
@@ -139,7 +144,7 @@ export async function DELETE(
 
     // Create placeholders for IN clause
     const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [...userBusinessAreas, parseInt(id)];
+    const queryParams = [parseInt(id), ...userBusinessAreas];
 
     // Check if document exists and user has access
     const [existingDocument] = await query(`
