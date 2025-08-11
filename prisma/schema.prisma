@@ -221,6 +221,9 @@ model User {
   deletedBusinessQualityObjectives BusinessQualityObjective[] @relation("BusinessQualityObjectiveDeletedBy")
   deletedPerformanceMonitoring PerformanceMonitoringControl[] @relation("PerformanceMonitoringDeletedBy")
   deletedRacmMatrix RacmMatrix[] @relation("RacmMatrixDeletedBy")
+  deletedNonConformities NonConformity[] @relation("NonConformityDeletedBy")
+  deletedRecordKeepingSystems RecordKeepingSystem[] @relation("RecordKeepingDeletedBy")
+  deletedBusinessImprovements BusinessImprovement[] @relation("BusinessImprovementDeletedBy")
 
   @@index([business_area], map: "fk_use_business_area")
   @@map("users")
@@ -236,6 +239,9 @@ model BusinessAreas {
   trainingsessions             TrainingSession[]
   user_business_areas          user_business_areas[]
   users                        User[]
+  nonConformities              NonConformity[]
+  recordKeepingSystems         RecordKeepingSystem[]
+  businessImprovements         BusinessImprovement[]
 
   @@map("businessareas")
 }
@@ -343,6 +349,131 @@ model CustomerFeedbackSystem {
   updated_at          DateTime @default(now()) @updatedAt @db.Timestamp(0)
 
   @@map("customer_feedback_systems")
+}
+
+/// Non-Conformity & Corrective Action Management
+model NonConformity {
+  id                  Int            @id @default(autoincrement())
+  business_area       String?        @db.VarChar(50)
+  sub_business_area   String?        @db.VarChar(100)
+  nc_number           String?        @db.VarChar(50)
+  nc_type             String?        @db.VarChar(50)
+  description         String?        @db.Text
+  root_cause          String?        @db.Text
+  corrective_action   String?        @db.Text
+  responsible_person  String?        @db.VarChar(100)
+  target_date         DateTime?      @db.Date
+  completion_date     DateTime?      @db.Date
+  status              String?        @db.VarChar(20)
+  priority            String?        @db.VarChar(20)
+  impact_level        String?        @db.VarChar(20)
+  verification_method  String?        @db.Text
+  effectiveness_review String?        @db.Text
+  lessons_learned     String?        @db.Text
+  related_documents   String?        @db.Text
+  file_url            String?        @db.VarChar(500)
+  file_name           String?        @db.VarChar(255)
+  file_size           BigInt?
+  file_type           String?        @db.VarChar(100)
+  uploaded_at         DateTime?      @default(now()) @db.Timestamp(0)
+  created_at          DateTime?      @default(now()) @db.Timestamp(0)
+  updated_at          DateTime?      @default(now()) @updatedAt @db.Timestamp(0)
+  deleted_at          DateTime?      @db.Timestamp(0)
+  deleted_by          Int?
+  businessareas       BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_nc_business_area")
+  deletedBy           User?          @relation("NonConformityDeletedBy", fields: [deleted_by], references: [id])
+
+  @@index([business_area], map: "fk_nc_business_area")
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
+  @@map("non_conformities")
+}
+
+/// Record Keeping Management
+model RecordKeepingSystem {
+  id                  Int            @id @default(autoincrement())
+  business_area       String?        @db.VarChar(50)
+  sub_business_area   String?        @db.VarChar(100)
+  record_type         String?        @db.VarChar(100)
+  system_name         String?        @db.VarChar(100)
+  system_description  String?        @db.Text
+  retention_period    String?        @db.VarChar(100)
+  storage_location    String?        @db.VarChar(255)
+  access_controls     String?        @db.Text
+  backup_procedures   String?        @db.Text
+  disposal_procedures String?        @db.Text
+  compliance_status   String?        @db.VarChar(20)
+  last_audit_date     DateTime?      @db.Date
+  next_audit_date     DateTime?      @db.Date
+  audit_findings      String?        @db.Text
+  corrective_actions  String?        @db.Text
+  responsible_person  String?        @db.VarChar(100)
+  status_percentage   Decimal?       @db.Decimal(5, 0)
+  doc_status          String?        @db.VarChar(20)
+  progress            String?        @db.VarChar(20)
+  notes               String?        @db.Text
+  file_url            String?        @db.VarChar(500)
+  file_name           String?        @db.VarChar(255)
+  file_size           BigInt?
+  file_type           String?        @db.VarChar(100)
+  uploaded_at         DateTime?      @default(now()) @db.Timestamp(0)
+  created_at          DateTime?      @default(now()) @db.Timestamp(0)
+  updated_at          DateTime?      @default(now()) @updatedAt @db.Timestamp(0)
+  deleted_at          DateTime?      @db.Timestamp(0)
+  deleted_by          Int?
+  businessareas       BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_rks_business_area")
+  deletedBy           User?          @relation("RecordKeepingDeletedBy", fields: [deleted_by], references: [id])
+
+  @@index([business_area], map: "fk_rks_business_area")
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
+  @@map("record_keeping_systems")
+}
+
+/// Business Improvements Management
+model BusinessImprovement {
+  id                      Int            @id @default(autoincrement())
+  business_area           String?        @db.VarChar(50)
+  sub_business_area       String?        @db.VarChar(100)
+  improvement_title       String?        @db.VarChar(255)
+  improvement_type        String?        @db.VarChar(50)
+  description             String?        @db.Text
+  business_case           String?        @db.Text
+  expected_benefits       String?        @db.Text
+  implementation_plan     String?        @db.Text
+  success_criteria        String?        @db.Text
+  responsible_person      String?        @db.VarChar(100)
+  start_date              DateTime?      @db.Date
+  target_completion_date  DateTime?      @db.Date
+  actual_completion_date  DateTime?      @db.Date
+  status                  String?        @db.VarChar(20)
+  priority                String?        @db.VarChar(20)
+  budget_allocated        Decimal?       @db.Decimal(10, 2)
+  actual_cost             Decimal?       @db.Decimal(10, 2)
+  roi_calculation         String?        @db.Text
+  lessons_learned         String?        @db.Text
+  next_steps              String?        @db.Text
+  related_processes       String?        @db.Text
+  status_percentage       Decimal?       @db.Decimal(5, 0)
+  doc_status              String?        @db.VarChar(20)
+  progress                String?        @db.VarChar(20)
+  notes                   String?        @db.Text
+  file_url                String?        @db.VarChar(500)
+  file_name               String?        @db.VarChar(255)
+  file_size               BigInt?
+  file_type               String?        @db.VarChar(100)
+  uploaded_at             DateTime?      @default(now()) @db.Timestamp(0)
+  created_at              DateTime?      @default(now()) @db.Timestamp(0)
+  updated_at              DateTime?      @default(now()) @updatedAt @db.Timestamp(0)
+  deleted_at              DateTime?      @db.Timestamp(0)
+  deleted_by              Int?
+  businessareas           BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bi_business_area")
+  deletedBy               User?          @relation("BusinessImprovementDeletedBy", fields: [deleted_by], references: [id])
+
+  @@index([business_area], map: "fk_bi_business_area")
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
+  @@map("business_improvements")
 }
 
 model QMSStatusOption {

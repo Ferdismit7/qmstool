@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate JWT token with business area
+    // Generate JWT token with business area - Extended to 30 days
     console.log('Generating JWT token...');
     let token;
     try {
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
           businessArea: user.business_area 
         },
         process.env.JWT_SECRET,
-        { expiresIn: '24h' }
+        { expiresIn: '30d' } // Extended from '24h' to '30d'
       );
     } catch (jwtError) {
       console.error('JWT generation failed:', jwtError);
@@ -116,13 +116,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Set cookie
+    // Set cookie with matching 30-day expiration
     const response = NextResponse.json({ token });
     response.cookies.set('authToken', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 24 * 60 * 60 // 24 hours
+      maxAge: 30 * 24 * 60 * 60 // 30 days (matching JWT expiration)
     });
 
     console.log('Login successful for user:', user.email);

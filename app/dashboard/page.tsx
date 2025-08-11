@@ -22,7 +22,7 @@ const navigationCards = [
     color: 'bg-purple-500 hover:bg-purple-600'
   },
   {
-    title: 'Risks Management',
+    title: 'Risk Management',
     description: 'Identify and manage business risks',
     href: '/risk-management',
     color: 'bg-red-500 hover:bg-red-600'
@@ -34,33 +34,33 @@ const navigationCards = [
     color: 'bg-yellow-500 hover:bg-yellow-600'
   },
   {
+    title: 'Non-Conformities & Corrective Actions',
+    description: 'Manage non-conformities and corrective actions',
+    href: '/non-conformities',
+    color: 'bg-orange-500 hover:bg-orange-600'
+  },
+  {
+    title: 'Record Keeping Systems',
+    description: 'Manage record keeping and compliance',
+    href: '/record-keeping-systems',
+    color: 'bg-teal-500 hover:bg-teal-600'
+  },
+  {
     title: 'Business Improvements',
     description: 'Monitor and implement improvements',
     href: '/business-improvements',
     color: 'bg-indigo-500 hover:bg-indigo-600'
   },
   {
-    title: 'Business Complaints',
-    description: 'Handle and track customer complaints',
-    href: '/business-complaints',
+    title: 'Third-Party Evaluations',
+    description: 'Manage supplier evaluations',
+    href: '/third-party-evaluations',
     color: 'bg-pink-500 hover:bg-pink-600'
   },
   {
-    title: 'Business Nonconformities',
-    description: 'Manage and resolve nonconformities',
-    href: '/business-nonconformities',
-    color: 'bg-orange-500 hover:bg-orange-600'
-  },
-  {
-    title: 'Business Audits',
-    description: 'Schedule and track business audits',
-    href: '/business-audits',
-    color: 'bg-teal-500 hover:bg-teal-600'
-  },
-  {
-    title: 'Management Review',
-    description: 'Conduct and document management reviews',
-    href: '/business-management-review',
+    title: 'Customer Feedback Systems',
+    description: 'Manage customer feedback and satisfaction',
+    href: '/customer-feedback-systems',
     color: 'bg-cyan-500 hover:bg-cyan-600'
   }
 ];

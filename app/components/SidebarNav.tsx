@@ -61,6 +61,21 @@ export default function SidebarNav({ isOpen = false, onClose }: SidebarNavProps)
       label: 'Risk Management'
     },
     {
+      href: '/non-conformities',
+      icon: FiAlertTriangle,
+      label: 'Non-Conformities & Corrective Actions'
+    },
+    {
+      href: '/record-keeping-systems',
+      icon: FiFileText,
+      label: 'Record Keeping Systems'
+    },
+    {
+      href: '/business-improvements',
+      icon: FiActivity,
+      label: 'Business Improvements'
+    },
+    {
       href: '/third-party-evaluations',
       icon: FiBarChart2,
       label: 'Third-Party Evaluations'

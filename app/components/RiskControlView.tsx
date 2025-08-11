@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FaTimes } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit } from 'react-icons/fa';
 import RiskTimelineChart from './RiskTimelineChart';
 
 interface RiskManagementControl {
@@ -42,23 +42,23 @@ interface RiskControlViewProps {
 }
 
 const statusStyles = {
-  'Open': 'bg-red-500 text-white',
-  'Under Review': 'bg-orange-500 text-white',
-  'Closed': 'bg-green-500 text-white',
+  'Open': 'bg-red-100 text-red-800',
+  'Under Review': 'bg-orange-100 text-orange-800',
+  'Closed': 'bg-green-100 text-green-800',
 } as const;
 
 const progressStyles = {
-  'Not Started': 'bg-gray-500 text-white',
-  'On-Track': 'bg-blue-500 text-white',
-  'Completed': 'bg-green-500 text-white',
-  'Minor Challenges': 'bg-orange-500 text-white',
-  'Major Challenges': 'bg-red-500 text-white',
+  'Not Started': 'bg-gray-100 text-gray-800',
+  'On-Track': 'bg-blue-100 text-blue-800',
+  'Completed': 'bg-green-100 text-green-800',
+  'Minor Challenges': 'bg-yellow-100 text-yellow-800',
+  'Major Challenges': 'bg-red-100 text-red-800',
 } as const;
 
 const effectivenessStyles = {
-  'High': 'bg-green-500 text-white',
-  'Medium': 'bg-orange-500 text-white',
-  'Low': 'bg-red-500 text-white',
+  'High': 'bg-green-100 text-green-800',
+  'Medium': 'bg-orange-100 text-orange-800',
+  'Low': 'bg-red-100 text-red-800',
 } as const;
 
 export default function RiskControlView({ control, onClose }: RiskControlViewProps) {
@@ -73,155 +73,187 @@ export default function RiskControlView({ control, onClose }: RiskControlViewPro
   const residualRisk = getRiskLevel(control.residual_risk_overall_score);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div className="w-full max-w-7xl max-h-[90vh] overflow-y-auto p-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl border border-gray-700 shadow-2xl">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-8">
-        <div>
-          <h2 className="text-3xl font-bold text-white mb-2">{control.process_name}</h2>
-          <p className="text-gray-400 text-lg">{control.business_area}</p>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-2 text-gray-400 hover:text-white transition-colors"
-        >
-          <FaTimes size={24} />
-        </button>
-      </div>
-
-      {/* Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">Status</h3>
-          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusStyles[control.status] || 'bg-gray-500 text-white'}`}>
-            {control.status}
-          </span>
-        </div>
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">Progress</h3>
-          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${progressStyles[control.doc_status] || 'bg-gray-500 text-white'}`}>
-            {control.doc_status}
-          </span>
-        </div>
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">Effectiveness</h3>
-          <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${effectivenessStyles[control.control_effectiveness] || 'bg-gray-500 text-white'}`}>
-            {control.control_effectiveness}
-          </span>
-        </div>
-      </div>
-
-      {/* Risk Scores */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Inherent Risk Assessment</h3>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Likelihood:</span>
-              <span className="text-white font-semibold">{control.inherent_risk_likeliness}/5</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Impact:</span>
-              <span className="text-white font-semibold">{control.inherent_risk_impact}/5</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Overall Score:</span>
-              <span className={`text-2xl font-bold ${inherentRisk.color}`}>
-                {control.inherent_risk_score} ({inherentRisk.level})
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Residual Risk Assessment</h3>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Likelihood:</span>
-              <span className="text-white font-semibold">{control.residual_risk_likeliness}/5</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Impact:</span>
-              <span className="text-white font-semibold">{control.residual_risk_impact}/5</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">Overall Score:</span>
-              <span className={`text-2xl font-bold ${residualRisk.color}`}>
-                {control.residual_risk_overall_score} ({residualRisk.level})
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Details Grid - Activity and Control side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Activity Details</h3>
-          <div className="space-y-4">
-            <div>
-              <span className="text-sm text-gray-400 uppercase tracking-wide">Activity Description</span>
-              <p className="text-white mt-1">{control.activity_description || 'Not specified'}</p>
-            </div>
-            <div>
-              <span className="text-sm text-gray-400 uppercase tracking-wide">Issue Description</span>
-              <p className="text-white mt-1">{control.issue_description}</p>
-            </div>
-            <div>
-              <span className="text-sm text-gray-400 uppercase tracking-wide">Issue Type</span>
-              <p className="text-white mt-1">{control.issue_type || 'Not specified'}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Control Information</h3>
-          <div className="space-y-4">
-            <div>
-              <span className="text-sm text-gray-400 uppercase tracking-wide">Control Description</span>
-              <p className="text-white mt-1">{control.control_description || 'Not specified'}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-start justify-center p-2 sm:p-4 z-50 pt-2 sm:pt-4">
+      <div className="w-full max-w-5xl h-[90vh] sm:h-[85vh] overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl border border-gray-700 shadow-2xl">
+        <div className="space-y-3 sm:space-y-4 px-3 sm:px-6 py-3 sm:py-4">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <button
+                onClick={onClose}
+                className="p-1 sm:p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                title="Back to risk management"
+              >
+                <FaArrowLeft size={18} className="sm:w-5 sm:h-5" />
+              </button>
               <div>
-                <span className="text-sm text-gray-400 uppercase tracking-wide">Control Type</span>
-                <p className="text-white mt-1">{control.control_type || 'Not specified'}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-400 uppercase tracking-wide">Control Owner</span>
-                <p className="text-white mt-1">{control.control_owner || 'Not specified'}</p>
+                <h1 className="text-lg sm:text-2xl font-bold text-brand-white">{control.process_name}</h1>
+                <p className="text-sm sm:text-base text-brand-gray3 mt-1">Risk Control Details</p>
               </div>
             </div>
-            <div>
-              <span className="text-sm text-gray-400 uppercase tracking-wide">Progress</span>
-              <div className="flex items-center mt-1">
-                <div className="w-full bg-gray-700 rounded-full h-2 mr-3">
-                  <div 
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${control.control_progress}%` }}
-                  ></div>
+            <button
+              onClick={onClose}
+              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors text-sm sm:text-base"
+            >
+              <FaEdit size={14} className="sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Edit Control</span>
+              <span className="sm:hidden">Edit</span>
+            </button>
+          </div>
+
+          {/* Risk Control Details */}
+          <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 p-3 sm:p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {/* Basic Information */}
+              <div className="space-y-2 sm:space-y-3">
+                <h3 className="text-base sm:text-lg font-semibold text-brand-white border-b border-brand-gray1 pb-2">
+                  Basic Information
+                </h3>
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Business Area</label>
+                    <p className="text-sm sm:text-base text-brand-white">{control.business_area}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Process Name</label>
+                    <p className="text-sm sm:text-base text-brand-white">{control.process_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Issue Type</label>
+                    <p className="text-sm sm:text-base text-brand-white">{control.issue_type || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Control Type</label>
+                    <p className="text-sm sm:text-base text-brand-white">{control.control_type || 'Not specified'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Control Owner</label>
+                    <p className="text-sm sm:text-base text-brand-white">{control.control_owner || 'Not specified'}</p>
+                  </div>
                 </div>
-                <span className="text-white font-semibold">{control.control_progress}%</span>
+              </div>
+
+              {/* Status & Progress */}
+              <div className="space-y-2 sm:space-y-3">
+                <h3 className="text-base sm:text-lg font-semibold text-brand-white border-b border-brand-gray1 pb-2">
+                  Status & Progress
+                </h3>
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Status</label>
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusStyles[control.status] || 'bg-gray-100 text-gray-800'}`}>
+                      {control.status}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Progress</label>
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${progressStyles[control.doc_status] || 'bg-gray-100 text-gray-800'}`}>
+                      {control.doc_status}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Effectiveness</label>
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${effectivenessStyles[control.control_effectiveness] || 'bg-gray-100 text-gray-800'}`}>
+                      {control.control_effectiveness}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Control Progress</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-full bg-gray-700 rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${control.control_progress}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-xs sm:text-sm text-brand-gray3">{control.control_progress}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Risk Assessment */}
+              <div className="space-y-2 sm:space-y-3">
+                <h3 className="text-base sm:text-lg font-semibold text-brand-white border-b border-brand-gray1 pb-2">
+                  Risk Assessment
+                </h3>
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Inherent Risk Score</label>
+                    <p className={`text-base sm:text-lg font-bold ${inherentRisk.color}`}>
+                      {control.inherent_risk_score} ({inherentRisk.level})
+                    </p>
+                    <p className="text-xs sm:text-sm text-brand-gray3">
+                      Likelihood: {control.inherent_risk_likeliness}/5 | Impact: {control.inherent_risk_impact}/5
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Residual Risk Score</label>
+                    <p className={`text-base sm:text-lg font-bold ${residualRisk.color}`}>
+                      {control.residual_risk_overall_score} ({residualRisk.level})
+                    </p>
+                    <p className="text-xs sm:text-sm text-brand-gray3">
+                      Likelihood: {control.residual_risk_likeliness}/5 | Impact: {control.residual_risk_impact}/5
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-            {control.control_target_date && (
-              <div>
-                <span className="text-sm text-gray-400 uppercase tracking-wide">Target Date</span>
-                <p className="text-white mt-1">{new Date(control.control_target_date).toLocaleDateString()}</p>
+          </div>
+
+          {/* Activity & Control Details */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+            <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 p-3 sm:p-4">
+              <h3 className="text-base sm:text-lg font-semibold text-brand-white border-b border-brand-gray1 pb-2 mb-2 sm:mb-3">
+                Activity Details
+              </h3>
+              <div className="space-y-2 sm:space-y-3">
+                <div>
+                  <label className="text-xs sm:text-sm font-medium text-brand-gray3">Activity Description</label>
+                  <p className="text-sm sm:text-base text-brand-white mt-1">{control.activity_description || 'Not specified'}</p>
+                </div>
+                <div>
+                  <label className="text-xs sm:text-sm font-medium text-brand-gray3">Issue Description</label>
+                  <p className="text-sm sm:text-base text-brand-white mt-1">{control.issue_description}</p>
+                </div>
               </div>
-            )}
+            </div>
+
+            <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 p-3 sm:p-4">
+              <h3 className="text-base sm:text-lg font-semibold text-brand-white border-b border-brand-gray1 pb-2 mb-2 sm:mb-3">
+                Control Information
+              </h3>
+              <div className="space-y-2 sm:space-y-3">
+                <div>
+                  <label className="text-xs sm:text-sm font-medium text-brand-gray3">Control Description</label>
+                  <p className="text-sm sm:text-base text-brand-white mt-1">{control.control_description || 'Not specified'}</p>
+                </div>
+                {control.control_target_date && (
+                  <div>
+                    <label className="text-xs sm:text-sm font-medium text-brand-gray3">Target Date</label>
+                    <p className="text-sm sm:text-base text-brand-white mt-1">
+                      {new Date(control.control_target_date).toLocaleDateString('en-GB')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Risk Score Timeline */}
+          <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 p-3 sm:p-4">
+            <h3 className="text-base sm:text-lg font-semibold text-brand-white border-b border-brand-gray1 pb-2 mb-2 sm:mb-3">
+              Risk Score Timeline
+            </h3>
+            <div className="overflow-x-auto">
+              <RiskTimelineChart 
+                riskId={control.id} 
+                processName={control.process_name} 
+              />
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Risk Score Timeline - Full Width at Bottom */}
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Risk Score Timeline</h3>
-        <RiskTimelineChart 
-          riskId={control.id} 
-          processName={control.process_name} 
-        />
-      </div>
-     </div>
-   </div>
- );
+    </div>
+  );
 } 

@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import SidebarNav, { MobileMenuButton } from './SidebarNav';
 import LogoutButton from './LogoutButton';
+import PageTransition from './PageTransition';
 import Link from 'next/link';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -333,7 +334,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         
         {/* Scrollable content */}
         <main className="flex-1 overflow-y-auto bg-brand-gray1 p-4">
-          {children}
+          <PageTransition>{children}</PageTransition>
         </main>
       </div>
     </div>

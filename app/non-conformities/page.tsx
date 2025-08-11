@@ -1,36 +1,46 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
-import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
-import Notification from '@/app/components/Notification';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import Notification from '../components/Notification';
 
-interface PerformanceMonitoringControl {
+interface NonConformity {
   id: number;
   business_area: string;
   sub_business_area: string;
-  Name_reports: string;
-  doc_type: string;
-  priority: string;
-  doc_status: string;
-  progress: string;
-  status_percentage: number;
+  nc_number: string;
+  nc_type: string;
+  description: string;
+  root_cause: string;
+  corrective_action: string;
+  responsible_person: string;
   target_date: string;
-  proof: string;
-  frequency: string;
-  responsible_persons: string;
-  remarks: string;
+  completion_date: string;
+  status: string;
+  priority: string;
+  impact_level: string;
+  verification_method: string;
+  effectiveness_review: string;
+  lessons_learned: string;
+  related_documents: string;
+  file_url: string;
+  file_name: string;
+  file_size: number;
+  file_type: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export default function PerformanceMonitoringPage() {
+export default function NonConformitiesPage() {
   const router = useRouter();
-  const [controls, setControls] = useState<PerformanceMonitoringControl[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [nonConformities, setNonConformities] = useState<NonConformity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [controlToDelete, setControlToDelete] = useState<PerformanceMonitoringControl | null>(null);
+  const [nonConformityToDelete, setNonConformityToDelete] = useState<NonConformity | null>(null);
   const [notification, setNotification] = useState<{
     isOpen: boolean;
     type: 'success' | 'error';
@@ -44,64 +54,74 @@ export default function PerformanceMonitoringPage() {
   });
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
-  const fetchControls = async () => {
+  const getAuthToken = () => {
+    // Check sessionStorage first (default for non-remembered logins)
+    let token = sessionStorage.getItem('authToken');
+    // If not in sessionStorage, check localStorage (for remembered logins)
+    if (!token) {
+      token = localStorage.getItem('authToken');
+    }
+    // If still no token, check cookies (for server-side compatibility)
+    if (!token) {
+      const cookies = document.cookie.split(';');
+      const authCookie = cookies.find(cookie => cookie.trim().startsWith('authToken='));
+      if (authCookie) {
+        token = authCookie.split('=')[1];
+      }
+    }
+    return token;
+  };
+
+  const fetchNonConformities = useCallback(async () => {
     try {
-      const response = await fetch('/api/performance-monitoring');
-      if (!response.ok) throw new Error('Failed to fetch controls');
+      setIsLoading(true);
+      const token = getAuthToken();
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('/api/non-conformities', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch non-conformities');
+      }
       const data = await response.json();
-      setControls(data);
+      if (data.success) {
+        setNonConformities(data.data);
+      } else {
+        throw new Error(data.error || 'Failed to fetch non-conformities');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchControls();
-  }, []);
+    fetchNonConformities();
+  }, [fetchNonConformities]);
 
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
-      case 'COMPLETED':
-      case 'FINISHED':
-        return 'bg-green-100 text-green-800';
-      case 'ON-TRACK':
-      case 'ON TRACK':
-      case 'IN_PROGRESS':
-      case 'ONGOING':
-        return 'bg-blue-100 text-blue-800';
-      case 'MINOR CHALLENGES':
-      case 'ON_HOLD':
-      case 'SUSPENDED':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'MAJOR CHALLENGES':
-      case 'EXPIRED':
-      case 'ARCHIVED':
+      case 'OPEN':
+      case 'ACTIVE':
         return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getProgressColor = (progress: string) => {
-    switch (progress?.toUpperCase()) {
-      case 'COMPLETED':
-      case 'FINISHED':
-        return 'bg-green-100 text-green-800';
-      case 'ON-TRACK':
-      case 'ON TRACK':
       case 'IN_PROGRESS':
       case 'ONGOING':
-        return 'bg-blue-100 text-blue-800';
-      case 'NOT_STARTED':
-      case 'PENDING':
-        return 'bg-gray-100 text-gray-800';
-      case 'MINOR CHALLENGES':
-      case 'MAJOR CHALLENGES':
-      case 'ON_HOLD':
-      case 'SUSPENDED':
         return 'bg-yellow-100 text-yellow-800';
+      case 'RESOLVED':
+      case 'CLOSED':
+      case 'COMPLETED':
+        return 'bg-green-100 text-green-800';
+      case 'PENDING':
+      case 'ON_HOLD':
+        return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -122,54 +142,68 @@ export default function PerformanceMonitoringPage() {
     }
   };
 
-  const handleDeleteClick = (control: PerformanceMonitoringControl) => {
-    setControlToDelete(control);
+  const getImpactColor = (impact: string) => {
+    switch (impact?.toUpperCase()) {
+      case 'HIGH':
+        return 'bg-red-100 text-red-800';
+      case 'MEDIUM':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'LOW':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleDeleteClick = (nonConformity: NonConformity) => {
+    setNonConformityToDelete(nonConformity);
     setShowDeleteModal(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!controlToDelete) return;
+    if (!nonConformityToDelete) return;
 
     try {
-      const response = await fetch('/api/performance-monitoring/soft-delete', {
-        method: 'POST',
+      const token = getAuthToken();
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`/api/non-conformities?id=${nonConformityToDelete.id}`, {
+        method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ id: controlToDelete.id }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete control');
+        throw new Error('Failed to delete non-conformity');
       }
 
-      await response.json();
-      
+      await fetchNonConformities();
       setNotification({
         isOpen: true,
         type: 'success',
         title: 'Success',
-        message: 'Performance monitoring control successfully deleted'
+        message: 'Non-conformity deleted successfully'
       });
-      
-      fetchControls();
-      setShowDeleteModal(false);
-      setControlToDelete(null);
-      
     } catch (error) {
-      console.error('Delete failed:', error);
+      console.error('Error deleting non-conformity:', error);
       setNotification({
         isOpen: true,
         type: 'error',
         title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to delete control'
+        message: error instanceof Error ? error.message : 'Failed to delete non-conformity'
       });
+    } finally {
+      setShowDeleteModal(false);
+      setNonConformityToDelete(null);
     }
   };
 
-  const handleDropdownToggle = (controlId: number) => {
-    setOpenDropdown(openDropdown === controlId ? null : controlId);
+  const handleDropdownToggle = (nonConformityId: number) => {
+    setOpenDropdown(openDropdown === nonConformityId ? null : nonConformityId);
   };
 
   useEffect(() => {
@@ -186,36 +220,48 @@ export default function PerformanceMonitoringPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdown]);
 
-  const handleViewControl = (controlId: number) => {
-    router.push(`/performance-monitoring/${controlId}`);
+  const handleViewNonConformity = (nonConformityId: number) => {
+    router.push(`/non-conformities/${nonConformityId}`);
   };
 
-  const handleEditControl = (controlId: number) => {
-    router.push(`/performance-monitoring/${controlId}/edit`);
+  const handleEditNonConformity = (nonConformityId: number) => {
+    router.push(`/non-conformities/${nonConformityId}/edit`);
   };
 
-  if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
+      </div>
+    );
+  }
 
-  if (loading) return <div className="text-center py-4">Loading...</div>;
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-800">Error: {error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-brand-white">Performance Monitoring</h1>
-          <p className="text-brand-gray3 mt-1">Manage your performance monitoring controls</p>
+          <h1 className="text-2xl font-bold text-brand-white">Non-Conformities</h1>
+          <p className="text-brand-gray3 mt-1">Manage and track non-conformities</p>
         </div>
         <Link
-          href="/performance-monitoring/new"
+          href="/non-conformities/new"
           className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
         >
           <FiPlus size={16} />
-          Add Control
+          Add Non-Conformity
         </Link>
       </div>
 
-      {/* Performance Monitoring Controls Table */}
+      {/* Non-Conformities Table */}
       <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 overflow-hidden">
         <div className="overflow-x-auto min-w-full">
           <div className="inline-block min-w-full align-middle">
@@ -223,30 +269,24 @@ export default function PerformanceMonitoringPage() {
               <thead className="bg-brand-gray1/50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    NC Number
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Business Area
                   </th>
                   <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                    Sub Business Area
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                    Report Name
-                  </th>
-                  <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Priority
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                    Progress
+                  <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    Impact
                   </th>
                   <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                    Status %
-                  </th>
-                  <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Target Date
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
@@ -255,61 +295,55 @@ export default function PerformanceMonitoringPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-gray1">
-                {controls.length === 0 ? (
+                {nonConformities.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-8 text-center text-brand-gray3">
-                      No performance monitoring controls found. Create your first control to get started.
+                    <td colSpan={8} className="px-4 py-8 text-center text-brand-gray3">
+                      No non-conformities found. Create your first non-conformity to get started.
                     </td>
                   </tr>
                 ) : (
-                  controls.map((control) => (
-                    <tr key={control.id} className="hover:bg-brand-gray1/30">
+                  nonConformities.map((nonConformity) => (
+                    <tr key={nonConformity.id} className="hover:bg-brand-gray1/30">
+                      <td className="px-4 py-3">
+                        <div className="text-sm font-medium text-brand-white">
+                          {nonConformity.nc_number}
+                        </div>
+                      </td>
                       <td className="px-4 py-3">
                         <div>
                           <div className="text-sm font-medium text-brand-white">
-                            {control.business_area}
+                            {nonConformity.business_area}
                           </div>
+                          {nonConformity.sub_business_area && (
+                            <div className="text-xs text-brand-gray3 mt-1">
+                              {nonConformity.sub_business_area}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="hidden md:table-cell px-4 py-3">
                         <div className="text-sm text-brand-white">
-                          {control.sub_business_area}
+                          {nonConformity.nc_type}
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="text-sm font-medium text-brand-white">
-                          {control.Name_reports}
-                        </div>
-                      </td>
-                      <td className="hidden lg:table-cell px-4 py-3">
-                        <div className="text-sm text-brand-white">
-                          {control.doc_type}
-                        </div>
-                      </td>
-                      <td className="hidden lg:table-cell px-4 py-3">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(control.priority)}`}>
-                          {control.priority}
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(nonConformity.priority)}`}>
+                          {nonConformity.priority}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <div>
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(control.doc_status)}`}>
-                            {control.doc_status}
-                          </span>
-                        </div>
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(nonConformity.status)}`}>
+                          {nonConformity.status}
+                        </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(control.progress)}`}>
-                          {control.progress}
+                      <td className="hidden lg:table-cell px-4 py-3">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getImpactColor(nonConformity.impact_level)}`}>
+                          {nonConformity.impact_level}
                         </span>
                       </td>
                       <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white">
-                        {control.status_percentage}%
-                      </td>
-                      <td className="hidden md:table-cell px-4 py-3 text-sm text-brand-white">
-                        {control.target_date ? (() => {
-                          const date = new Date(control.target_date);
-                          // Adjust for timezone offset
+                        {nonConformity.target_date ? (() => {
+                          const date = new Date(nonConformity.target_date);
                           const userTimezoneOffset = date.getTimezoneOffset() * 60000;
                           const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
                           return adjustedDate.toLocaleDateString('en-GB');
@@ -319,23 +353,23 @@ export default function PerformanceMonitoringPage() {
                         {/* Desktop Actions */}
                         <div className="hidden md:flex items-center space-x-2">
                           <button
-                            onClick={() => handleViewControl(control.id)}
+                            onClick={() => handleViewNonConformity(nonConformity.id)}
                             className="text-blue-400 hover:text-blue-300 transition-colors"
                             title="View Details"
                           >
                             <FiEye size={16} />
                           </button>
                           <button
-                            onClick={() => handleEditControl(control.id)}
+                            onClick={() => handleEditNonConformity(nonConformity.id)}
                             className="text-green-400 hover:text-green-300 transition-colors"
-                            title="Edit Control"
+                            title="Edit Non-Conformity"
                           >
                             <FiEdit2 size={16} />
                           </button>
                           <button
-                            onClick={() => handleDeleteClick(control)}
+                            onClick={() => handleDeleteClick(nonConformity)}
                             className="text-red-400 hover:text-red-300 transition-colors"
-                            title="Delete Control"
+                            title="Delete Non-Conformity"
                           >
                             <FiTrash2 size={16} />
                           </button>
@@ -344,28 +378,28 @@ export default function PerformanceMonitoringPage() {
                         {/* Mobile Actions Dropdown */}
                         <div className="md:hidden relative">
                           <button
-                            onClick={() => handleDropdownToggle(control.id)}
+                            onClick={() => handleDropdownToggle(nonConformity.id)}
                             className="text-brand-gray3 hover:text-brand-white transition-colors"
                           >
                             <FiMoreVertical size={16} />
                           </button>
 
                           {/* Mobile Overlay */}
-                          {openDropdown === control.id && (
+                          {openDropdown === nonConformity.id && (
                             <div className="dropdown-overlay fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                               <div 
                                 className="bg-brand-dark border border-brand-gray2 rounded-lg p-6 w-full max-w-sm"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <h3 className="text-lg font-semibold text-brand-white mb-4">
-                                  Actions for &ldquo;{control.Name_reports}&rdquo;
+                                  Actions for &ldquo;{nonConformity.nc_number}&rdquo;
                                 </h3>
                                 <div className="space-y-3">
                                   <button
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      handleViewControl(control.id);
+                                      handleViewNonConformity(nonConformity.id);
                                     }}
                                     className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
                                   >
@@ -376,23 +410,23 @@ export default function PerformanceMonitoringPage() {
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      handleEditControl(control.id);
+                                      handleEditNonConformity(nonConformity.id);
                                     }}
                                     className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
                                   >
                                     <FiEdit2 size={18} />
-                                    Edit Control
+                                    Edit Non-Conformity
                                   </button>
                                   <button
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      handleDeleteClick(control);
+                                      handleDeleteClick(nonConformity);
                                     }}
                                     className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                                   >
                                     <FiTrash2 size={18} />
-                                    Delete Control
+                                    Delete Non-Conformity
                                   </button>
                                   <button
                                     onClick={() => setOpenDropdown(null)}
@@ -420,11 +454,11 @@ export default function PerformanceMonitoringPage() {
         isOpen={showDeleteModal}
         onClose={() => {
           setShowDeleteModal(false);
-          setControlToDelete(null);
+          setNonConformityToDelete(null);
         }}
         onConfirm={handleDeleteConfirm}
-        itemName={controlToDelete?.Name_reports || ''}
-        itemType="performance monitoring control"
+        itemName={nonConformityToDelete?.nc_number || ''}
+        itemType="non-conformity"
       />
 
       {/* Notification */}
@@ -437,4 +471,4 @@ export default function PerformanceMonitoringPage() {
       />
     </div>
   );
-} 
+}
