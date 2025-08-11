@@ -190,7 +190,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !user && pathname !== '/auth') {
-      router.replace('/auth');
+      // Add a small delay to prevent race conditions during token refresh
+      const timer = setTimeout(() => {
+        const token = getAuthToken();
+        if (!token) {
+          router.replace('/auth');
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [isLoading, user, pathname, router]);
 
@@ -229,7 +237,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   // Redirect to auth if no user and not on auth page
   if (!user && pathname !== '/auth') {
-    router.replace('/auth');
+    // Check if we have a token before redirecting
+    const token = getAuthToken();
+    if (!token) {
+      router.replace('/auth');
+      return (
+        <div className="flex h-full bg-brand-gray1">
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <header className="relative z-10 flex-shrink-0 border-b border-brand-gray2/50 bg-brand-gray1">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 sm:py-3">
+                  <div className="flex items-center mb-4 sm:mb-0">
+                    <h1 className="text-xl sm:text-2xl font-bold text-brand-white truncate">Quality Management Systems</h1>
+                  </div>
+                </div>
+              </div>
+            </header>
+            <main className="flex-1 overflow-y-auto bg-brand-gray1 p-4">
+              <div className="flex items-center justify-center h-full">
+                <div className="text-brand-white">Redirecting to login...</div>
+              </div>
+            </main>
+          </div>
+        </div>
+      );
+    }
+    // If we have a token but no user, show loading instead of redirecting
     return (
       <div className="flex h-full bg-brand-gray1">
         <div className="flex flex-1 flex-col overflow-hidden">
@@ -244,7 +277,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </header>
           <main className="flex-1 overflow-y-auto bg-brand-gray1 p-4">
             <div className="flex items-center justify-center h-full">
-              <div className="text-brand-white">Redirecting to login...</div>
+              <div className="text-brand-white">Loading...</div>
             </div>
           </main>
         </div>

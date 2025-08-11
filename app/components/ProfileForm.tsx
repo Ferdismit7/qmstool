@@ -134,13 +134,25 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           {/* Username */}
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-brand-white">Username</label>
-            <input id="username" type="text" {...register('username', { required: 'Username is required' })} className="mt-1 block w-full bg-brand-gray2/40 border-gray-500 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-primary focus:border-blue-500" />
+            <input 
+              id="username" 
+              type="text" 
+              autoComplete="username"
+              {...register('username', { required: 'Username is required' })} 
+              className="mt-1 block w-full bg-brand-gray2/40 border-gray-500 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-primary focus:border-blue-500" 
+            />
             {errors.username && <p className="mt-1 text-sm text-red-400">{errors.username.message as string}</p>}
           </div>
           {/* Email Address */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-brand-white">Email Address</label>
-            <input id="email" type="email" {...register('email', { required: 'Email is required', pattern: { value: /^\S+@\S+$/i, message: 'Invalid email address' } })} className="mt-1 block w-full bg-brand-gray2/40 border-gray-500 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-primary focus:border-blue-500" />
+            <input 
+              id="email" 
+              type="email" 
+              autoComplete="email"
+              {...register('email', { required: 'Email is required', pattern: { value: /^\S+@\S+$/i, message: 'Invalid email address' } })} 
+              className="mt-1 block w-full bg-brand-gray2/40 border-gray-500 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-primary focus:border-blue-500" 
+            />
             {errors.email && <p className="mt-1 text-sm text-red-400">{errors.email.message as string}</p>}
           </div>
         </div>
@@ -168,7 +180,14 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           <div className="mt-4">
             <label htmlFor="newBusinessArea" className="block text-sm font-medium text-brand-white">Add New Business Area</label>
             <div className="mt-1 flex gap-2">
-              <input id="newBusinessArea" type="text" {...register('newBusinessArea')} className="block w-full bg-brand-gray2/40 border-gray-500 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-primary focus:border-blue-500" placeholder="Enter new area name" />
+              <input 
+                id="newBusinessArea" 
+                type="text" 
+                autoComplete="off"
+                {...register('newBusinessArea')} 
+                className="block w-full bg-brand-gray2/40 border-gray-500 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-primary focus:border-blue-500" 
+                placeholder="Enter new area name" 
+              />
               <button type="button" onClick={handleAddNewBusinessArea} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Add</button>
             </div>
           </div>
@@ -181,7 +200,13 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           <h3 className="text-lg font-semibold text-brand-white">Change Password</h3>
           <p className="text-sm text-brand-gray2 mt-1 mb-4">Leave blank to keep your current password.</p>
           <label htmlFor="password" className="block text-sm font-medium text-brand-white">New Password</label>
-          <input id="password" type="password" {...register('password')} className="mt-1 block w-full bg-brand-gray2/40 border-gray-500 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-primary focus:border-blue-500" />
+          <input 
+            id="password" 
+            type="password" 
+            autoComplete="new-password"
+            {...register('password')} 
+            className="mt-1 block w-full bg-brand-gray2/40 border-gray-500 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-primary focus:border-blue-500" 
+          />
         </div>
         
         <div className="mt-8 flex justify-end gap-4">
