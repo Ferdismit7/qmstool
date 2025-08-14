@@ -29,7 +29,7 @@ interface RiskHistoryData {
   racm_matrix_id: number;
   inherent_risk_score: number | null;
   change_date: string;
-  change_type: 'created' | 'updated';
+  change_type: 'insert' | 'update';
   created_at: string;
 }
 
@@ -38,9 +38,20 @@ interface RiskCreationData {
   created_at: string;
 }
 
+interface TimelineData {
+  month_start: string;
+  month_end: string;
+  inherent_risk_score: number | null;
+  last_change_date: string;
+  last_change_type: string;
+  month_key: string;
+  month_label: string;
+}
+
 interface RiskTimelineResponse {
   creation: RiskCreationData;
   history: RiskHistoryData[];
+  timeline: TimelineData[];
 }
 
 interface RiskTimelineChartProps {
@@ -73,68 +84,14 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
   }, [riskId]);
 
   const generateTimelineData = () => {
-    if (!timelineData) {
+    if (!timelineData || !timelineData.timeline || timelineData.timeline.length === 0) {
       console.log('No timeline data available');
       return { labels: [], datasets: [] };
     }
 
-    // Create the creation point (baseline from racm_matrix)
-    const creationPoint = {
-      change_date: timelineData.creation.created_at,
-      inherent_risk_score: timelineData.creation.inherent_risk_score,
-      change_type: 'created'
-    };
-
-    // Combine creation point with history updates
-    const allData = [creationPoint, ...timelineData.history];
-    
-    // Sort by change date
-    const sortedData = allData.sort((a, b) => 
-      new Date(a.change_date).getTime() - new Date(b.change_date).getTime()
-    );
-
-    // Get all unique dates from the data
-    const allDates = sortedData.map(record => new Date(record.change_date));
-    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
-    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
-
-    // Create labels for each month from min date to max date
-    const labels: string[] = [];
-    const currentDate = new Date(minDate);
-    currentDate.setDate(1); // Start from first day of month
-    
-    while (currentDate <= maxDate) {
-      labels.push(currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
-      currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-
-    // Generate scores for each month with continuity logic
-    const inherentScores: (number | null)[] = [];
-    let currentScore: number | null = null;
-
-    for (let i = 0; i < labels.length; i++) {
-      // Check if there's a record for this specific month
-      const currentMonthDate = new Date(minDate);
-      currentMonthDate.setMonth(currentMonthDate.getMonth() + i);
-      
-      const recordsForThisMonth = sortedData.filter(record => {
-        const recordDate = new Date(record.change_date);
-        const recordMonth = recordDate.getMonth();
-        const recordYear = recordDate.getFullYear();
-        const currentMonth = currentMonthDate.getMonth();
-        const currentYear = currentMonthDate.getFullYear();
-        return recordMonth === currentMonth && recordYear === currentYear;
-      });
-
-      if (recordsForThisMonth.length > 0) {
-        // Use the most recent record for this month (latest change)
-        const mostRecentRecord = recordsForThisMonth[recordsForThisMonth.length - 1];
-        currentScore = mostRecentRecord.inherent_risk_score;
-      }
-      // If no record for this month, keep the previous score (continuity)
-
-      inherentScores.push(currentScore);
-    }
+    // Use the timeline data directly from the database
+    const labels = timelineData.timeline.map(item => item.month_label);
+    const inherentScores = timelineData.timeline.map(item => item.inherent_risk_score);
 
     const chartData = {
       labels: labels,
@@ -145,8 +102,9 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
           borderColor: 'rgb(255, 99, 132)',
           backgroundColor: 'rgba(255, 99, 132, 0.5)',
           tension: 0.1,
-          pointRadius: 4,
-          pointHoverRadius: 6,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          fill: false,
         }
       ]
     };
@@ -184,6 +142,24 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
         bodyColor: '#ffffff',
         borderColor: '#ffffff',
         borderWidth: 1,
+        callbacks: {
+          title: function(context) {
+            return context[0].label;
+          },
+          label: function(context) {
+            const dataIndex = context.dataIndex;
+            const timelineItem = timelineData?.timeline[dataIndex];
+            if (timelineItem) {
+              const changeDate = new Date(timelineItem.last_change_date).toLocaleDateString();
+              const changeType = timelineItem.last_change_type === 'insert' ? 'Created' : 'Updated';
+              return [
+                `Risk Score: ${context.parsed.y}`,
+                `${changeType}: ${changeDate}`
+              ];
+            }
+            return `Risk Score: ${context.parsed.y}`;
+          }
+        }
       }
     },
     scales: {
@@ -191,7 +167,7 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
         display: true,
         title: {
           display: true,
-          text: 'Month',
+          text: 'Change Date',
           color: '#ffffff',
           font: {
             size: 14
@@ -222,7 +198,9 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
         },
         grid: {
           color: 'rgba(255, 255, 255, 0.1)'
-        }
+        },
+        min: 0,
+        max: 25
       }
     },
     interaction: {
@@ -248,7 +226,7 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
     );
   }
 
-  if (!timelineData) {
+  if (!timelineData || !timelineData.timeline || timelineData.timeline.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 bg-gray-800 rounded-lg">
         <div className="text-gray-400">No timeline data available</div>
@@ -258,40 +236,16 @@ export default function RiskTimelineChart({ riskId, processName }: RiskTimelineC
 
   const chartData = generateTimelineData();
 
-  // Create a simple test chart data to verify Chart.js is working
-  const testChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        label: 'Test Data',
-        data: [10, 15, 20, 25, 30, 35],
-        borderColor: 'rgb(255, 99, 132)',
-        backgroundColor: 'rgba(255, 99, 132, 0.5)',
-        tension: 0.1,
-      }
-    ]
-  };
-
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
       <div className="h-96">
-        {chartData.labels.length > 0 ? (
-          <Line data={chartData} options={chartOptions} />
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-400">
-            <div className="text-center">
-              <p>No chart data available</p>
-              <p className="text-sm mt-2">Testing with sample data...</p>
-              <div className="mt-4">
-                <Line data={testChartData} options={chartOptions} />
-              </div>
-            </div>
-          </div>
-        )}
+        <Line data={chartData} options={chartOptions} />
       </div>
       <div className="mt-4 text-sm text-gray-400">
         <p>• Inherent Risk Score: Risk level before controls are applied</p>
-        <p>• Timeline shows monthly progression of risk scores</p>
+        <p>• Timeline shows actual change points from database</p>
+        <p>• Each point represents when the risk score was created or updated</p>
+        <p>• Hover over points to see when the score was changed</p>
       </div>
     </div>
   );
