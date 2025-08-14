@@ -248,7 +248,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex h-full bg-brand-gray1">
       {/* Responsive Sidebar - Always render but control visibility */}
       <SidebarNav 
-        isOpen={shouldShowSidebar ? sidebarOpen : false} 
+        isOpen={sidebarOpen} 
         onClose={handleSidebarClose} 
       />
 
