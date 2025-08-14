@@ -304,12 +304,12 @@ export default function NonConformitiesPage() {
                 ) : (
                   nonConformities.map((nonConformity) => (
                     <tr key={nonConformity.id} className="hover:bg-brand-gray1/30">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <div className="text-sm font-medium text-brand-white">
                           {nonConformity.nc_number}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <div>
                           <div className="text-sm font-medium text-brand-white">
                             {nonConformity.business_area}
@@ -321,27 +321,27 @@ export default function NonConformitiesPage() {
                           )}
                         </div>
                       </td>
-                      <td className="hidden md:table-cell px-4 py-3">
+                      <td className="hidden md:table-cell px-4 py-3 align-top">
                         <div className="text-sm text-brand-white">
                           {nonConformity.nc_type}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(nonConformity.priority)}`}>
                           {nonConformity.priority}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(nonConformity.status)}`}>
                           {nonConformity.status}
                         </span>
                       </td>
-                      <td className="hidden lg:table-cell px-4 py-3">
+                      <td className="hidden lg:table-cell px-4 py-3 align-top">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getImpactColor(nonConformity.impact_level)}`}>
                           {nonConformity.impact_level}
                         </span>
                       </td>
-                      <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white">
+                      <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white align-top">
                         {nonConformity.target_date ? (() => {
                           const date = new Date(nonConformity.target_date);
                           const userTimezoneOffset = date.getTimezoneOffset() * 60000;
@@ -349,27 +349,20 @@ export default function NonConformitiesPage() {
                           return adjustedDate.toLocaleDateString('en-GB');
                         })() : 'Not set'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         {/* Desktop Actions */}
-                        <div className="hidden md:flex items-center space-x-2">
-                          <button
-                            onClick={() => handleViewNonConformity(nonConformity.id)}
-                            className="text-blue-400 hover:text-blue-300 transition-colors"
-                            title="View Details"
-                          >
-                            <FiEye size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleEditNonConformity(nonConformity.id)}
-                            className="text-green-400 hover:text-green-300 transition-colors"
-                            title="Edit Non-Conformity"
+                        <div className="hidden md:flex items-start gap-2">
+                          <Link
+                            href={`/non-conformities/${nonConformity.id}/edit`}
+                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
+                            title="Edit conformity"
                           >
                             <FiEdit2 size={16} />
-                          </button>
+                          </Link>
                           <button
                             onClick={() => handleDeleteClick(nonConformity)}
-                            className="text-red-400 hover:text-red-300 transition-colors"
-                            title="Delete Non-Conformity"
+                            className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
+                            title="Delete conformity"
                           >
                             <FiTrash2 size={16} />
                           </button>
@@ -391,9 +384,9 @@ export default function NonConformitiesPage() {
                                 className="bg-brand-dark border border-brand-gray2 rounded-lg p-6 w-full max-w-sm"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <h3 className="text-lg font-semibold text-brand-white mb-4">
+                                <div className="text-lg font-semibold text-brand-white mb-4 text-left">
                                   Actions for &ldquo;{nonConformity.nc_number}&rdquo;
-                                </h3>
+                                </div>
                                 <div className="space-y-3">
                                   <button
                                     onClick={(e) => {
@@ -430,7 +423,7 @@ export default function NonConformitiesPage() {
                                   </button>
                                   <button
                                     onClick={() => setOpenDropdown(null)}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-gray3 hover:bg-brand-gray1/50 rounded-lg transition-colors"
+                                    className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-left"
                                   >
                                     Cancel
                                   </button>

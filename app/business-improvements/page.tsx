@@ -320,12 +320,12 @@ export default function BusinessImprovementsPage() {
                 ) : (
                   businessImprovements.map((improvement) => (
                     <tr key={improvement.id} className="hover:bg-brand-gray1/30">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <div className="text-sm font-medium text-brand-white">
                           {improvement.improvement_title}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <div>
                           <div className="text-sm font-medium text-brand-white">
                             {improvement.business_area}
@@ -337,27 +337,27 @@ export default function BusinessImprovementsPage() {
                           )}
                         </div>
                       </td>
-                      <td className="hidden md:table-cell px-4 py-3">
+                      <td className="hidden md:table-cell px-4 py-3 align-top">
                         <div className="text-sm text-brand-white">
                           {improvement.improvement_type}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(improvement.priority)}`}>
                           {improvement.priority}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(improvement.status)}`}>
                           {improvement.status}
                         </span>
                       </td>
-                      <td className="hidden lg:table-cell px-4 py-3">
+                      <td className="hidden lg:table-cell px-4 py-3 align-top">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getDocStatusColor(improvement.progress)}`}>
                           {improvement.progress}
                         </span>
                       </td>
-                      <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white">
+                      <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white align-top">
                         {improvement.target_completion_date ? (() => {
                           const date = new Date(improvement.target_completion_date);
                           const userTimezoneOffset = date.getTimezoneOffset() * 60000;
@@ -365,27 +365,20 @@ export default function BusinessImprovementsPage() {
                           return adjustedDate.toLocaleDateString('en-GB');
                         })() : 'Not set'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         {/* Desktop Actions */}
-                        <div className="hidden md:flex items-center space-x-2">
-                          <button
-                            onClick={() => handleViewBusinessImprovement(improvement.id)}
-                            className="text-blue-400 hover:text-blue-300 transition-colors"
-                            title="View Details"
-                          >
-                            <FiEye size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleEditBusinessImprovement(improvement.id)}
-                            className="text-green-400 hover:text-green-300 transition-colors"
-                            title="Edit Improvement"
+                        <div className="hidden md:flex items-start gap-2">
+                          <Link
+                            href={`/business-improvements/${improvement.id}/edit`}
+                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
+                            title="Edit improvement"
                           >
                             <FiEdit2 size={16} />
-                          </button>
+                          </Link>
                           <button
                             onClick={() => handleDeleteClick(improvement)}
-                            className="text-red-400 hover:text-red-300 transition-colors"
-                            title="Delete Improvement"
+                            className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
+                            title="Delete improvement"
                           >
                             <FiTrash2 size={16} />
                           </button>
@@ -407,9 +400,9 @@ export default function BusinessImprovementsPage() {
                                 className="bg-brand-dark border border-brand-gray2 rounded-lg p-6 w-full max-w-sm"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <h3 className="text-lg font-semibold text-brand-white mb-4">
+                                <div className="text-lg font-semibold text-brand-white mb-4 text-left">
                                   Actions for &ldquo;{improvement.improvement_title}&rdquo;
-                                </h3>
+                                </div>
                                 <div className="space-y-3">
                                   <button
                                     onClick={(e) => {
@@ -446,7 +439,7 @@ export default function BusinessImprovementsPage() {
                                   </button>
                                   <button
                                     onClick={() => setOpenDropdown(null)}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-gray3 hover:bg-brand-gray1/50 rounded-lg transition-colors"
+                                    className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-left"
                                   >
                                     Cancel
                                   </button>

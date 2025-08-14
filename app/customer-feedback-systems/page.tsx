@@ -220,8 +220,8 @@ export default function CustomerFeedbackSystemsPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                   Feedback System
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                  Last Review
+                <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  Feedback Type
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                   Status
@@ -244,7 +244,7 @@ export default function CustomerFeedbackSystemsPage() {
               ) : (
                 feedbackSystems.map((feedbackSystem) => (
                   <tr key={feedbackSystem.id} className="hover:bg-brand-gray1/30">
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <div>
                         <div className="text-sm font-medium text-brand-white">
                           {feedbackSystem.business_area}
@@ -256,21 +256,17 @@ export default function CustomerFeedbackSystemsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getFeedbackSystemColor(feedbackSystem.has_feedback_system)}`}>
                         {feedbackSystem.has_feedback_system}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-brand-white">
-                      {feedbackSystem.last_review_date ? (() => {
-                        const date = new Date(feedbackSystem.last_review_date);
-                        // Adjust for timezone offset
-                        const userTimezoneOffset = date.getTimezoneOffset() * 60000;
-                        const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
-                        return adjustedDate.toLocaleDateString('en-GB');
-                      })() : 'Not set'}
+                    <td className="hidden md:table-cell px-4 py-3 align-top">
+                      <div className="text-sm text-brand-white">
+                        {feedbackSystem.document_reference || 'Not specified'}
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <div className="flex items-center gap-2">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(feedbackSystem.doc_status)}`}>
                           {feedbackSystem.doc_status}
@@ -280,32 +276,32 @@ export default function CustomerFeedbackSystemsPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(feedbackSystem.progress)}`}>
                         {feedbackSystem.progress}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       {/* Desktop Actions */}
-                      <div className="hidden md:flex items-center space-x-2">
-                        <button
-                          onClick={() => handleViewFeedbackSystem(feedbackSystem.id)}
-                          className="text-blue-400 hover:text-blue-300 transition-colors"
-                          title="View Details"
+                      <div className="hidden md:flex items-start gap-2">
+                        <Link
+                          href={`/customer-feedback-systems/${feedbackSystem.id}`}
+                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
+                          title="View details"
                         >
                           <FiEye size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleEditFeedbackSystem(feedbackSystem.id)}
-                          className="text-green-400 hover:text-green-300 transition-colors"
-                          title="Edit Feedback System"
+                        </Link>
+                        <Link
+                          href={`/customer-feedback-systems/${feedbackSystem.id}/edit`}
+                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
+                          title="Edit system"
                         >
                           <FiEdit2 size={16} />
-                        </button>
+                        </Link>
                         <button
                           onClick={() => handleDeleteClick(feedbackSystem)}
-                          className="text-red-400 hover:text-red-300 transition-colors"
-                          title="Delete Feedback System"
+                          className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
+                          title="Delete system"
                         >
                           <FiTrash2 size={16} />
                         </button>
@@ -327,9 +323,9 @@ export default function CustomerFeedbackSystemsPage() {
                               className="bg-brand-dark border border-brand-gray2 rounded-lg p-6 w-full max-w-sm"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <h3 className="text-lg font-semibold text-brand-white mb-4">
+                              <div className="text-lg font-semibold text-brand-white mb-4 text-left">
                                 Actions for &ldquo;{feedbackSystem.business_area}&rdquo;
-                              </h3>
+                              </div>
                               <div className="space-y-3">
                                 <button
                                   onClick={(e) => {
@@ -366,7 +362,7 @@ export default function CustomerFeedbackSystemsPage() {
                                 </button>
                                 <button
                                   onClick={() => setOpenDropdown(null)}
-                                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-gray3 hover:bg-brand-gray1/50 rounded-lg transition-colors"
+                                  className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-left"
                                 >
                                   Cancel
                                 </button>

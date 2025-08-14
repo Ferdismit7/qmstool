@@ -45,14 +45,26 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(
+    const { payload } = await jwtVerify(
       token,
       new TextEncoder().encode(process.env.JWT_SECRET)
     );
-    console.log('Token verified successfully');
-    return NextResponse.next();
+    console.log('Token verified successfully, payload:', payload);
+    
+    // Add user info to headers for downstream use
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-user-id', payload.userId?.toString() || '');
+    requestHeaders.set('x-user-email', payload.email?.toString() || '');
+    requestHeaders.set('x-user-username', payload.username?.toString() || '');
+    
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   } catch (error) {
     console.log('Token verification failed:', error);
+    console.log('Token that failed:', token.substring(0, 20) + '...');
     return NextResponse.redirect(new URL('/auth', request.url));
   }
 }

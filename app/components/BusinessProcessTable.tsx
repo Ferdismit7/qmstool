@@ -202,12 +202,16 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
             color: var(--color-brand-white);
             font-size: 0.75rem;
             line-height: 1rem;
+            text-align: left;
+            vertical-align: top;
           }
           .status-cell-content {
             display: inline-block;
             padding: 0.25rem 0.75rem;
             border-radius: 0.25rem;
             min-width: fit-content;
+            text-align: left;
+            vertical-align: top;
           }
           td.expanded .cell-content {
             white-space: normal;
@@ -264,7 +268,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
                         style={expandedCell === cellId ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}
                       >
                         <div
-                          className={`status-cell-content text-xs text-center font-medium cursor-pointer rounded-full ${progressStatusStyles[value as keyof typeof progressStatusStyles] || 'bg-gray-500 text-white'}`}
+                          className={`status-cell-content text-xs font-medium cursor-pointer rounded-full ${progressStatusStyles[value as keyof typeof progressStatusStyles] || 'bg-gray-500 text-white'}`}
                           tabIndex={0}
                           aria-expanded={expandedCell === cellId}
                           onClick={() => handleCellClick(cellId)}
@@ -286,7 +290,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
                         style={expandedCell === cellId ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}
                       >
                         <div
-                          className={`status-cell-content text-xs text-center font-medium cursor-pointer ${progressStatusStyles[progressValue as keyof typeof progressStatusStyles] || 'text-gray-500'}`}
+                          className={`status-cell-content text-xs font-medium cursor-pointer ${progressStatusStyles[progressValue as keyof typeof progressStatusStyles] || 'text-gray-500'}`}
                           tabIndex={0}
                           aria-expanded={expandedCell === cellId}
                           onClick={() => handleCellClick(cellId)}
@@ -306,7 +310,7 @@ export default function BusinessProcessTable({ processes, loading, onEdit, refre
                       style={expandedCell === cellId ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}
                     >
                       <div
-                        className="cell-content text-xs text-center font-medium cursor-pointer"
+                        className="cell-content text-xs font-medium cursor-pointer"
                         tabIndex={0}
                         aria-expanded={expandedCell === cellId}
                         onClick={() => handleCellClick(cellId)}

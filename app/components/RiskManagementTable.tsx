@@ -256,12 +256,16 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
           color: var(--color-brand-white);
           font-size: 0.75rem;
           line-height: 1rem;
+          text-align: left;
+          vertical-align: top;
         }
         .status-cell-content {
           display: inline-block;
           padding: 0.25rem 0.75rem;
           border-radius: 0.25rem;
           min-width: fit-content;
+          text-align: left;
+          vertical-align: top;
         }
         td.expanded .cell-content {
           white-space: normal;
@@ -269,6 +273,7 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
           background: rgba(13, 16, 31, 0.75);
           border: 1px solid #3b82f6;
           border-radius: 0.5rem;
+          max-width: 100%;
           z-index: 1;
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
@@ -308,7 +313,7 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
                       style={expandedCell === cellId ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}
                     >
                       <div
-                        className={`status-cell-content text-xs text-center font-medium cursor-pointer rounded-full ${statusStyles[value as keyof typeof statusStyles] || 'bg-gray-500 text-white'}`}
+                                                  className={`status-cell-content text-xs font-medium cursor-pointer rounded-full ${statusStyles[value as keyof typeof statusStyles] || 'bg-gray-500 text-white'}`}
                         tabIndex={0}
                         aria-expanded={expandedCell === cellId}
                         onClick={() => handleCellClick(cellId)}
@@ -329,7 +334,7 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
                       style={expandedCell === cellId ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}
                     >
                       <div
-                        className={`status-cell-content text-xs text-center font-medium cursor-pointer rounded-full ${progressStyles[value as keyof typeof progressStyles] || 'bg-gray-500 text-white'}`}
+                                                  className={`status-cell-content text-xs font-medium cursor-pointer rounded-full ${progressStyles[value as keyof typeof progressStyles] || 'bg-gray-500 text-white'}`}
                         tabIndex={0}
                         aria-expanded={expandedCell === cellId}
                         onClick={() => handleCellClick(cellId)}
@@ -350,7 +355,7 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
                       style={expandedCell === cellId ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}
                     >
                       <div
-                        className={`status-cell-content text-xs text-center font-medium cursor-pointer rounded-full ${effectivenessStyles[value as keyof typeof effectivenessStyles] || 'bg-gray-500 text-white'}`}
+                                                  className={`status-cell-content text-xs font-medium cursor-pointer rounded-full ${effectivenessStyles[value as keyof typeof effectivenessStyles] || 'bg-gray-500 text-white'}`}
                         tabIndex={0}
                         aria-expanded={expandedCell === cellId}
                         onClick={() => handleCellClick(cellId)}
@@ -371,7 +376,7 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
                       style={expandedCell === cellId ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}
                     >
                       <div
-                        className="cell-content text-xs text-center font-medium cursor-pointer"
+                        className="cell-content text-xs font-medium cursor-pointer"
                         tabIndex={0}
                         aria-expanded={expandedCell === cellId}
                         onClick={() => handleCellClick(cellId)}
@@ -391,7 +396,7 @@ export default function RiskManagementTable({ controls, loading, onEdit, refresh
                     style={expandedCell === cellId ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}
                   >
                     <div
-                      className="cell-content text-xs text-center font-medium cursor-pointer"
+                                              className="cell-content text-xs font-medium cursor-pointer"
                       tabIndex={0}
                       aria-expanded={expandedCell === cellId}
                       onClick={() => handleCellClick(cellId)}

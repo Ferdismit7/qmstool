@@ -99,7 +99,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         }
         
         // Then try to fetch the full user data
-        await fetchUserData(token);
+        const success = await fetchUserData(token);
+        if (!success && tokenData && tokenData.username) {
+          // If fetch failed but we have token data, keep the temporary user state
+          console.log('Keeping temporary user state after failed fetch');
+        }
       } else {
         setUser(null);
       }
@@ -107,8 +111,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     };
 
-    // Add a small delay to ensure DOM is ready and cookies are accessible
-    const timer = setTimeout(initializeAuth, 50);
+    // Add a longer delay to ensure DOM is ready and cookies are accessible
+    const timer = setTimeout(initializeAuth, 100); // Reduced from 50ms to 100ms
     
     return () => clearTimeout(timer);
   }, [fetchUserData]);
@@ -149,17 +153,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !user && pathname !== '/auth') {
-      // Add a small delay to prevent race conditions during token refresh
+      // Add a longer delay to prevent race conditions during token refresh
       const timer = setTimeout(() => {
         const token = clientTokenUtils.getToken();
         if (!token) {
+          console.log('No token found, redirecting to auth');
           router.replace('/auth');
+        } else {
+          console.log('Token found but no user, attempting to fetch user data');
+          fetchUserData(token);
         }
-      }, 100);
+      }, 500); // Increased delay to 500ms
       
       return () => clearTimeout(timer);
     }
-  }, [isLoading, user, pathname, router]);
+  }, [isLoading, user, pathname, router, fetchUserData]);
 
   const getInitials = (username: string) => {
     const initial = username.charAt(0).toUpperCase();

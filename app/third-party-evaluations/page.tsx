@@ -248,7 +248,7 @@ export default function ThirdPartyEvaluationsPage() {
               ) : (
                 evaluations.map((evaluation) => (
                   <tr key={evaluation.id} className="hover:bg-brand-gray1/30">
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <div>
                         <div className="text-sm font-medium text-brand-white">
                           {evaluation.supplier_name}
@@ -260,15 +260,22 @@ export default function ThirdPartyEvaluationsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-brand-white">
-                      {evaluation.business_area}
+                    <td className="px-4 py-3 align-top">
+                      <div>
+                        <div className="text-sm font-medium text-brand-white">
+                          {evaluation.business_area}
+                        </div>
+                        {/* The original code had sub_business_area, but it's not in the interface.
+                            Assuming it's a placeholder for a future feature or typo.
+                            For now, removing it as it's not part of the ThirdPartyEvaluation interface. */}
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getEvaluationSystemColor(evaluation.evaluation_system_in_place)}`}>
                         {evaluation.evaluation_system_in_place}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-brand-white">
+                    <td className="px-4 py-3 align-top">
                       {evaluation.last_evaluation_date ? (() => {
                         const date = new Date(evaluation.last_evaluation_date);
                         // Adjust for timezone offset
@@ -277,7 +284,7 @@ export default function ThirdPartyEvaluationsPage() {
                         return adjustedDate.toLocaleDateString('en-GB');
                       })() : 'Not set'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <div className="flex items-center gap-2">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(evaluation.doc_status)}`}>
                           {evaluation.doc_status}
@@ -287,32 +294,32 @@ export default function ThirdPartyEvaluationsPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(evaluation.progress)}`}>
                         {evaluation.progress}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       {/* Desktop Actions */}
-                      <div className="hidden md:flex items-center space-x-2">
-                        <button
-                          onClick={() => handleViewEvaluation(evaluation.id)}
-                          className="text-blue-400 hover:text-blue-300 transition-colors"
-                          title="View Details"
+                      <div className="hidden md:flex items-start gap-2">
+                        <Link
+                          href={`/third-party-evaluations/${evaluation.id}`}
+                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
+                          title="View details"
                         >
                           <FiEye size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleEditEvaluation(evaluation.id)}
-                          className="text-green-400 hover:text-green-300 transition-colors"
-                          title="Edit Evaluation"
+                        </Link>
+                        <Link
+                          href={`/third-party-evaluations/${evaluation.id}/edit`}
+                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
+                          title="Edit evaluation"
                         >
                           <FiEdit2 size={16} />
-                        </button>
+                        </Link>
                         <button
                           onClick={() => handleDeleteClick(evaluation)}
-                          className="text-red-400 hover:text-red-300 transition-colors"
-                          title="Delete Evaluation"
+                          className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
+                          title="Delete evaluation"
                         >
                           <FiTrash2 size={16} />
                         </button>
@@ -334,9 +341,9 @@ export default function ThirdPartyEvaluationsPage() {
                               className="bg-brand-dark border border-brand-gray2 rounded-lg p-6 w-full max-w-sm"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <h3 className="text-lg font-semibold text-brand-white mb-4">
+                              <div className="text-lg font-semibold text-brand-white mb-4 text-left">
                                 Actions for &ldquo;{evaluation.supplier_name}&rdquo;
-                              </h3>
+                              </div>
                               <div className="space-y-3">
                                 <button
                                   onClick={(e) => {
@@ -373,7 +380,7 @@ export default function ThirdPartyEvaluationsPage() {
                                 </button>
                                 <button
                                   onClick={() => setOpenDropdown(null)}
-                                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-gray3 hover:bg-brand-gray1/50 rounded-lg transition-colors"
+                                  className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-left"
                                 >
                                   Cancel
                                 </button>

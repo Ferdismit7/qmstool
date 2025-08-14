@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
-import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
-import Notification from '@/app/components/Notification';
-import RiskManagementForm from '@/app/components/RiskManagementForm';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import Notification from '../components/Notification';
+import RiskManagementForm from '../components/RiskManagementForm';
 
 interface RiskManagementControl {
   id: number;

@@ -261,7 +261,7 @@ export default function DocumentsPage() {
                 ) : (
                   documents.map((document) => (
                     <tr key={document.id} className="hover:bg-brand-gray1/30">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <div>
                           <div className="text-sm font-medium text-brand-white">
                             {document.business_area}
@@ -273,7 +273,7 @@ export default function DocumentsPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <div className="text-sm font-medium text-brand-white">
                           {document.document_name}
                         </div>
@@ -283,7 +283,7 @@ export default function DocumentsPage() {
                           </div>
                         )}
                       </td>
-                      <td className="hidden md:table-cell px-4 py-3">
+                      <td className="hidden md:table-cell px-4 py-3 align-top">
                         <div className="text-sm text-brand-white">
                           {document.document_type || 'Not specified'}
                         </div>
@@ -293,12 +293,12 @@ export default function DocumentsPage() {
                           </div>
                         )}
                       </td>
-                      <td className="hidden lg:table-cell px-4 py-3">
+                      <td className="hidden lg:table-cell px-4 py-3 align-top">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(document.priority || '')}`}>
                           {document.priority || 'Not set'}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <div>
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(document.doc_status || '')}`}>
                             {document.doc_status || 'Not set'}
@@ -308,12 +308,12 @@ export default function DocumentsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(document.progress || '')}`}>
                           {document.progress || 'Not set'}
                         </span>
                       </td>
-                      <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white">
+                      <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white align-top">
                         {document.target_date ? (() => {
                           const date = new Date(document.target_date);
                           // Adjust for timezone offset
@@ -322,27 +322,27 @@ export default function DocumentsPage() {
                           return adjustedDate.toLocaleDateString('en-GB');
                         })() : 'Not set'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         {/* Desktop Actions */}
-                        <div className="hidden md:flex items-center space-x-2">
-                          <button
-                            onClick={() => handleViewDocument(document.id)}
-                            className="text-blue-400 hover:text-blue-300 transition-colors"
-                            title="View Details"
+                        <div className="hidden md:flex items-start gap-2">
+                          <Link
+                            href={`/documents/${document.id}`}
+                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
+                            title="View details"
                           >
                             <FiEye size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleEditDocument(document.id)}
-                            className="text-green-400 hover:text-green-300 transition-colors"
-                            title="Edit Document"
+                          </Link>
+                          <Link
+                            href={`/documents/${document.id}/edit`}
+                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
+                            title="Edit document"
                           >
                             <FiEdit2 size={16} />
-                          </button>
+                          </Link>
                           <button
                             onClick={() => handleDeleteClick(document)}
-                            className="text-red-400 hover:text-red-300 transition-colors"
-                            title="Delete Document"
+                            className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
+                            title="Delete document"
                           >
                             <FiTrash2 size={16} />
                           </button>
@@ -364,9 +364,9 @@ export default function DocumentsPage() {
                                 className="bg-brand-dark border border-brand-gray2 rounded-lg p-6 w-full max-w-sm"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <h3 className="text-lg font-semibold text-brand-white mb-4">
+                                <div className="text-lg font-semibold text-brand-white mb-4 text-left">
                                   Actions for &ldquo;{document.document_name}&rdquo;
-                                </h3>
+                                </div>
                                 <div className="space-y-3">
                                   <button
                                     onClick={(e) => {
@@ -403,7 +403,7 @@ export default function DocumentsPage() {
                                   </button>
                                   <button
                                     onClick={() => setOpenDropdown(null)}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-gray3 hover:bg-brand-gray1/50 rounded-lg transition-colors"
+                                    className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-left"
                                   >
                                     Cancel
                                   </button>

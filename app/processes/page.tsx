@@ -267,7 +267,7 @@ export default function ProcessesPage() {
               ) : (
                 processes.map((process) => (
                   <tr key={process.id} className="hover:bg-brand-gray1/30">
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <div>
                         <div className="text-sm font-medium text-brand-white">
                           {process.businessArea}
@@ -279,12 +279,12 @@ export default function ProcessesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <div className="text-sm font-medium text-brand-white">
                         {process.processName}
                       </div>
                     </td>
-                    <td className="hidden md:table-cell px-4 py-3">
+                    <td className="hidden md:table-cell px-4 py-3 align-top">
                       <div>
                         <div className="text-sm text-brand-white">
                           {process.documentName || 'Not specified'}
@@ -296,12 +296,12 @@ export default function ProcessesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="hidden lg:table-cell px-4 py-3">
+                    <td className="hidden lg:table-cell px-4 py-3 align-top">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(process.priority || '')}`}>
                         {process.priority || 'Not set'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <div>
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(process.docStatus || '')}`}>
                           {process.docStatus || 'Not set'}
@@ -311,12 +311,12 @@ export default function ProcessesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(process.progress || '')}`}>
                         {process.progress || 'Not set'}
                       </span>
                     </td>
-                    <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white">
+                    <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white align-top">
                       {process.targetDate ? (() => {
                         const date = new Date(process.targetDate);
                         // Adjust for timezone offset
@@ -325,9 +325,9 @@ export default function ProcessesPage() {
                         return adjustedDate.toLocaleDateString('en-GB');
                       })() : 'Not set'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       {/* Desktop view - always visible icons */}
-                      <div className="hidden md:flex items-center gap-2">
+                      <div className="hidden md:flex items-start gap-2">
                         <Link
                           href={`/processes/${process.id}`}
                           className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
@@ -378,7 +378,7 @@ export default function ProcessesPage() {
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <div className="p-4">
-                                    <div className="text-lg font-semibold text-brand-white mb-4 text-center">
+                                    <div className="text-lg font-semibold text-brand-white mb-4 text-left">
                                       Actions for &ldquo;{process.processName}&rdquo;
                                     </div>
                                     <div className="space-y-2">
@@ -424,7 +424,7 @@ export default function ProcessesPage() {
                                           e.stopPropagation();
                                           setOpenDropdown(null);
                                         }}
-                                        className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-center"
+                                        className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-left"
                                       >
                                         Cancel
                                       </button>
