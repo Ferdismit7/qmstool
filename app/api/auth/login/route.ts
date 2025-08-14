@@ -116,12 +116,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Set cookie with matching 30-day expiration
+    // Set cookie with matching 30-day expiration - Fixed for frontend compatibility
     const response = NextResponse.json({ token });
     response.cookies.set('authToken', token, {
-      httpOnly: true,
+      httpOnly: false, // Allow client-side access
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax', // More permissive for better compatibility
       maxAge: 30 * 24 * 60 * 60 // 30 days (matching JWT expiration)
     });
 

@@ -2,28 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { clientTokenUtils } from '@/lib/auth';
 
 interface LoginFormProps {
   onToggleForm: () => void;
 }
-
-// Helper function to store token in all locations for consistency
-const storeToken = (token: string, rememberMe: boolean = false) => {
-  if (rememberMe) {
-    localStorage.setItem('authToken', token);
-  } else {
-    sessionStorage.setItem('authToken', token);
-  }
-  
-  // Also store in cookie for server-side access
-  // Use more compatible cookie settings for production
-  const expires = rememberMe ? '; expires=Fri, 31 Dec 9999 23:59:59 GMT' : '';
-  const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
-  const secureFlag = isSecure ? '; secure' : '';
-  document.cookie = `authToken=${token}; path=/; samesite=lax${secureFlag}${expires}`;
-  
-  console.log('Token stored in', rememberMe ? 'localStorage' : 'sessionStorage', 'and session cookie');
-};
 
 const LoginForm = ({ onToggleForm }: LoginFormProps) => {
   const router = useRouter();
@@ -58,13 +41,8 @@ const LoginForm = ({ onToggleForm }: LoginFormProps) => {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Clear any existing tokens first
-      localStorage.removeItem('authToken');
-      sessionStorage.removeItem('authToken');
-      document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-
-      // Use the consistent token storage function
-      storeToken(data.token, formData.rememberMe);
+      // Store token using the utility function
+      clientTokenUtils.storeToken(data.token, formData.rememberMe);
 
       // Dispatch custom event to notify Layout component of user change
       window.dispatchEvent(new Event('tokenChange'));

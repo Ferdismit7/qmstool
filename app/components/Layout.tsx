@@ -6,6 +6,7 @@ import SidebarNav, { MobileMenuButton } from './SidebarNav';
 import LogoutButton from './LogoutButton';
 import PageTransition from './PageTransition';
 import Link from 'next/link';
+import { clientTokenUtils } from '@/lib/auth';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -33,46 +34,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setSidebarOpen(false);
   };
 
-  // Helper function to get token from all possible sources
-  const getAuthToken = () => {
-    // Check sessionStorage first (default for non-remembered logins)
-    let token = sessionStorage.getItem('authToken');
-    console.log('sessionStorage token:', token ? 'Found' : 'Not found');
-    // If not in sessionStorage, check localStorage (for remembered logins)
-    if (!token) {
-      token = localStorage.getItem('authToken');
-      console.log('localStorage token:', token ? 'Found' : 'Not found');
-    }
-    // If still no token, check cookies (for server-side compatibility)
-    if (!token) {
-      const cookies = document.cookie.split(';');
-      const authCookie = cookies.find(cookie => cookie.trim().startsWith('authToken='));
-      if (authCookie) {
-        token = authCookie.split('=')[1];
-        console.log('Cookie token: Found');
-      } else {
-        console.log('Cookie token: Not found');
-      }
-    }
-    console.log('Final token result:', token ? 'Token available' : 'No token found');
-    return token;
-  };
-
-  // Helper function to decode JWT token (client-side, for display purposes only)
-  const decodeToken = (token: string) => {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      return JSON.parse(jsonPayload);
-    } catch (error) {
-      console.error('Failed to decode token:', error);
-      return null;
-    }
-  };
-
   const fetchUserData = useCallback(async (token: string) => {
     setIsLoading(true);
     try {
@@ -96,13 +57,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         console.log('Failed to fetch user data, response not ok:', response.status);
         if (response.status === 401) {
           console.log('Token is invalid (401), clearing tokens');
-          localStorage.removeItem('authToken');
-          sessionStorage.removeItem('authToken');
-          document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+          clientTokenUtils.clearTokens();
           setUser(null);
         } else {
           console.log('API error but keeping token - might be temporary issue');
-          const tokenData = decodeToken(token);
+          const tokenData = clientTokenUtils.decodeToken(token);
           if (tokenData && tokenData.username) {
             console.log('Creating temporary user state from token:', tokenData);
             setUser({ username: tokenData.username });
@@ -113,7 +72,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to fetch user data:', error);
       console.log('Network error, keeping existing user state');
-      const tokenData = decodeToken(token);
+      const tokenData = clientTokenUtils.decodeToken(token);
       if (tokenData && tokenData.username) {
         console.log('Creating temporary user state from token after network error:', tokenData);
         setUser({ username: tokenData.username });
@@ -128,12 +87,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       setIsLoading(true);
       
-      const token = getAuthToken();
+      const token = clientTokenUtils.getToken();
       console.log('Initial token check:', token ? 'Token found' : 'No token');
       
       if (token) {
         // First, try to create a temporary user state from the token
-        const tokenData = decodeToken(token);
+        const tokenData = clientTokenUtils.decodeToken(token);
         if (tokenData && tokenData.username) {
           console.log('Setting temporary user state from token:', tokenData);
           setUser({ username: tokenData.username });
@@ -159,7 +118,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'authToken') {
         console.log('Auth token changed, refetching user data');
-        const token = getAuthToken();
+        const token = clientTokenUtils.getToken();
         if (token) {
           fetchUserData(token);
         } else {
@@ -171,7 +130,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     // Also listen for custom events when token changes in the same window
     const handleTokenChange = () => {
       console.log('Custom token change event detected');
-      const token = getAuthToken();
+      const token = clientTokenUtils.getToken();
       if (token) {
         fetchUserData(token);
       } else {
@@ -192,7 +151,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     if (!isLoading && !user && pathname !== '/auth') {
       // Add a small delay to prevent race conditions during token refresh
       const timer = setTimeout(() => {
-        const token = getAuthToken();
+        const token = clientTokenUtils.getToken();
         if (!token) {
           router.replace('/auth');
         }
@@ -238,7 +197,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   // Redirect to auth if no user and not on auth page
   if (!user && pathname !== '/auth') {
     // Check if we have a token before redirecting
-    const token = getAuthToken();
+    const token = clientTokenUtils.getToken();
     if (!token) {
       router.replace('/auth');
       return (

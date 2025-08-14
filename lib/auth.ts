@@ -13,6 +13,82 @@ export interface JWTPayload {
 }
 
 /**
+ * Client-side token utilities
+ */
+export const clientTokenUtils = {
+  /**
+   * Get token from all possible client-side sources
+   */
+  getToken: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    
+    // Check cookies first (set by server, most reliable for middleware)
+    const cookies = document.cookie.split(';');
+    const authCookie = cookies.find(cookie => cookie.trim().startsWith('authToken='));
+    if (authCookie) {
+      const token = authCookie.split('=')[1];
+      return token;
+    }
+    
+    // Fall back to sessionStorage (default for non-remembered logins)
+    let token = sessionStorage.getItem('authToken');
+    if (token) return token;
+    
+    // If not in sessionStorage, check localStorage (for remembered logins)
+    token = localStorage.getItem('authToken');
+    return token;
+  },
+
+  /**
+   * Store token in appropriate client-side storage
+   */
+  storeToken: (token: string, rememberMe: boolean = false): void => {
+    if (typeof window === 'undefined') return;
+    
+    // Clear any existing tokens first
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    
+    // Store in appropriate storage based on rememberMe preference
+    if (rememberMe) {
+      localStorage.setItem('authToken', token);
+    } else {
+      sessionStorage.setItem('authToken', token);
+    }
+  },
+
+  /**
+   * Clear all client-side tokens
+   */
+  clearTokens: (): void => {
+    if (typeof window === 'undefined') return;
+    
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    
+    // Clear cookie by setting it to expire in the past
+    document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  },
+
+  /**
+   * Decode JWT token (client-side, for display purposes only)
+   */
+  decodeToken: (token: string): JWTPayload | null => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error('Failed to decode token:', error);
+      return null;
+    }
+  }
+};
+
+/**
  * Extract user information from JWT token
  * @param request - Next.js request object
  * @returns User information from JWT token or null if invalid
