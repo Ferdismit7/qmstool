@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-import {prisma }from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -116,14 +116,35 @@ export async function POST(request: Request) {
       );
     }
 
-    // Set cookie with matching 30-day expiration - Fixed for frontend compatibility
-    const response = NextResponse.json({ token });
-    response.cookies.set('authToken', token, {
-      httpOnly: false, // Allow client-side access
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', // More permissive for better compatibility
-      maxAge: 30 * 24 * 60 * 60 // 30 days (matching JWT expiration)
+    // Create response with proper CORS headers
+    const response = NextResponse.json({ 
+      token,
+      user: {
+        userId: user.id,
+        email: user.email,
+        username: user.username,
+        businessArea: user.business_area
+      }
     });
+
+    // Set cookie with improved settings for production compatibility
+    const isProduction = process.env.NODE_ENV === 'production';
+    const domain = isProduction ? process.env.COOKIE_DOMAIN : undefined;
+    
+    response.cookies.set('authToken', token, {
+      httpOnly: false, // Allow client-side access for better UX
+      secure: isProduction, // Only use secure in production
+      sameSite: 'lax', // More permissive for better compatibility
+      maxAge: 30 * 24 * 60 * 60, // 30 days (matching JWT expiration)
+      path: '/',
+      ...(domain && { domain }) // Only set domain if specified
+    });
+
+    // Add CORS headers for better compatibility
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     console.log('Login successful for user:', user.email);
     return response;

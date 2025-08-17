@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
-import {prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 // Debug: Print the JWT secret on server start
 console.log('JWT_SECRET:', process.env.JWT_SECRET);
@@ -10,37 +10,41 @@ export interface JWTPayload {
   email: string;
   businessArea: string;
   username: string;
+  iat?: number;
+  exp?: number;
 }
 
 /**
- * Client-side token utilities
+ * Enhanced client-side token utilities with proper storage management
  */
 export const clientTokenUtils = {
   /**
-   * Get token from all possible client-side sources
+   * Get token from all possible client-side sources with priority order
    */
   getToken: (): string | null => {
     if (typeof window === 'undefined') return null;
     
-    // Check cookies first (set by server, most reliable for middleware)
+    // Priority 1: Check localStorage first (for remembered logins)
+    let token = localStorage.getItem('authToken');
+    if (token) return token;
+    
+    // Priority 2: Check sessionStorage (for session-only logins)
+    token = sessionStorage.getItem('authToken');
+    if (token) return token;
+    
+    // Priority 3: Check cookies (fallback for server-side compatibility)
     const cookies = document.cookie.split(';');
     const authCookie = cookies.find(cookie => cookie.trim().startsWith('authToken='));
     if (authCookie) {
-      const token = authCookie.split('=')[1];
-      return token;
+      const tokenValue = authCookie.split('=')[1];
+      return tokenValue;
     }
     
-    // Fall back to sessionStorage (default for non-remembered logins)
-    let token = sessionStorage.getItem('authToken');
-    if (token) return token;
-    
-    // If not in sessionStorage, check localStorage (for remembered logins)
-    token = localStorage.getItem('authToken');
-    return token;
+    return null;
   },
 
   /**
-   * Store token in appropriate client-side storage
+   * Store token in appropriate client-side storage with proper cleanup
    */
   storeToken: (token: string, rememberMe: boolean = false): void => {
     if (typeof window === 'undefined') return;
@@ -55,6 +59,10 @@ export const clientTokenUtils = {
     } else {
       sessionStorage.setItem('authToken', token);
     }
+    
+    // Also set cookie for server-side compatibility
+    const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60; // 30 days or 1 day
+    document.cookie = `authToken=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
   },
 
   /**
@@ -85,6 +93,108 @@ export const clientTokenUtils = {
       console.error('Failed to decode token:', error);
       return null;
     }
+  },
+
+  /**
+   * Check if token is expired (client-side check)
+   */
+  isTokenExpired: (token: string): boolean => {
+    try {
+      const decoded = clientTokenUtils.decodeToken(token);
+      if (!decoded || !decoded.exp) return true;
+      
+      const currentTime = Math.floor(Date.now() / 1000);
+      return decoded.exp < currentTime;
+    } catch (error) {
+      console.error('Failed to check token expiration:', error);
+      return true;
+    }
+  },
+
+  /**
+   * Get token with automatic expiration check
+   */
+  getValidToken: (): string | null => {
+    const token = clientTokenUtils.getToken();
+    if (!token) return null;
+    
+    if (clientTokenUtils.isTokenExpired(token)) {
+      console.log('Token is expired, clearing tokens');
+      clientTokenUtils.clearTokens();
+      return null;
+    }
+    
+    return token;
+  }
+};
+
+/**
+ * Enhanced API request utility with automatic token handling
+ */
+export const apiClient = {
+  /**
+   * Make authenticated API request with automatic token handling
+   */
+  request: async (url: string, options: RequestInit = {}): Promise<Response> => {
+    const token = clientTokenUtils.getValidToken();
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string>),
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include', // Include cookies for CORS
+    });
+
+    // Handle 401 responses by clearing tokens
+    if (response.status === 401) {
+      console.log('Received 401, clearing tokens');
+      clientTokenUtils.clearTokens();
+      window.dispatchEvent(new Event('tokenChange'));
+    }
+
+    return response;
+  },
+
+  /**
+   * GET request with automatic token handling
+   */
+  get: async (url: string): Promise<Response> => {
+    return apiClient.request(url, { method: 'GET' });
+  },
+
+  /**
+   * POST request with automatic token handling
+   */
+  post: async (url: string, data?: unknown): Promise<Response> => {
+    return apiClient.request(url, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  },
+
+  /**
+   * PUT request with automatic token handling
+   */
+  put: async (url: string, data?: unknown): Promise<Response> => {
+    return apiClient.request(url, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  },
+
+  /**
+   * DELETE request with automatic token handling
+   */
+  delete: async (url: string): Promise<Response> => {
+    return apiClient.request(url, { method: 'DELETE' });
   }
 };
 
