@@ -19,15 +19,29 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Skip auth check for static files and images
+  if (request.nextUrl.pathname.startsWith('/_next') || 
+      request.nextUrl.pathname.startsWith('/favicon.ico') ||
+      request.nextUrl.pathname.startsWith('/images/')) {
+    console.log('Skipping auth check for static resource');
+    return NextResponse.next();
+  }
+
   // Check if JWT_SECRET is available (for build-time safety)
   if (!process.env.JWT_SECRET) {
     console.warn('JWT_SECRET not available in middleware');
     return NextResponse.next();
   }
 
-  // Check for token in cookies first
+  // Check for token in HttpOnly cookies first (most secure)
   let token = request.cookies.get('authToken')?.value;
-  console.log('Token from cookies:', token ? 'Found' : 'Not found');
+  console.log('Token from HttpOnly cookies:', token ? 'Found' : 'Not found');
+
+  // If not in HttpOnly cookies, check client-side cookies
+  if (!token) {
+    token = request.cookies.get('clientAuthToken')?.value;
+    console.log('Token from client cookies:', token ? 'Found' : 'Not found');
+  }
 
   // If not in cookies, check Authorization header
   if (!token) {
@@ -56,6 +70,7 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-user-id', payload.userId?.toString() || '');
     requestHeaders.set('x-user-email', payload.email?.toString() || '');
     requestHeaders.set('x-user-username', payload.username?.toString() || '');
+    requestHeaders.set('x-user-business-area', payload.businessArea?.toString() || '');
     
     return NextResponse.next({
       request: {
@@ -65,7 +80,13 @@ export async function middleware(request: NextRequest) {
   } catch (error) {
     console.log('Token verification failed:', error);
     console.log('Token that failed:', token.substring(0, 20) + '...');
-    return NextResponse.redirect(new URL('/auth', request.url));
+    
+    // Clear invalid cookies
+    const response = NextResponse.redirect(new URL('/auth', request.url));
+    response.cookies.set('authToken', '', { maxAge: 0, path: '/' });
+    response.cookies.set('clientAuthToken', '', { maxAge: 0, path: '/' });
+    
+    return response;
   }
 }
 

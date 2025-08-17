@@ -31,6 +31,7 @@ const LoginForm = ({ onToggleForm }: LoginFormProps) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for better compatibility
         body: JSON.stringify(formData),
       });
 
