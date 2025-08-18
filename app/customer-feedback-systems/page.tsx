@@ -267,13 +267,13 @@ export default function CustomerFeedbackSystemsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <div className="flex items-center gap-2">
+                      <div>
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(feedbackSystem.doc_status)}`}>
                           {feedbackSystem.doc_status}
                         </span>
-                        <span className="text-xs text-brand-gray3">
-                          {feedbackSystem.status_percentage}%
-                        </span>
+                        <div className="text-xs text-brand-gray3 mt-1">
+                          {feedbackSystem.status_percentage || 0}%
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 align-top">

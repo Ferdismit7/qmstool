@@ -285,13 +285,13 @@ export default function ThirdPartyEvaluationsPage() {
                       })() : 'Not set'}
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <div className="flex items-center gap-2">
+                      <div>
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(evaluation.doc_status)}`}>
                           {evaluation.doc_status}
                         </span>
-                        <span className="text-xs text-brand-gray3">
-                          {evaluation.status_percentage}%
-                        </span>
+                        <div className="text-xs text-brand-gray3 mt-1">
+                          {evaluation.status_percentage || 0}%
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 align-top">

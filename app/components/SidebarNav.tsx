@@ -99,11 +99,6 @@ export default function SidebarNav({ isOpen = false, onClose }: SidebarNavProps)
       href: '/operations-summary',
       icon: FiBarChart2,
       label: 'Operations Summary'
-    },
-    {
-      href: '/management-report',
-      icon: FiBarChart2,
-      label: 'Management Report'
     }
   ];
 
