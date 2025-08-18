@@ -243,9 +243,6 @@ export default function PerformanceMonitoringPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Progress
                   </th>
-                  <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                    Status %
-                  </th>
                   <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Target Date
                   </th>
@@ -257,7 +254,7 @@ export default function PerformanceMonitoringPage() {
               <tbody className="divide-y divide-brand-gray1">
                 {controls.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-8 text-center text-brand-gray3">
+                    <td colSpan={9} className="px-4 py-8 text-center text-brand-gray3">
                       No performance monitoring controls found. Create your first control to get started.
                     </td>
                   </tr>
@@ -296,15 +293,15 @@ export default function PerformanceMonitoringPage() {
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(control.doc_status)}`}>
                             {control.doc_status}
                           </span>
+                          <div className="text-xs text-brand-gray3 mt-1">
+                            {control.status_percentage || 0}%
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 align-top">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(control.progress)}`}>
                           {control.progress}
                         </span>
-                      </td>
-                      <td className="hidden lg:table-cell px-4 py-3 text-sm text-brand-white align-top">
-                        {control.status_percentage}%
                       </td>
                       <td className="hidden md:table-cell px-4 py-3 text-sm text-brand-white align-top">
                         {control.target_date ? (() => {

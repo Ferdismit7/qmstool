@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Notification from '../components/Notification';
+import { clientTokenUtils } from '@/lib/auth';
 
 interface BusinessImprovement {
   id: number;
@@ -62,28 +63,12 @@ export default function BusinessImprovementsPage() {
   });
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
-  const getAuthToken = () => {
-    // Check sessionStorage first (default for non-remembered logins)
-    let token = sessionStorage.getItem('authToken');
-    // If not in sessionStorage, check localStorage (for remembered logins)
-    if (!token) {
-      token = localStorage.getItem('authToken');
-    }
-    // If still no token, check cookies (for server-side compatibility)
-    if (!token) {
-      const cookies = document.cookie.split(';');
-      const authCookie = cookies.find(cookie => cookie.trim().startsWith('authToken='));
-      if (authCookie) {
-        token = authCookie.split('=')[1];
-      }
-    }
-    return token;
-  };
+
 
   const fetchBusinessImprovements = useCallback(async () => {
     try {
       setIsLoading(true);
-      const token = getAuthToken();
+      const token = clientTokenUtils.getToken();
       
       if (!token) {
         throw new Error('No authentication token found');
@@ -180,7 +165,7 @@ export default function BusinessImprovementsPage() {
     if (!businessImprovementToDelete) return;
 
     try {
-      const token = getAuthToken();
+      const token = clientTokenUtils.getToken();
       
       if (!token) {
         throw new Error('No authentication token found');

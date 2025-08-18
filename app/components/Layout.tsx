@@ -302,11 +302,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       </svg>
                     </Link>
                     <Link
-                      href="/operational-report/business-areas"
+                      href="/management-report"
                       className="px-3 py-2 sm:px-3 sm:py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 font-medium text-sm transition-colors whitespace-nowrap"
-                      aria-label="View Business Areas"
+                      aria-label="View Management Report"
                     >
-                      Business Areas
+                      Management Report
                     </Link>
                   </div>
 

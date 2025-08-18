@@ -37,6 +37,14 @@ const progressStatusStyles = {
   'Major Challenges': 'bg-red-500 text-white',
 } as const;
 
+// Styles for status (doc_status)
+const statusStyles = {
+  'Completed': 'bg-green-500 text-white',
+  'New': 'bg-blue-500 text-white',
+  'In progress': 'bg-yellow-500 text-white',
+  'To be reviewed': 'bg-orange-500 text-white',
+} as const;
+
 const columns = [
   { key: 'business_area', label: 'Business Area' },
   { key: 'sub_business_area', label: 'Sub Business Area' },
@@ -45,7 +53,6 @@ const columns = [
   { key: 'priority', label: 'Priority' },
   { key: 'doc_status', label: 'Status' },
   { key: 'progress', label: 'Progress' },
-  { key: 'status_percentage', label: 'Status %' },
   { key: 'target_date', label: 'Target Date' },
   { key: 'proof', label: 'Proof' },
   { key: 'frequency', label: 'Frequency' },
@@ -147,7 +154,7 @@ export default function PerformanceMonitoringTable({ controls, loading, onEdit, 
           position: relative;
           overflow: hidden;
           text-overflow: ellipsis;
-          white-space: nowrap;
+          white-space: normal;
           transition: all 0.2s;
           cursor: pointer;
           padding: 0.5rem;
@@ -224,9 +231,10 @@ export default function PerformanceMonitoringTable({ controls, loading, onEdit, 
                   );
                 }
 
-                // Special rendering for status percentage column
-                if (col.key === 'status_percentage') {
-                  const progressValue = control.progress;
+                // Special rendering for status column with percentage underneath
+                if (col.key === 'doc_status') {
+                  const statusValue = String(control.doc_status ?? '');
+                  const percentValue = control.status_percentage ?? 0;
                   return (
                     <td
                       key={cellId}
@@ -235,12 +243,19 @@ export default function PerformanceMonitoringTable({ controls, loading, onEdit, 
                       style={expandedCell === cellId ? { minWidth: 300, maxWidth: 400, width: 400 } : { minWidth: 80, maxWidth: 120, width: 120 }}
                     >
                       <div
-                                                  className={`status-cell-content text-xs font-medium cursor-pointer rounded-full ${progressStatusStyles[progressValue as keyof typeof progressStatusStyles] || 'bg-gray-500 text-white'}`}
+                        className="cell-content text-xs font-medium cursor-pointer"
                         tabIndex={0}
                         aria-expanded={expandedCell === cellId}
                         onClick={() => handleCellClick(cellId)}
                       >
-                        {value}%
+                        <div
+                          className={`status-cell-content rounded-full ${statusStyles[statusValue as keyof typeof statusStyles] || 'bg-gray-500 text-white'}`}
+                        >
+                          {statusValue}
+                        </div>
+                        <div className="mt-1 text-[10px] text-gray-300" aria-label="Status percentage">
+                          {percentValue}%
+                        </div>
                       </div>
                     </td>
                   );

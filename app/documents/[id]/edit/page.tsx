@@ -45,7 +45,9 @@ export default function EditDocument({ params }: { params: Promise<{ id: string 
         setError(null);
         const response = await fetch(`/api/business-documents/${id}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch document');
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+          throw new Error(errorMessage);
         }
         const data = await response.json();
         setDocument(data);
@@ -74,7 +76,9 @@ export default function EditDocument({ params }: { params: Promise<{ id: string 
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update document');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(errorMessage);
       }
 
       // Redirect to the document detail page

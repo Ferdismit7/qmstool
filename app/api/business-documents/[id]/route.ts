@@ -27,13 +27,13 @@ export async function GET(
 
     // Create placeholders for IN clause
     const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [parseInt(id), ...userBusinessAreas];
+    const queryParams = [...userBusinessAreas, parseInt(id)];
 
     const [document] = await query(`
       SELECT bdr.*, ba.business_area 
       FROM businessdocumentregister bdr
       LEFT JOIN businessareas ba ON bdr.business_area = ba.business_area
-      WHERE bdr.id = ? AND bdr.business_area IN (${placeholders})
+      WHERE bdr.business_area IN (${placeholders}) AND bdr.id = ?
     `, queryParams);
 
     if (!document) {
@@ -81,7 +81,7 @@ export async function PUT(
 
     // Create placeholders for IN clause
     const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [parseInt(id), ...userBusinessAreas];
+    const queryParams = [...userBusinessAreas, parseInt(id)];
 
     // Check if document exists and user has access
     const [existingDocument] = await query(`
@@ -99,12 +99,12 @@ export async function PUT(
         document_type = ?, version = ?, progress = ?, doc_status = ?, status_percentage = ?,
         priority = ?, target_date = ?, document_owner = ?, update_date = NOW(),
         remarks = ?, review_date = ?
-      WHERE id = ? AND business_area IN (${placeholders})
+      WHERE business_area IN (${placeholders}) AND id = ?
     `, [
       sub_business_area, document_name, name_and_numbering, document_type,
       version, progress, doc_status, status_percentage, priority,
       target_date ? new Date(target_date) : null, document_owner, remarks,
-      review_date ? new Date(review_date) : null, parseInt(id), ...userBusinessAreas
+      review_date ? new Date(review_date) : null, ...userBusinessAreas, parseInt(id)
     ]);
 
     if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
@@ -116,8 +116,8 @@ export async function PUT(
       SELECT bdr.*, ba.business_area 
       FROM businessdocumentregister bdr
       LEFT JOIN businessareas ba ON bdr.business_area = ba.business_area
-      WHERE bdr.id = ? AND bdr.business_area IN (${placeholders})
-    `, [parseInt(id), ...userBusinessAreas]);
+      WHERE bdr.business_area IN (${placeholders}) AND bdr.id = ?
+    `, [...userBusinessAreas, parseInt(id)]);
 
     return NextResponse.json(updatedDocument);
   } catch (error) {
@@ -144,7 +144,7 @@ export async function DELETE(
 
     // Create placeholders for IN clause
     const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [parseInt(id), ...userBusinessAreas];
+    const queryParams = [...userBusinessAreas, parseInt(id)];
 
     // Check if document exists and user has access
     const [existingDocument] = await query(`
@@ -158,7 +158,7 @@ export async function DELETE(
 
     const result = await query(`
       DELETE FROM businessdocumentregister 
-      WHERE id = ? AND business_area IN (${placeholders})
+      WHERE business_area IN (${placeholders}) AND id = ?
     `, queryParams);
 
     if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
