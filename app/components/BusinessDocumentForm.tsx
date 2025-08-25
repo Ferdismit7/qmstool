@@ -378,10 +378,10 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
           >
             <option value="">Select document type</option>
             <option value="SOP">SOP</option>
-            <option value="BP">BP</option>
             <option value="Policy">Policy</option>
             <option value="Form">Form</option>
             <option value="Training Manual">Training Manual</option>
+            <option value="Template">Template</option>
           </select>
           {errors.document_type && (
             <p className="mt-1 text-sm text-red-500">{errors.document_type}</p>

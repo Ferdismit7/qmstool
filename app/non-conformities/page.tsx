@@ -247,11 +247,11 @@ export default function NonConformitiesPage() {
       </div>
 
       {/* Non-Conformities Table */}
-      <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 overflow-hidden">
-        <div className="overflow-x-auto min-w-full">
+      <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 overflow-hidden" style={{ maxHeight: '70vh', display: 'flex', flexDirection: 'column' }}>
+        <div className="overflow-x-auto min-w-full flex-1" style={{ overflowY: 'auto' }}>
           <div className="inline-block min-w-full align-middle">
             <table className="min-w-full divide-y divide-brand-gray1">
-              <thead className="bg-brand-gray1/50">
+              <thead className="bg-brand-gray1 sticky top-0 z-10">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     NC Number

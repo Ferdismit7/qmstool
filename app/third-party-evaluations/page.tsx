@@ -210,10 +210,10 @@ export default function ThirdPartyEvaluationsPage() {
       </div>
 
       {/* Evaluations Table */}
-      <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 overflow-hidden" style={{ maxHeight: '70vh', display: 'flex', flexDirection: 'column' }}>
+        <div className="overflow-x-auto flex-1" style={{ overflowY: 'auto' }}>
           <table className="w-full">
-            <thead className="bg-brand-gray1/50">
+            <thead className="bg-brand-gray1 sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                   Supplier
