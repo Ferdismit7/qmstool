@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { getCurrentUserBusinessAreas, getUserFromToken } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
@@ -127,6 +127,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Get current user ID from JWT token
+    const user = getUserFromToken(request);
+    if (!user || !user.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.userId;
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     if (userBusinessAreas.length === 0) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -138,15 +148,42 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Invalid ID' }, { status: 400 });
     }
 
-    // Soft delete
-    await prisma.recordKeepingSystem.update({
-      where: { id: recordKeepingSystemId },
-      data: {
-        deleted_at: new Date()
+    // Check if the record exists and belongs to user's business areas
+    const existingRecord = await prisma.recordKeepingSystem.findFirst({
+      where: {
+        id: recordKeepingSystemId,
+        business_area: {
+          in: userBusinessAreas
+        },
+        deleted_at: null // Only allow soft delete of non-deleted records
       }
     });
 
-    return NextResponse.json({ success: true, message: 'Record keeping system deleted successfully' });
+    if (!existingRecord) {
+      return NextResponse.json(
+        { success: false, error: 'Record not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    // Soft delete with audit trail
+    const softDeletedRecord = await prisma.recordKeepingSystem.update({
+      where: { id: recordKeepingSystemId },
+      data: {
+        deleted_at: new Date(),
+        deleted_by: userId
+      },
+      include: {
+        businessareas: true
+      }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Record keeping system deleted successfully',
+      deletedAt: softDeletedRecord.deleted_at,
+      deletedBy: softDeletedRecord.deleted_by
+    });
   } catch (error) {
     console.error('Error deleting record keeping system:', error);
     return NextResponse.json(

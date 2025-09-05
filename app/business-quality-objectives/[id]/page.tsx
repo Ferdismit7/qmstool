@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FiArrowLeft, FiEdit2 } from 'react-icons/fi';
+import MonthlyProgressTracker from '../../components/MonthlyProgressTracker';
 
 interface BusinessQualityObjective {
   id: number;
@@ -289,6 +290,12 @@ export default function BusinessQualityObjectiveDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Monthly Progress Tracking */}
+      <MonthlyProgressTracker 
+        objectiveId={objective.id} 
+        objectiveName={objective.qms_main_objectives || `Objective ${objective.id}`}
+      />
     </div>
   );
 } 

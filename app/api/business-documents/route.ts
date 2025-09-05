@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { getCurrentUserBusinessAreas, getUserFromToken } from '@/lib/auth';
 
 // Helper function to get local time in UTC+2 timezone
 const getLocalTime = () => {
@@ -248,9 +248,19 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE a business document
+// DELETE a business document (soft delete)
 export async function DELETE(request: NextRequest) {
   try {
+    // Get current user ID from JWT token
+    const user = getUserFromToken(request);
+    if (!user || !user.userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.userId;
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     
     if (userBusinessAreas.length === 0) {
@@ -266,21 +276,43 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    const result = await prisma.businessDocumentRegister.deleteMany({
+    const documentId = Number(id);
+    if (isNaN(documentId)) {
+      return NextResponse.json({ error: 'Invalid document ID' }, { status: 400 });
+    }
+
+    // Check if the document exists and belongs to user's business areas
+    const existingDocument = await prisma.businessDocumentRegister.findFirst({
       where: {
-        id: Number(id),
+        id: documentId,
         business_area: {
           in: userBusinessAreas
         },
-        deleted_at: null // Only delete non-deleted records
+        deleted_at: null // Only allow soft delete of non-deleted records
       }
     });
 
-    if (result.count === 0) {
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    if (!existingDocument) {
+      return NextResponse.json({ error: 'Document not found or access denied' }, { status: 404 });
     }
+
+    // Perform soft delete with audit trail
+    const softDeletedDocument = await prisma.businessDocumentRegister.update({
+      where: { id: documentId },
+      data: {
+        deleted_at: new Date(),
+        deleted_by: userId
+      },
+      include: {
+        businessareas: true
+      }
+    });
     
-    return NextResponse.json({ message: 'Document deleted successfully' });
+    return NextResponse.json({ 
+      message: 'Document deleted successfully',
+      deletedAt: softDeletedDocument.deleted_at,
+      deletedBy: softDeletedDocument.deleted_by
+    });
   } catch (error) {
     console.error('Error deleting document:', error);
     return NextResponse.json({ 

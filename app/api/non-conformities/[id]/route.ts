@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { getCurrentUserBusinessAreas, getUserFromToken } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
@@ -121,6 +121,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Get current user ID from JWT token
+    const user = getUserFromToken(request);
+    if (!user || !user.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.userId;
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
     if (userBusinessAreas.length === 0) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -132,15 +142,42 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Invalid ID' }, { status: 400 });
     }
 
-    // Soft delete
-    await prisma.nonConformity.update({
-      where: { id: nonConformityId },
-      data: {
-        deleted_at: new Date()
+    // Check if the non-conformity exists and belongs to user's business areas
+    const existingNonConformity = await prisma.nonConformity.findFirst({
+      where: {
+        id: nonConformityId,
+        business_area: {
+          in: userBusinessAreas
+        },
+        deleted_at: null // Only allow soft delete of non-deleted records
       }
     });
 
-    return NextResponse.json({ success: true, message: 'Non-conformity deleted successfully' });
+    if (!existingNonConformity) {
+      return NextResponse.json(
+        { success: false, error: 'Non-conformity not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    // Soft delete with audit trail
+    const softDeletedNonConformity = await prisma.nonConformity.update({
+      where: { id: nonConformityId },
+      data: {
+        deleted_at: new Date(),
+        deleted_by: userId
+      },
+      include: {
+        businessareas: true
+      }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Non-conformity deleted successfully',
+      deletedAt: softDeletedNonConformity.deleted_at,
+      deletedBy: softDeletedNonConformity.deleted_by
+    });
   } catch (error) {
     console.error('Error deleting non-conformity:', error);
     return NextResponse.json(

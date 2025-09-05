@@ -8,7 +8,7 @@ interface SoftDeleteRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get current user ID from JWT token (from cookies)
+    // Get current user ID from JWT token
     const user = getUserFromToken(request);
     if (!user || !user.userId) {
       return NextResponse.json(
@@ -31,13 +31,13 @@ export async function POST(request: NextRequest) {
 
     if (!id || typeof id !== 'number') {
       return NextResponse.json(
-        { error: 'Invalid process ID' },
+        { error: 'Invalid customer feedback system ID' },
         { status: 400 }
       );
     }
 
-    // Check if the process exists and belongs to user's business areas
-    const existingProcess = await prisma.businessProcessRegister.findFirst({
+    // Check if the customer feedback system exists and belongs to user's business areas
+    const existingFeedbackSystem = await prisma.customerFeedbackSystem.findFirst({
       where: {
         id: id,
         business_area: {
@@ -47,39 +47,36 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    if (!existingProcess) {
+    if (!existingFeedbackSystem) {
       return NextResponse.json(
-        { error: 'Process not found or access denied' },
+        { error: 'Customer feedback system not found or access denied' },
         { status: 404 }
       );
     }
 
     // Perform soft delete
-    const softDeletedProcess = await prisma.businessProcessRegister.update({
+    const softDeletedFeedbackSystem = await prisma.customerFeedbackSystem.update({
       where: {
         id: id
       },
       data: {
         deleted_at: new Date(),
         deleted_by: userId
-      },
-      include: {
-        businessareas: true
       }
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Process successfully deleted',
-      deletedAt: softDeletedProcess.deleted_at,
-      deletedBy: softDeletedProcess.deleted_by
+      message: 'Customer feedback system successfully deleted',
+      deletedAt: softDeletedFeedbackSystem.deleted_at,
+      deletedBy: softDeletedFeedbackSystem.deleted_by
     });
 
   } catch (error) {
-    console.error('Error soft deleting business process:', error);
+    console.error('Error soft deleting customer feedback system:', error);
     return NextResponse.json(
-      { error: 'Failed to delete business process' },
+      { error: 'Failed to delete customer feedback system' },
       { status: 500 }
     );
   }
-} 
+}

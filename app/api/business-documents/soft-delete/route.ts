@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserBusinessAreas, getUserFromToken } from '@/lib/auth';
+import { performSoftDeleteWithAudit } from '@/lib/services/auditService';
 
 interface SoftDeleteRequest {
   id: number;
@@ -54,25 +55,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Perform soft delete
-    const softDeletedDocument = await prisma.businessDocumentRegister.update({
-      where: {
-        id: id
-      },
-      data: {
-        deleted_at: new Date(),
-        deleted_by: userId
-      },
-      include: {
-        businessareas: true
-      }
-    });
+    // Perform soft delete with file cleanup and audit logging
+    const { result: softDeletedDocument, fileCleanupSuccess, auditEntry } = 
+      await performSoftDeleteWithAudit(
+        () => prisma.businessDocumentRegister.update({
+          where: { id: id },
+          data: {
+            deleted_at: new Date(),
+            deleted_by: userId
+          },
+          include: {
+            businessareas: true
+          }
+        }),
+        'businessdocumentregister',
+        id,
+        userId,
+        existingDocument.file_url,
+        existingDocument.file_name || undefined,
+        existingDocument.business_area || undefined
+      );
 
     return NextResponse.json({
       success: true,
       message: 'Document successfully deleted',
       deletedAt: softDeletedDocument.deleted_at,
-      deletedBy: softDeletedDocument.deleted_by
+      deletedBy: softDeletedDocument.deleted_by,
+      fileCleanupSuccess,
+      auditLog: {
+        tableName: auditEntry.tableName,
+        recordId: auditEntry.recordId,
+        deletedAt: auditEntry.deletedAt,
+        businessArea: auditEntry.businessArea,
+        fileName: auditEntry.fileName
+      }
     });
 
   } catch (error) {

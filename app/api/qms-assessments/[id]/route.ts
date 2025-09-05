@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/app/lib/db';
-import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUserBusinessAreas, getUserFromToken } from '@/lib/auth';
 
 /**
  * QMS Assessment Detail API Route
@@ -274,6 +275,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Get current user ID from JWT token
+    const user = getUserFromToken(request);
+    if (!user || !user.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.userId;
     const { id } = await params;
     const assessmentId = parseInt(id);
     const userBusinessAreas = await getCurrentUserBusinessAreas(request);
@@ -292,47 +303,38 @@ export async function DELETE(
       );
     }
 
-    // Create placeholders for IN clause
-    const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [assessmentId, ...userBusinessAreas];
-
     // Check if assessment exists and user has access
-    const [existingAssessment] = await query(`
-      SELECT id, business_area FROM qms_assessments WHERE id = ? AND business_area IN (${placeholders})
-    `, queryParams);
+    const existingAssessment = await prisma.qMSAssessment.findFirst({
+      where: {
+        id: assessmentId,
+        business_area: {
+          in: userBusinessAreas
+        },
+        deleted_at: null // Only allow soft delete of non-deleted records
+      }
+    });
 
     if (!existingAssessment) {
       return NextResponse.json(
-        { success: false, error: 'Assessment not found' },
+        { success: false, error: 'Assessment not found or access denied' },
         { status: 404 }
       );
     }
 
-    // Delete assessment items first (due to foreign key constraints)
-    await query(`
-      DELETE FROM qms_assessment_items WHERE assessment_id = ?
-    `, [assessmentId]);
-
-    // Delete approval records
-    await query(`
-      DELETE FROM qms_approvals WHERE assessment_id = ?
-    `, [assessmentId]);
-
-    // Delete the main assessment
-    const result = await query(`
-      DELETE FROM qms_assessments WHERE id = ? AND business_area IN (${placeholders})
-    `, queryParams);
-
-    if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Assessment not found' },
-        { status: 404 }
-      );
-    }
+    // Perform soft delete with audit trail
+    const softDeletedAssessment = await prisma.qMSAssessment.update({
+      where: { id: assessmentId },
+      data: {
+        deleted_at: new Date(),
+        deleted_by: userId
+      }
+    });
 
     return NextResponse.json({
       success: true,
-      message: 'Assessment deleted successfully'
+      message: 'Assessment deleted successfully',
+      deletedAt: softDeletedAssessment.deleted_at,
+      deletedBy: softDeletedAssessment.deleted_by
     });
   } catch (error) {
     console.error('Error deleting QMS assessment:', error);

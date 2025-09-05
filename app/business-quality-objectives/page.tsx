@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical, FiTrendingUp } from 'react-icons/fi';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Notification from '../components/Notification';
 
@@ -392,6 +392,18 @@ export default function BusinessQualityObjectivesPage() {
                                       >
                                         <FiEdit2 size={18} />
                                         <span className="text-base">Edit Objective</span>
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          console.log('Progress tracking clicked for objective:', objective.id);
+                                          router.push(`/business-quality-objectives/${objective.id}`);
+                                        }}
+                                        className="flex items-center gap-3 px-4 py-3 text-brand-white hover:bg-brand-gray1 transition-colors rounded-lg w-full text-left"
+                                      >
+                                        <FiTrendingUp size={18} />
+                                        <span className="text-base">Track Progress</span>
                                       </button>
                                       <button
                                         onClick={(e) => {

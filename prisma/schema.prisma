@@ -68,11 +68,35 @@ model BusinessQualityObjective {
   deleted_by                Int?
   businessareas             BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bqo_business_area")
   deletedBy                 User?          @relation("BusinessQualityObjectiveDeletedBy", fields: [deleted_by], references: [id])
+  monthlyProgress           BusinessQualityObjectiveProgress[]
 
   @@index([business_area], map: "fk_bqo_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
   @@index([deleted_by], map: "idx_deleted_by")
   @@map("businessqualityobjectives")
+}
+
+/// Business Quality Objective Monthly Progress Tracking
+model BusinessQualityObjectiveProgress {
+  id           Int      @id @default(autoincrement())
+  objective_id Int
+  month        Int      @db.TinyInt // 1-12
+  year         Int
+  percentage   Decimal  @db.Decimal(5, 2) // 0.00-100.00
+  notes        String?  @db.Text
+  created_at   DateTime @default(now()) @db.Timestamp(0)
+  updated_at   DateTime @default(now()) @updatedAt @db.Timestamp(0)
+  created_by   Int?
+  
+  objective    BusinessQualityObjective @relation(fields: [objective_id], references: [id], onDelete: Cascade)
+  createdBy    User?                    @relation("BusinessQualityObjectiveProgressCreatedBy", fields: [created_by], references: [id])
+
+  @@unique([objective_id, month, year], map: "unique_objective_month_year")
+  @@index([objective_id], map: "idx_objective_id")
+  @@index([month, year], map: "idx_month_year")
+  @@index([created_by], map: "idx_created_by")
+  @@index([created_at], map: "idx_created_at")
+  @@map("business_quality_objective_progress")
 }
 
 model TrainingSession {
@@ -81,9 +105,19 @@ model TrainingSession {
   sessions      String         @db.VarChar(50)
   session_date  DateTime       @db.Date
   remarks       String         @db.Text
+  file_url      String?        @db.VarChar(500)
+  file_name     String?        @db.VarChar(255)
+  file_size     BigInt?
+  file_type     String?        @db.VarChar(100)
+  uploaded_at   DateTime?      @default(now()) @db.Timestamp(0)
+  deleted_at    DateTime?      @db.Timestamp(0)
+  deleted_by    Int?
   businessareas BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_ts_business_area")
+  deletedBy     User?          @relation("TrainingSessionDeletedBy", fields: [deleted_by], references: [id])
 
   @@index([business_area], map: "fk_ts_business_area")
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
   @@map("trainingsessions")
 }
 
@@ -224,6 +258,11 @@ model User {
   deletedNonConformities NonConformity[] @relation("NonConformityDeletedBy")
   deletedRecordKeepingSystems RecordKeepingSystem[] @relation("RecordKeepingDeletedBy")
   deletedBusinessImprovements BusinessImprovement[] @relation("BusinessImprovementDeletedBy")
+  deletedTrainingSessions TrainingSession[] @relation("TrainingSessionDeletedBy")
+  deletedThirdPartyEvaluations ThirdPartyEvaluation[] @relation("ThirdPartyEvaluationDeletedBy")
+  deletedCustomerFeedbackSystems CustomerFeedbackSystem[] @relation("CustomerFeedbackSystemDeletedBy")
+  deletedQMSAssessments QMSAssessment[] @relation("QMSAssessmentDeletedBy")
+  createdBusinessQualityObjectiveProgress BusinessQualityObjectiveProgress[] @relation("BusinessQualityObjectiveProgressCreatedBy")
 
   @@index([business_area], map: "fk_use_business_area")
   @@map("users")
@@ -275,9 +314,19 @@ model QMSAssessment {
   section4Data             String?             @db.Text
   status                   String              @default("draft") @db.VarChar(20)
   updatedAt                DateTime            @default(now()) @db.Timestamp(0)
+  file_url                 String?             @db.VarChar(500)
+  file_name                String?             @db.VarChar(255)
+  file_size                BigInt?
+  file_type                String?             @db.VarChar(100)
+  uploaded_at              DateTime?           @default(now()) @db.Timestamp(0)
+  deleted_at               DateTime?           @db.Timestamp(0)
+  deleted_by               Int?
   approval                 QMSApproval[]
   items                    QMSAssessmentItem[]
+  deletedBy                User?               @relation("QMSAssessmentDeletedBy", fields: [deleted_by], references: [id])
 
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
   @@map("qms_assessments")
 }
 
@@ -329,9 +378,19 @@ model ThirdPartyEvaluation {
   doc_status                String   @db.VarChar(20)
   progress                  String   @db.VarChar(20)
   notes                     String?  @db.Text
+  file_url                  String?  @db.VarChar(500)
+  file_name                 String?  @db.VarChar(255)
+  file_size                 BigInt?
+  file_type                 String?  @db.VarChar(100)
+  uploaded_at               DateTime? @default(now()) @db.Timestamp(0)
   created_at                DateTime @default(now()) @db.Timestamp(0)
   updated_at                DateTime @default(now()) @updatedAt @db.Timestamp(0)
+  deleted_at                DateTime? @db.Timestamp(0)
+  deleted_by                Int?
+  deletedBy                 User?    @relation("ThirdPartyEvaluationDeletedBy", fields: [deleted_by], references: [id])
 
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
   @@map("third_party_evaluations")
 }
 
@@ -345,9 +404,19 @@ model CustomerFeedbackSystem {
   doc_status          String   @db.VarChar(20)
   progress            String   @db.VarChar(20)
   notes               String?  @db.Text
+  file_url            String?  @db.VarChar(500)
+  file_name           String?  @db.VarChar(255)
+  file_size           BigInt?
+  file_type           String?  @db.VarChar(100)
+  uploaded_at         DateTime? @default(now()) @db.Timestamp(0)
   created_at          DateTime @default(now()) @db.Timestamp(0)
   updated_at          DateTime @default(now()) @updatedAt @db.Timestamp(0)
+  deleted_at          DateTime? @db.Timestamp(0)
+  deleted_by          Int?
+  deletedBy           User?    @relation("CustomerFeedbackSystemDeletedBy", fields: [deleted_by], references: [id])
 
+  @@index([deleted_at], map: "idx_deleted_at")
+  @@index([deleted_by], map: "idx_deleted_by")
   @@map("customer_feedback_systems")
 }
 

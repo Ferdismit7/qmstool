@@ -8,7 +8,7 @@ interface SoftDeleteRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get current user ID from JWT token (from cookies)
+    // Get current user ID from JWT token
     const user = getUserFromToken(request);
     if (!user || !user.userId) {
       return NextResponse.json(
@@ -31,13 +31,13 @@ export async function POST(request: NextRequest) {
 
     if (!id || typeof id !== 'number') {
       return NextResponse.json(
-        { error: 'Invalid process ID' },
+        { error: 'Invalid training session ID' },
         { status: 400 }
       );
     }
 
-    // Check if the process exists and belongs to user's business areas
-    const existingProcess = await prisma.businessProcessRegister.findFirst({
+    // Check if the training session exists and belongs to user's business areas
+    const existingTrainingSession = await prisma.trainingSession.findFirst({
       where: {
         id: id,
         business_area: {
@@ -47,15 +47,15 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    if (!existingProcess) {
+    if (!existingTrainingSession) {
       return NextResponse.json(
-        { error: 'Process not found or access denied' },
+        { error: 'Training session not found or access denied' },
         { status: 404 }
       );
     }
 
     // Perform soft delete
-    const softDeletedProcess = await prisma.businessProcessRegister.update({
+    const softDeletedTrainingSession = await prisma.trainingSession.update({
       where: {
         id: id
       },
@@ -70,16 +70,16 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Process successfully deleted',
-      deletedAt: softDeletedProcess.deleted_at,
-      deletedBy: softDeletedProcess.deleted_by
+      message: 'Training session successfully deleted',
+      deletedAt: softDeletedTrainingSession.deleted_at,
+      deletedBy: softDeletedTrainingSession.deleted_by
     });
 
   } catch (error) {
-    console.error('Error soft deleting business process:', error);
+    console.error('Error soft deleting training session:', error);
     return NextResponse.json(
-      { error: 'Failed to delete business process' },
+      { error: 'Failed to delete training session' },
       { status: 500 }
     );
   }
-} 
+}
