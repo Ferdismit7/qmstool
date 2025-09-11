@@ -34,6 +34,7 @@ model BusinessProcessRegister {
   deleted_by        Int?
   businessareas     BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bpr_business_area")
   deletedBy         User?          @relation("BusinessProcessDeletedBy", fields: [deleted_by], references: [id])
+  linkedDocuments   BusinessProcessDocumentLink[]
 
   @@index([business_area], map: "fk_bpr_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
@@ -147,11 +148,33 @@ model BusinessDocumentRegister {
   deleted_by         Int?
   businessareas      BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bdr_business_area")
   deletedBy          User?          @relation("BusinessDocumentDeletedBy", fields: [deleted_by], references: [id])
+  linkedProcesses    BusinessProcessDocumentLink[]
 
   @@index([business_area], map: "fk_bdr_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
   @@index([deleted_by], map: "idx_deleted_by")
   @@map("businessdocumentregister")
+}
+
+/// Business Process Document Links - Junction table linking Business Processes to Business Documents
+model BusinessProcessDocumentLink {
+  id                    Int      @id @default(autoincrement())
+  business_process_id   Int
+  business_document_id  Int
+  created_at            DateTime @default(now()) @db.Timestamp(0)
+  updated_at            DateTime @default(now()) @updatedAt @db.Timestamp(0)
+  created_by            Int?
+  
+  businessProcess       BusinessProcessRegister @relation(fields: [business_process_id], references: [id], onDelete: Cascade)
+  businessDocument      BusinessDocumentRegister @relation(fields: [business_document_id], references: [id], onDelete: Cascade)
+  createdBy             User? @relation("BusinessProcessDocumentLinkCreatedBy", fields: [created_by], references: [id])
+  
+  @@unique([business_process_id, business_document_id], map: "unique_bp_bd_link")
+  @@index([business_process_id], map: "idx_business_process_id")
+  @@index([business_document_id], map: "idx_business_document_id")
+  @@index([created_by], map: "idx_created_by")
+  @@index([created_at], map: "idx_created_at")
+  @@map("business_process_document_links")
 }
 
 model PerformanceMonitoringControl {
@@ -263,6 +286,7 @@ model User {
   deletedCustomerFeedbackSystems CustomerFeedbackSystem[] @relation("CustomerFeedbackSystemDeletedBy")
   deletedQMSAssessments QMSAssessment[] @relation("QMSAssessmentDeletedBy")
   createdBusinessQualityObjectiveProgress BusinessQualityObjectiveProgress[] @relation("BusinessQualityObjectiveProgressCreatedBy")
+  createdBusinessProcessDocumentLinks BusinessProcessDocumentLink[] @relation("BusinessProcessDocumentLinkCreatedBy")
 
   @@index([business_area], map: "fk_use_business_area")
   @@map("users")

@@ -3,6 +3,36 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FiArrowLeft, FiEdit2 } from 'react-icons/fi';
+import DocumentLinkingManager from '../../components/DocumentLinkingManager';
+
+interface BusinessDocument {
+  id: number;
+  document_name: string;
+  document_type: string;
+  version: string;
+  doc_status: string;
+  progress: string;
+  status_percentage: number;
+  file_url?: string;
+  file_name?: string;
+  file_type?: string;
+  uploaded_at?: string;
+}
+
+interface LinkedDocument {
+  id: number;
+  business_process_id: number;
+  business_document_id: number;
+  created_at: string;
+  updated_at: string;
+  created_by: number | null;
+  businessDocument: BusinessDocument;
+  createdBy: {
+    id: number;
+    username: string;
+    email: string;
+  } | null;
+}
 
 interface BusinessProcess {
   id: number;
@@ -20,10 +50,12 @@ interface BusinessProcess {
   updateDate?: string;
   remarks?: string;
   reviewDate?: string;
+  linkedDocuments?: LinkedDocument[];
 }
 
 export default function BusinessProcessDetailPage() {
   const [process, setProcess] = useState<BusinessProcess | null>(null);
+  const [linkedDocuments, setLinkedDocuments] = useState<LinkedDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,6 +75,7 @@ export default function BusinessProcessDetailPage() {
         
         const data = await response.json();
         setProcess(data);
+        setLinkedDocuments(data.linkedDocuments || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -305,6 +338,15 @@ export default function BusinessProcessDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Document Linking Section */}
+      <DocumentLinkingManager
+        businessProcessId={process.id}
+        businessArea={process.businessArea}
+        linkedDocuments={linkedDocuments}
+        onLinkedDocumentsChange={setLinkedDocuments}
+        canEdit={true}
+      />
     </div>
   );
 } 

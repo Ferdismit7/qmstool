@@ -266,7 +266,11 @@ export default function ProcessesPage() {
                 </tr>
               ) : (
                 processes.map((process) => (
-                  <tr key={process.id} className="hover:bg-brand-gray1/30">
+                  <tr 
+                    key={process.id} 
+                    className="hover:bg-brand-gray1/30 cursor-pointer"
+                    onClick={() => router.push(`/processes/${process.id}`)}
+                  >
                     <td className="px-4 py-3 align-top">
                       <div>
                         <div className="text-sm font-medium text-brand-white">
@@ -327,7 +331,7 @@ export default function ProcessesPage() {
                     </td>
                     <td className="px-4 py-3 align-top">
                       {/* Desktop view - always visible icons */}
-                      <div className="hidden md:flex items-start gap-2">
+                      <div className="hidden md:flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
                         <Link
                           href={`/processes/${process.id}`}
                           className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"

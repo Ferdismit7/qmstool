@@ -2,6 +2,36 @@
 
 import React, { useEffect, useState } from 'react';
 import BusinessProcessForm from '@/app/components/BusinessProcessForm';
+import DocumentLinkingManager from '@/app/components/DocumentLinkingManager';
+
+interface BusinessDocument {
+  id: number;
+  document_name: string;
+  document_type: string;
+  version: string;
+  doc_status: string;
+  progress: string;
+  status_percentage: number;
+  file_url?: string;
+  file_name?: string;
+  file_type?: string;
+  uploaded_at?: string;
+}
+
+interface LinkedDocument {
+  id: number;
+  business_process_id: number;
+  business_document_id: number;
+  created_at: string;
+  updated_at: string;
+  created_by: number | null;
+  businessDocument: BusinessDocument;
+  createdBy: {
+    id: number;
+    username: string;
+    email: string;
+  } | null;
+}
 
 interface BusinessProcess {
   id: number;
@@ -26,6 +56,7 @@ export default function EditBusinessProcessPage({
   params: Promise<{ id: string }>;
 }) {
   const [process, setProcess] = useState<BusinessProcess | null>(null);
+  const [linkedDocuments, setLinkedDocuments] = useState<LinkedDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -104,6 +135,7 @@ export default function EditBusinessProcessPage({
         };
         
         setProcess(transformedData);
+        setLinkedDocuments(data.linkedDocuments || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -122,9 +154,24 @@ export default function EditBusinessProcessPage({
     <div className="w-full px-2 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-brand-white mb-2">Edit Business Process</h1>
-        <p className="text-brand-gray2">Update the business process details</p>
+        <p className="text-brand-gray2">Update the business process details and manage linked documents</p>
       </div>
-      <BusinessProcessForm mode="edit" process={process} />
+      
+      <div className="space-y-8">
+        <BusinessProcessForm mode="edit" process={process} />
+        
+        {/* Document Linking Section */}
+        <div className="bg-brand-gray2/30 border border-brand-gray1 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-brand-white mb-4">Document Management</h2>
+          <DocumentLinkingManager
+            businessProcessId={process.id}
+            businessArea={process.business_area}
+            linkedDocuments={linkedDocuments}
+            onLinkedDocumentsChange={setLinkedDocuments}
+            canEdit={true}
+          />
+        </div>
+      </div>
     </div>
   );
 } 

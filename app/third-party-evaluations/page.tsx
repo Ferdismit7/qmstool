@@ -247,7 +247,11 @@ export default function ThirdPartyEvaluationsPage() {
                 </tr>
               ) : (
                 evaluations.map((evaluation) => (
-                  <tr key={evaluation.id} className="hover:bg-brand-gray1/30">
+                  <tr 
+                    key={evaluation.id} 
+                    className="hover:bg-brand-gray1/30 cursor-pointer"
+                    onClick={() => router.push(`/third-party-evaluations/${evaluation.id}`)}
+                  >
                     <td className="px-4 py-3 align-top">
                       <div>
                         <div className="text-sm font-medium text-brand-white">
@@ -301,7 +305,7 @@ export default function ThirdPartyEvaluationsPage() {
                     </td>
                     <td className="px-4 py-3 align-top">
                       {/* Desktop Actions */}
-                      <div className="hidden md:flex items-start gap-2">
+                      <div className="hidden md:flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
                         <Link
                           href={`/third-party-evaluations/${evaluation.id}`}
                           className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"

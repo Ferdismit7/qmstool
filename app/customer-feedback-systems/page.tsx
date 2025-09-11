@@ -243,7 +243,11 @@ export default function CustomerFeedbackSystemsPage() {
                 </tr>
               ) : (
                 feedbackSystems.map((feedbackSystem) => (
-                  <tr key={feedbackSystem.id} className="hover:bg-brand-gray1/30">
+                  <tr 
+                    key={feedbackSystem.id} 
+                    className="hover:bg-brand-gray1/30 cursor-pointer"
+                    onClick={() => router.push(`/customer-feedback-systems/${feedbackSystem.id}`)}
+                  >
                     <td className="px-4 py-3 align-top">
                       <div>
                         <div className="text-sm font-medium text-brand-white">
@@ -283,7 +287,7 @@ export default function CustomerFeedbackSystemsPage() {
                     </td>
                     <td className="px-4 py-3 align-top">
                       {/* Desktop Actions */}
-                      <div className="hidden md:flex items-start gap-2">
+                      <div className="hidden md:flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
                         <Link
                           href={`/customer-feedback-systems/${feedbackSystem.id}`}
                           className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"

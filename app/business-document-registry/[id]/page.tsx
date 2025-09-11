@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { FiArrowLeft, FiEdit2 } from 'react-icons/fi';
 
 interface BusinessDocument {
@@ -32,6 +33,8 @@ export default function BusinessDocumentDetail({ params }: { params: Promise<{ i
   const [document, setDocument] = useState<BusinessDocument | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const fromParam = searchParams.get('from');
 
   useEffect(() => {
     const fetchDocument = async () => {
@@ -139,15 +142,17 @@ export default function BusinessDocumentDetail({ params }: { params: Promise<{ i
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link
-            href="/business-document-registry"
+            href={fromParam ? decodeURIComponent(fromParam) : "/business-document-registry"}
             className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
-            title="Back to documents"
+            title={fromParam ? "Back to previous page" : "Back to documents"}
           >
             <FiArrowLeft size={20} />
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-brand-white">{document.document_name}</h1>
-            <p className="text-brand-gray3 mt-1">Document Details</p>
+            <p className="text-brand-gray3 mt-1">
+              {fromParam ? "Document Details (from Business Process)" : "Document Details"}
+            </p>
           </div>
         </div>
         <Link

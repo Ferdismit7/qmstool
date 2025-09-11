@@ -288,7 +288,11 @@ export default function NonConformitiesPage() {
                   </tr>
                 ) : (
                   nonConformities.map((nonConformity) => (
-                    <tr key={nonConformity.id} className="hover:bg-brand-gray1/30">
+                    <tr 
+                      key={nonConformity.id} 
+                      className="hover:bg-brand-gray1/30 cursor-pointer"
+                      onClick={() => router.push(`/non-conformities/${nonConformity.id}`)}
+                    >
                       <td className="px-4 py-3 align-top">
                         <div className="text-sm font-medium text-brand-white">
                           {nonConformity.nc_number}
@@ -336,7 +340,7 @@ export default function NonConformitiesPage() {
                       </td>
                       <td className="px-4 py-3 align-top">
                         {/* Desktop Actions */}
-                        <div className="hidden md:flex items-start gap-2">
+                        <div className="hidden md:flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
                           <Link
                             href={`/non-conformities/${nonConformity.id}/edit`}
                             className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"

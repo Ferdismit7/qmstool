@@ -260,7 +260,11 @@ export default function DocumentsPage() {
                   </tr>
                 ) : (
                   documents.map((document) => (
-                    <tr key={document.id} className="hover:bg-brand-gray1/30">
+                    <tr 
+                      key={document.id} 
+                      className="hover:bg-brand-gray1/30 cursor-pointer"
+                      onClick={() => router.push(`/documents/${document.id}`)}
+                    >
                       <td className="px-4 py-3 align-top">
                         <div>
                           <div className="text-sm font-medium text-brand-white">
@@ -324,7 +328,7 @@ export default function DocumentsPage() {
                       </td>
                       <td className="px-4 py-3 align-top">
                         {/* Desktop Actions */}
-                        <div className="hidden md:flex items-start gap-2">
+                        <div className="hidden md:flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
                           <Link
                             href={`/documents/${document.id}`}
                             className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
@@ -349,7 +353,7 @@ export default function DocumentsPage() {
                         </div>
 
                         {/* Mobile Actions Dropdown */}
-                        <div className="md:hidden relative">
+                        <div className="md:hidden relative" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => handleDropdownToggle(document.id)}
                             className="text-brand-gray3 hover:text-brand-white transition-colors"

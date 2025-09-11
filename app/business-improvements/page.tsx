@@ -304,7 +304,11 @@ export default function BusinessImprovementsPage() {
                   </tr>
                 ) : (
                   businessImprovements.map((improvement) => (
-                    <tr key={improvement.id} className="hover:bg-brand-gray1/30">
+                    <tr 
+                      key={improvement.id} 
+                      className="hover:bg-brand-gray1/30 cursor-pointer"
+                      onClick={() => router.push(`/business-improvements/${improvement.id}`)}
+                    >
                       <td className="px-4 py-3 align-top">
                         <div className="text-sm font-medium text-brand-white">
                           {improvement.improvement_title}
@@ -352,7 +356,7 @@ export default function BusinessImprovementsPage() {
                       </td>
                       <td className="px-4 py-3 align-top">
                         {/* Desktop Actions */}
-                        <div className="hidden md:flex items-start gap-2">
+                        <div className="hidden md:flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
                           <Link
                             href={`/business-improvements/${improvement.id}/edit`}
                             className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"

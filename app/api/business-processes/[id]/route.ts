@@ -20,6 +20,32 @@ const transformBusinessProcess = (dbProcess: unknown) => {
     update_date: Date | null;
     remarks: string | null;
     review_date: Date | null;
+    linkedDocuments?: Array<{
+      id: number;
+      business_process_id: number;
+      business_document_id: number;
+      created_at: Date;
+      updated_at: Date;
+      created_by: number | null;
+      businessDocument: {
+        id: number;
+        document_name: string;
+        document_type: string;
+        version: string;
+        doc_status: string;
+        progress: string;
+        status_percentage: number;
+        file_url: string;
+        file_name: string;
+        file_type: string;
+        uploaded_at: Date;
+      };
+      createdBy: {
+        id: number;
+        username: string;
+        email: string;
+      } | null;
+    }>;
   };
   return {
     id: p.id,
@@ -37,6 +63,7 @@ const transformBusinessProcess = (dbProcess: unknown) => {
     updateDate: p.update_date,
     remarks: p.remarks,
     reviewDate: p.review_date,
+    linkedDocuments: p.linkedDocuments || [],
   };
 };
 
@@ -113,7 +140,36 @@ export async function GET(
         }
       },
       include: {
-        businessareas: true
+        businessareas: true,
+        linkedDocuments: {
+          include: {
+            businessDocument: {
+              select: {
+                id: true,
+                document_name: true,
+                document_type: true,
+                version: true,
+                doc_status: true,
+                progress: true,
+                status_percentage: true,
+                file_url: true,
+                file_name: true,
+                file_type: true,
+                uploaded_at: true
+              }
+            },
+            createdBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          },
+          orderBy: {
+            created_at: 'desc'
+          }
+        }
       }
     });
 
