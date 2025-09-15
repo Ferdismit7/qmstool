@@ -1,16 +1,55 @@
 import mysql from 'mysql2/promise';
 
 // Type definitions for database operations
+export interface DatabaseError extends Error {
+  code?: string;
+  errno?: number;
+  sqlMessage?: string;
+  sqlState?: string;
+}
+
 export interface QueryResult<T = unknown> {
   [key: string]: T;
 }
 
-// Create a connection pool
+// Parse DATABASE_URL to extract connection details
+function parseDatabaseUrl(url: string) {
+  const regex = /mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)/;
+  const match = url.match(regex);
+  
+  if (!match) {
+    throw new Error('Invalid DATABASE_URL format');
+  }
+  
+  // Safely decode password, handling special characters
+  let password: string;
+  try {
+    password = decodeURIComponent(match[2]);
+  } catch (error) {
+    // If decoding fails, use the raw password (might contain special chars)
+    console.warn('Failed to decode password, using raw value:', error);
+    password = match[2];
+  }
+  
+  return {
+    host: match[3],
+    user: match[1],
+    password: password,
+    database: match[5],
+    port: parseInt(match[4])
+  };
+}
+
+// Create a connection pool using DATABASE_URL
+// Note: DATABASE_URL should always be available from AWS Secrets Manager or environment variables
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is required');
+}
+
+const dbConfig = parseDatabaseUrl(process.env.DATABASE_URL);
+
 const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  ...dbConfig,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0

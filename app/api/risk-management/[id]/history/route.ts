@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import { query } from '@/lib/db';
 import { getCurrentUserBusinessArea } from '@/lib/auth';
 
 // Type definitions for timeline data

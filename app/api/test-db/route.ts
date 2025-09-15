@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import {prisma } from '@/lib/prisma';
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function GET() {
   try {
     console.log('Testing database connection...');
+    
+    // Initialize secrets from AWS Secrets Manager
+    await initializeSecrets();
     
     // Log environment variables (without sensitive data)
     console.log('NODE_ENV:', process.env.NODE_ENV);

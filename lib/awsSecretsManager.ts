@@ -5,9 +5,9 @@ import {
 
 const secret_name = "qmssecretnamedb";
 
+// Create client without credentials - let AWS SDK handle it automatically
 const client = new SecretsManagerClient({
   region: "eu-north-1",
-  // AWS Amplify will automatically use the IAM role attached to the service
 });
 
 interface Secrets {
@@ -53,13 +53,15 @@ export const getSecrets = async (): Promise<Secrets> => {
     // Build DATABASE_URL from individual components
     const databaseUrl = `mysql://${secrets.username}:${secrets.password}@${secrets.host}:${secrets.port}/${secrets.dbInstanceIdentifier}`;
     
-    // Set environment variables
+    // Set environment variables (except AWS credentials which are already set)
     process.env.DATABASE_URL = databaseUrl;
     process.env.JWT_SECRET = secrets.JWT_SECRET;
-    process.env.ACCESS_KEY_ID = secrets.ACCESS_KEY_ID;
-    process.env.SECRET_ACCESS_KEY = secrets.SECRET_ACCESS_KEY;
     process.env.S3_BUCKET_NAME = secrets.S3_BUCKET_NAME;
     process.env.REGION = secrets.REGION;
+    
+    // Note: ACCESS_KEY_ID and SECRET_ACCESS_KEY are not set here
+    // because they're already available from AWS Amplify environment variables
+    // and are needed to call AWS Secrets Manager in the first place
 
     // Cache the secrets
     cachedSecrets = secrets;

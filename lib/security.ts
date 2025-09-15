@@ -5,11 +5,12 @@
  * This should be called at application startup
  */
 export const validateEnvironmentVariables = (): void => {
+  // Note: ACCESS_KEY_ID and SECRET_ACCESS_KEY are not required here
+  // because they're provided by AWS Amplify environment variables
+  // and are used to access AWS Secrets Manager
   const requiredEnvVars = [
     'JWT_SECRET',
     'DATABASE_URL',
-    'ACCESS_KEY_ID',
-    'SECRET_ACCESS_KEY',
     'S3_BUCKET_NAME',
     'REGION'
   ];

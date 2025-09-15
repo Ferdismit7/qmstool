@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function GET() {
   try {
     console.log('Test simple route accessed');
+    
+    // Initialize secrets from AWS Secrets Manager
+    await initializeSecrets();
     console.log('Environment variables check:');
     console.log('- NODE_ENV:', process.env.NODE_ENV);
     // SECURITY FIX: Removed environment variable logging

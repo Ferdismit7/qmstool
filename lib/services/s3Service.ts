@@ -2,12 +2,10 @@ import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } fro
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { UploadFileParams } from '@/app/types/fileUpload';
 
+// Create S3 client - AWS SDK will automatically find credentials
+// Note: REGION will be set by AWS Secrets Manager via initializeSecrets()
 const s3Client = new S3Client({
     region: process.env.REGION || 'eu-north-1',
-    credentials: {
-      accessKeyId: process.env.ACCESS_KEY_ID!,
-      secretAccessKey: process.env.SECRET_ACCESS_KEY!,
-    },
   });
 
 export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: string; url: string }> => {
@@ -22,7 +20,7 @@ export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: s
     fileSize: file.length
   });
   
-  // Get bucket name from environment variable
+  // Get bucket name from environment variable (set by AWS Secrets Manager)
   const bucketName = process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1';
   console.log('Using S3 bucket:', bucketName);
   

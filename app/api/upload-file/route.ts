@@ -20,16 +20,8 @@ export async function POST(request: NextRequest) {
     // console.log('- S3_BUCKET_NAME value:', process.env.S3_BUCKET_NAME); // REMOVED
     // console.log('- REGION value:', process.env.REGION); // REMOVED
     
-    if (!process.env.ACCESS_KEY_ID || !process.env.SECRET_ACCESS_KEY) {
-      console.error('Missing AWS credentials');
-      // SECURITY FIX: Removed environment variable logging
-      // console.error('ACCESS_KEY_ID length:', process.env.ACCESS_KEY_ID?.length || 0); // REMOVED
-      // console.error('SECRET_ACCESS_KEY length:', process.env.SECRET_ACCESS_KEY?.length || 0); // REMOVED
-      return NextResponse.json(
-        { error: 'AWS credentials not configured' },
-        { status: 500 }
-      );
-    }
+    // AWS credentials will be automatically available from environment variables
+    // No need to check them explicitly as AWS SDK handles this
     
     console.log('AWS credentials found, processing form data...');
     const formData = await request.formData();

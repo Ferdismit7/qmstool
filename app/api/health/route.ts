@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function GET() {
   try {
+    // Initialize secrets from AWS Secrets Manager
+    await initializeSecrets();
+    
     // Test database connection
     await query('SELECT 1');
     
