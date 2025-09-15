@@ -1,15 +1,53 @@
 import { NextResponse } from 'next/server';
 import {prisma }from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { validateEnvironmentVariables, sanitizeInput, isValidEmail, validatePasswordStrength, checkRateLimit } from '@/lib/security';
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function POST(request: Request) {
   try {
+    // Initialize secrets from AWS Secrets Manager
+    await initializeSecrets();
+    
+    // Validate environment variables
+    validateEnvironmentVariables();
+    
     const { username, email, password, businessAreas } = await request.json();
-    console.log('Received signup request for:', { username, email, businessAreas });
+    
+    // SECURITY: Sanitize and validate input
+    const sanitizedUsername = sanitizeInput(username);
+    const sanitizedEmail = sanitizeInput(email);
+    
+    if (!isValidEmail(sanitizedEmail)) {
+      return NextResponse.json(
+        { message: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+    
+    // SECURITY: Validate password strength
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      return NextResponse.json(
+        { message: 'Password does not meet security requirements', errors: passwordValidation.errors },
+        { status: 400 }
+      );
+    }
+    
+    // SECURITY: Rate limiting
+    const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
+    if (!checkRateLimit(`signup:${clientIP}`, 3, 300000)) { // 3 attempts per 5 minutes
+      return NextResponse.json(
+        { message: 'Too many signup attempts. Please try again later.' },
+        { status: 429 }
+      );
+    }
+    
+    console.log('Received signup request for:', { username: sanitizedUsername, email: sanitizedEmail, businessAreas });
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email: sanitizedEmail }
     });
 
     if (existingUser) {
@@ -33,8 +71,8 @@ export async function POST(request: Request) {
     // Create new user using Prisma
     const user = await prisma.user.create({
       data: {
-        username,
-        email,
+        username: sanitizedUsername,
+        email: sanitizedEmail,
         password: hashedPassword,
         business_area: primaryBusinessArea,
         created_at: new Date()

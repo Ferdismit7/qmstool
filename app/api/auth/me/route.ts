@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/security';
 
 export async function GET(request: NextRequest) {
   try {
+    // SECURITY: Rate limiting
+    const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
+    if (!checkRateLimit(`me:${clientIP}`, 100, 60000)) { // 100 requests per minute
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429 }
+      );
+    }
+
     // Debug: Log the incoming Authorization header
     const authHeader = request.headers.get('authorization');
     console.log('[API /auth/me] Authorization header:', authHeader);

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiArrowLeft, FiEdit2 } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText } from 'react-icons/fi';
+import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
 
 interface BusinessDocument {
   id: number;
@@ -106,6 +107,28 @@ export default function DocumentDetail({ params }: { params: Promise<{ id: strin
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleDownload = () => {
+    if (document?.file_url) {
+      const fileId = extractFileIdFromUrl(document.file_url);
+      if (fileId) {
+        window.open(`/api/files/${fileId}/download`, '_blank');
+      } else {
+        window.open(document.file_url, '_blank');
+      }
+    }
+  };
+
+  const handleView = () => {
+    if (document?.file_url) {
+      const fileId = extractFileIdFromUrl(document.file_url);
+      if (fileId) {
+        window.open(`/api/files/${fileId}/view`, '_blank');
+      } else {
+        window.open(document.file_url, '_blank');
+      }
     }
   };
 
@@ -272,12 +295,35 @@ export default function DocumentDetail({ params }: { params: Promise<{ id: strin
               {document.file_name && (
                 <div>
                   <label className="text-sm font-medium text-brand-gray3">Attached File</label>
-                  <p className="text-brand-white">{document.file_name}</p>
-                  {document.file_size && (
-                    <p className="text-sm text-brand-gray3">
-                      {(document.file_size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  )}
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 text-brand-white">
+                        <FiFileText size={16} />
+                        <span className="text-sm">{document.file_name}</span>
+                      </div>
+                      {document.file_size && (
+                        <p className="text-xs text-brand-gray3 mt-1">
+                          {(document.file_size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleView}
+                        className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                        title="View document"
+                      >
+                        <FiEye size={16} />
+                      </button>
+                      <button
+                        onClick={handleDownload}
+                        className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                        title="Download document"
+                      >
+                        <FiDownload size={16} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

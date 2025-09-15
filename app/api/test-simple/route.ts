@@ -5,8 +5,9 @@ export async function GET() {
     console.log('Test simple route accessed');
     console.log('Environment variables check:');
     console.log('- NODE_ENV:', process.env.NODE_ENV);
-    console.log('- JWT_SECRET exists:', !!process.env.JWT_SECRET);
-    console.log('- DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    // SECURITY FIX: Removed environment variable logging
+    // console.log('- JWT_SECRET exists:', !!process.env.JWT_SECRET); // REMOVED
+    // console.log('- DATABASE_URL exists:', !!process.env.DATABASE_URL); // REMOVED
     
     return NextResponse.json({ 
       success: true, 
@@ -14,9 +15,10 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       env: {
         nodeEnv: process.env.NODE_ENV,
-        hasJwtSecret: !!process.env.JWT_SECRET,
-        hasDatabaseUrl: !!process.env.DATABASE_URL,
-        jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0
+        // SECURITY FIX: Removed environment variable exposure
+        // hasJwtSecret: !!process.env.JWT_SECRET, // REMOVED
+        // hasDatabaseUrl: !!process.env.DATABASE_URL, // REMOVED
+        // jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0 // REMOVED
       }
     });
   } catch (error) {

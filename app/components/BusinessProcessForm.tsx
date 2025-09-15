@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import FileUploadField from './FileUploadField';
 
 type BusinessProcess = {
   id?: number;
@@ -18,6 +19,10 @@ type BusinessProcess = {
   process_owner: string;
   remarks: string;
   review_date: string;
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  file_type?: string;
 }
 
 type Props = {
@@ -381,6 +386,39 @@ export default function BusinessProcessForm({ mode, process }: Props) {
           placeholder="Enter remarks"
           rows={4}
           className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white placeholder:text-brand-gray3 placeholder:italic focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+        />
+      </div>
+
+      {/* File Upload Section */}
+      <div className="mt-6">
+        <FileUploadField
+          label="Upload Document"
+          value={{
+            file_url: formData.file_url,
+            file_name: formData.file_name,
+            file_size: formData.file_size,
+            file_type: formData.file_type,
+          }}
+          onChange={(fileData) => {
+            setFormData(prev => ({
+              ...prev,
+              ...fileData,
+              uploaded_at: fileData.uploaded_at ? (typeof fileData.uploaded_at === 'string' ? fileData.uploaded_at : fileData.uploaded_at.toISOString()) : ''
+            }));
+          }}
+          onRemove={() => {
+            setFormData(prev => ({
+              ...prev,
+              file_url: undefined,
+              file_name: undefined,
+              file_size: undefined,
+              file_type: undefined,
+            }));
+          }}
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf"
+          maxSize={10}
+          businessArea={formData.business_area}
+          documentType="business-processes"
         />
       </div>
     </form>

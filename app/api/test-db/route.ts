@@ -7,8 +7,9 @@ export async function GET() {
     
     // Log environment variables (without sensitive data)
     console.log('NODE_ENV:', process.env.NODE_ENV);
-    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
-    console.log('DATABASE_URL length:', process.env.DATABASE_URL?.length || 0);
+    // SECURITY FIX: Removed environment variable logging
+    // console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL); // REMOVED
+    // console.log('DATABASE_URL length:', process.env.DATABASE_URL?.length || 0); // REMOVED
     
     console.log('Prisma client imported successfully');
 
@@ -19,7 +20,8 @@ export async function GET() {
         error: 'Prisma client not available',
         details: 'Database client not initialized - check environment variables',
         environment: process.env.NODE_ENV,
-        hasDatabaseUrl: !!process.env.DATABASE_URL
+        // SECURITY FIX: Removed environment variable exposure
+        // hasDatabaseUrl: !!process.env.DATABASE_URL // REMOVED
       }, { status: 500 });
     }
 
@@ -39,7 +41,8 @@ export async function GET() {
         message: 'Database connection successful',
         userCount,
         environment: process.env.NODE_ENV,
-        hasDatabaseUrl: !!process.env.DATABASE_URL
+        // SECURITY FIX: Removed environment variable exposure
+        // hasDatabaseUrl: !!process.env.DATABASE_URL // REMOVED
       });
     } catch (dbError) {
       console.error('Database connection failed:', dbError);
@@ -47,7 +50,8 @@ export async function GET() {
         error: 'Database connection failed',
         details: dbError instanceof Error ? dbError.message : 'Unknown database error',
         environment: process.env.NODE_ENV,
-        hasDatabaseUrl: !!process.env.DATABASE_URL
+        // SECURITY FIX: Removed environment variable exposure
+        // hasDatabaseUrl: !!process.env.DATABASE_URL // REMOVED
       }, { status: 500 });
     }
   } catch (error) {

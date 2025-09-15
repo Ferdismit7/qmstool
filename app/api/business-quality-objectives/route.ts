@@ -20,7 +20,14 @@ export async function GET(request: NextRequest) {
         id: 'desc'
       }
     });
-    return NextResponse.json({ success: true, data: objectives });
+    
+    // Transform BigInt fields to strings for JSON serialization
+    const transformedObjectives = objectives.map(item => ({
+      ...item,
+      file_size: item.file_size ? item.file_size.toString() : null
+    }));
+    
+    return NextResponse.json({ success: true, data: transformedObjectives });
   } catch (error) {
     console.error('Database Error:', error);
     return NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { handleFileUploadFromJson, prepareFileDataForPrisma } from '@/lib/fileUpload';
 
 export async function GET(
   request: NextRequest,
@@ -58,6 +59,14 @@ export async function PUT(
     const body = await request.json();
     console.log('Received update body:', body);
 
+    // Handle file upload data
+    const fileUploadResult = await handleFileUploadFromJson(request);
+    if (!fileUploadResult.success && fileUploadResult.error) {
+      return NextResponse.json({ error: fileUploadResult.error }, { status: 400 });
+    }
+
+    const fileData = fileUploadResult.data ? prepareFileDataForPrisma(fileUploadResult.data) : {};
+
     const evaluation = await prisma.thirdPartyEvaluation.update({
       where: {
         id: parseInt(resolvedParams.id),
@@ -75,6 +84,7 @@ export async function PUT(
         doc_status: body.doc_status || 'Not Started',
         progress: body.progress || 'New',
         notes: body.notes || '',
+        ...fileData,
         updated_at: getLocalTime()
       }
     });

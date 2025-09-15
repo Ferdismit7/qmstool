@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { UploadFileParams } from '@/app/types/fileUpload';
 
 const s3Client = new S3Client({
     region: process.env.REGION || 'eu-north-1',
@@ -8,15 +9,6 @@ const s3Client = new S3Client({
       secretAccessKey: process.env.SECRET_ACCESS_KEY!,
     },
   });
-
-export interface UploadFileParams {
-  file: Buffer;
-  fileName: string;
-  contentType: string;
-  businessArea: string;
-  documentType: 'business-processes' | 'business-documents' | 'quality-objectives' | 'performance-monitoring' | 'risk-management';
-  recordId?: number; // Optional record ID for better organization
-}
 
 export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: string; url: string }> => {
   const { file, fileName, contentType, businessArea, documentType, recordId } = params;

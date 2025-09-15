@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { BusinessDocument } from '../types/businessDocument';
-import FileUpload from './FileUpload';
+import FileUploadField from './FileUploadField';
 
 /**
  * Props for the BusinessDocumentForm component
@@ -67,6 +67,11 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     document_owner: '',
     remarks: '',
     review_date: '',
+    file_url: '',
+    file_name: '',
+    file_size: 0,
+    file_type: '',
+    uploaded_at: '',
   });
 
   const [fileData, setFileData] = useState<{
@@ -162,54 +167,7 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     return Object.keys(newErrors).length === 0;
   };
 
-  /**
-   * Handles file upload
-   */
-  const handleFileUpload = async (file: File) => {
-    setFileData({ file });
-    
-    try {
-      const uploadFormData = new FormData();
-      uploadFormData.append('file', file);
-      uploadFormData.append('businessArea', formData.business_area || '');
-      uploadFormData.append('documentType', 'business-documents');
-      if (editData?.id) {
-        uploadFormData.append('recordId', editData.id.toString());
-      }
-
-      const response = await fetch('/api/upload-file', {
-        method: 'POST',
-        body: uploadFormData,
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setFileData({
-          file,
-          uploadedFile: result.data
-        });
-      } else {
-        const error = await response.json();
-        setErrors(prev => ({
-          ...prev,
-          file: error.error || 'Failed to upload file'
-        }));
-      }
-    } catch (error) {
-      console.error('File upload error:', error);
-      setErrors(prev => ({
-        ...prev,
-        file: 'Failed to upload file'
-      }));
-    }
-  };
-
-  /**
-   * Handles file removal
-   */
-  const handleFileRemove = () => {
-    setFileData({});
-  };
+  // File upload is now handled by the FileUploadField component
 
   /**
    * Handles form submission
@@ -259,6 +217,11 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
           document_owner: '',
           remarks: '',
           review_date: '',
+          file_url: '',
+          file_name: '',
+          file_size: 0,
+          file_type: '',
+          uploaded_at: '',
         });
         setFileData({});
       }
@@ -536,17 +499,34 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
           />
         </div>
         <div>
-          <FileUpload
-            onFileUpload={handleFileUpload}
-            onFileRemove={handleFileRemove}
-            currentFile={fileData.uploadedFile ? {
-              name: fileData.uploadedFile.fileName,
-              size: fileData.uploadedFile.fileSize,
-              url: fileData.uploadedFile.url
-            } : undefined}
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
-            maxSize={10 * 1024 * 1024} // 10MB
+          <FileUploadField
             label="Upload Document File"
+            value={{
+              file_url: formData.file_url,
+              file_name: formData.file_name,
+              file_size: formData.file_size,
+              file_type: formData.file_type,
+            }}
+            onChange={(fileData) => {
+              setFormData(prev => ({
+                ...prev,
+                ...fileData,
+                uploaded_at: fileData.uploaded_at ? (typeof fileData.uploaded_at === 'string' ? fileData.uploaded_at : fileData.uploaded_at.toISOString()) : ''
+              }));
+            }}
+            onRemove={() => {
+              setFormData(prev => ({
+                ...prev,
+                file_url: '',
+                file_name: '',
+                file_size: 0,
+                file_type: '',
+              }));
+            }}
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+            maxSize={10}
+            businessArea={formData.business_area}
+            documentType="business-documents"
           />
           {errors.file && (
             <p className="mt-1 text-sm text-red-500">{errors.file}</p>

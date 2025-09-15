@@ -5,28 +5,26 @@ import Link from 'next/link';
 import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText } from 'react-icons/fi';
 import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
 
-interface CustomerFeedbackSystem {
+interface BusinessImprovement {
   id: number;
   business_area: string;
   sub_business_area?: string;
-  feedback_type?: string;
-  system_name?: string;
-  system_description?: string;
-  collection_method?: string;
-  feedback_categories?: string;
-  response_time_target?: string;
-  escalation_procedures?: string;
-  analysis_method?: string;
-  reporting_frequency?: string;
-  improvement_actions?: string;
-  satisfaction_target?: string;
-  current_satisfaction?: string;
-  last_review_date?: string;
-  next_review_date?: string;
-  responsible_person?: string;
+  improvement_title?: string;
+  improvement_description?: string;
+  improvement_type?: string;
+  priority?: string;
+  target_completion_date?: string;
+  actual_completion_date?: string;
   status?: string;
   progress_percentage?: number;
-  notes?: string;
+  responsible_person?: string;
+  improvement_category?: string;
+  expected_benefits?: string;
+  resources_required?: string;
+  implementation_plan?: string;
+  success_metrics?: string;
+  lessons_learned?: string;
+  follow_up_actions?: string;
   file_url?: string;
   file_name?: string;
   file_size?: number;
@@ -34,13 +32,13 @@ interface CustomerFeedbackSystem {
   uploaded_at?: string;
 }
 
-export default function CustomerFeedbackSystemDetail({ params }: { params: Promise<{ id: string }> }) {
-  const [system, setSystem] = useState<CustomerFeedbackSystem | null>(null);
+export default function BusinessImprovementDetail({ params }: { params: Promise<{ id: string }> }) {
+  const [improvement, setImprovement] = useState<BusinessImprovement | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchSystem = async () => {
+    const fetchImprovement = async () => {
       try {
         const { id } = await params;
         setIsLoading(true);
@@ -51,46 +49,61 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
           throw new Error('No authentication token found');
         }
 
-        const response = await fetch(`/api/customer-feedback-systems/${id}`, {
+        const response = await fetch(`/api/business-improvements/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         });
         
         if (!response.ok) {
-          throw new Error('Failed to fetch customer feedback system');
+          throw new Error('Failed to fetch business improvement');
         }
         
         const data = await response.json();
         if (data.success) {
-          setSystem(data.data);
+          setImprovement(data.data);
         } else {
-          throw new Error(data.error || 'Failed to fetch customer feedback system');
+          throw new Error(data.error || 'Failed to fetch business improvement');
         }
       } catch (error) {
-        console.error('Error fetching customer feedback system:', error);
-        setError(error instanceof Error ? error.message : 'Failed to fetch customer feedback system');
+        console.error('Error fetching business improvement:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch business improvement');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchSystem();
+    fetchImprovement();
   }, [params]);
 
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
-      case 'ACTIVE':
-      case 'OPERATIONAL':
+      case 'COMPLETED':
+      case 'IMPLEMENTED':
         return 'bg-green-100 text-green-800';
       case 'IN_PROGRESS':
-      case 'DEVELOPMENT':
+      case 'ONGOING':
         return 'bg-blue-100 text-blue-800';
-      case 'INACTIVE':
-      case 'SUSPENDED':
-        return 'bg-red-100 text-red-800';
-      case 'PENDING':
+      case 'PLANNED':
+      case 'SCHEDULED':
         return 'bg-yellow-100 text-yellow-800';
+      case 'CANCELLED':
+      case 'ABANDONED':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toUpperCase()) {
+      case 'CRITICAL':
+      case 'HIGH':
+        return 'bg-red-100 text-red-800';
+      case 'MEDIUM':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'LOW':
+        return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -98,37 +111,37 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
 
   const getTypeColor = (type: string) => {
     switch (type?.toUpperCase()) {
-      case 'SURVEY':
+      case 'PROCESS':
         return 'bg-blue-100 text-blue-800';
-      case 'COMPLAINT':
-        return 'bg-red-100 text-red-800';
-      case 'SUGGESTION':
+      case 'TECHNOLOGY':
+        return 'bg-purple-100 text-purple-800';
+      case 'ORGANIZATIONAL':
         return 'bg-green-100 text-green-800';
-      case 'COMPLIMENT':
-        return 'bg-yellow-100 text-yellow-800';
+      case 'CUSTOMER':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
   const handleDownload = () => {
-    if (system?.file_url) {
-      const fileId = extractFileIdFromUrl(system.file_url);
+    if (improvement?.file_url) {
+      const fileId = extractFileIdFromUrl(improvement.file_url);
       if (fileId) {
         window.open(`/api/files/${fileId}/download`, '_blank');
       } else {
-        window.open(system.file_url, '_blank');
+        window.open(improvement.file_url, '_blank');
       }
     }
   };
 
   const handleView = () => {
-    if (system?.file_url) {
-      const fileId = extractFileIdFromUrl(system.file_url);
+    if (improvement?.file_url) {
+      const fileId = extractFileIdFromUrl(improvement.file_url);
       if (fileId) {
         window.open(`/api/files/${fileId}/view`, '_blank');
       } else {
-        window.open(system.file_url, '_blank');
+        window.open(improvement.file_url, '_blank');
       }
     }
   };
@@ -149,10 +162,10 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
     );
   }
 
-  if (!system) {
+  if (!improvement) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-yellow-800">Customer feedback system not found</p>
+        <p className="text-yellow-800">Business improvement not found</p>
       </div>
     );
   }
@@ -163,27 +176,27 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link
-            href="/customer-feedback-systems"
+            href="/business-improvements"
             className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
-            title="Back to customer feedback systems"
+            title="Back to business improvements"
           >
             <FiArrowLeft size={20} />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-brand-white">Customer Feedback System Details</h1>
-            <p className="text-brand-gray3 mt-1">{system.system_name || `System ${system.id}`}</p>
+            <h1 className="text-2xl font-bold text-brand-white">Business Improvement Details</h1>
+            <p className="text-brand-gray3 mt-1">{improvement.improvement_title || `Improvement ${improvement.id}`}</p>
           </div>
         </div>
         <Link
-          href={`/customer-feedback-systems/${system.id}/edit`}
+          href={`/business-improvements/${improvement.id}/edit`}
           className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
         >
           <FiEdit2 size={16} />
-          Edit System
+          Edit Improvement
         </Link>
       </div>
 
-      {/* System Details */}
+      {/* Improvement Details */}
       <div className="bg-brand-gray2/50 rounded-lg border border-brand-gray1 p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Basic Information */}
@@ -194,51 +207,49 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
             <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-brand-gray3">Business Area</label>
-                <p className="text-brand-white">{system.business_area}</p>
-                {system.sub_business_area && (
-                  <p className="text-sm text-brand-gray3">{system.sub_business_area}</p>
+                <p className="text-brand-white">{improvement.business_area}</p>
+                {improvement.sub_business_area && (
+                  <p className="text-sm text-brand-gray3">{improvement.sub_business_area}</p>
                 )}
               </div>
               <div>
-                <label className="text-sm font-medium text-brand-gray3">System Name</label>
-                <p className="text-brand-white">{system.system_name || 'Not specified'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-brand-gray3">Feedback Type</label>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(system.feedback_type || '')}`}>
-                  {system.feedback_type || 'Not set'}
+                <label className="text-sm font-medium text-brand-gray3">Improvement Type</label>
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(improvement.improvement_type || '')}`}>
+                  {improvement.improvement_type || 'Not set'}
                 </span>
               </div>
               <div>
+                <label className="text-sm font-medium text-brand-gray3">Category</label>
+                <p className="text-brand-white">{improvement.improvement_category || 'Not specified'}</p>
+              </div>
+              <div>
                 <label className="text-sm font-medium text-brand-gray3">Responsible Person</label>
-                <p className="text-brand-white">{system.responsible_person || 'Not specified'}</p>
+                <p className="text-brand-white">{improvement.responsible_person || 'Not specified'}</p>
               </div>
             </div>
           </div>
 
-          {/* Status & Performance */}
+          {/* Status & Priority */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-brand-white border-b border-brand-gray1 pb-2">
-              Status & Performance
+              Status & Priority
             </h3>
             <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-brand-gray3">Status</label>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(system.status || '')}`}>
-                  {system.status || 'Not set'}
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(improvement.status || '')}`}>
+                  {improvement.status || 'Not set'}
+                </span>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-brand-gray3">Priority</label>
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(improvement.priority || '')}`}>
+                  {improvement.priority || 'Not set'}
                 </span>
               </div>
               <div>
                 <label className="text-sm font-medium text-brand-gray3">Progress</label>
-                <p className="text-brand-white font-medium">{system.progress_percentage || 0}%</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-brand-gray3">Satisfaction Target</label>
-                <p className="text-brand-white">{system.satisfaction_target || 'Not set'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-brand-gray3">Current Satisfaction</label>
-                <p className="text-brand-white">{system.current_satisfaction || 'Not measured'}</p>
+                <p className="text-brand-white font-medium">{improvement.progress_percentage || 0}%</p>
               </div>
             </div>
           </div>
@@ -250,10 +261,10 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-medium text-brand-gray3">Last Review Date</label>
+                <label className="text-sm font-medium text-brand-gray3">Target Completion</label>
                 <p className="text-brand-white">
-                  {system.last_review_date ? (() => {
-                    const date = new Date(system.last_review_date);
+                  {improvement.target_completion_date ? (() => {
+                    const date = new Date(improvement.target_completion_date);
                     const userTimezoneOffset = date.getTimezoneOffset() * 60000;
                     const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
                     return adjustedDate.toLocaleDateString('en-GB');
@@ -261,28 +272,28 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-brand-gray3">Next Review Date</label>
+                <label className="text-sm font-medium text-brand-gray3">Actual Completion</label>
                 <p className="text-brand-white">
-                  {system.next_review_date ? (() => {
-                    const date = new Date(system.next_review_date);
+                  {improvement.actual_completion_date ? (() => {
+                    const date = new Date(improvement.actual_completion_date);
                     const userTimezoneOffset = date.getTimezoneOffset() * 60000;
                     const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
                     return adjustedDate.toLocaleDateString('en-GB');
-                  })() : 'Not scheduled'}
+                  })() : 'Not completed'}
                 </p>
               </div>
-              {system.file_name && (
+              {improvement.file_name && (
                 <div>
                   <label className="text-sm font-medium text-brand-gray3">Attached File</label>
                   <div className="flex items-center gap-3 mt-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 text-brand-white">
                         <FiFileText size={16} />
-                        <span className="text-sm">{system.file_name}</span>
+                        <span className="text-sm">{improvement.file_name}</span>
                       </div>
-                      {system.file_size && (
+                      {improvement.file_size && (
                         <p className="text-xs text-brand-gray3 mt-1">
-                          {(system.file_size / 1024 / 1024).toFixed(2)} MB
+                          {(improvement.file_size / 1024 / 1024).toFixed(2)} MB
                         </p>
                       )}
                     </div>
@@ -309,87 +320,76 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
           </div>
         </div>
 
-        {/* System Description */}
-        {system.system_description && (
+        {/* Improvement Description */}
+        {improvement.improvement_description && (
           <div className="mt-6 pt-6 border-t border-brand-gray1">
-            <h3 className="text-lg font-semibold text-brand-white mb-3">System Description</h3>
+            <h3 className="text-lg font-semibold text-brand-white mb-3">Improvement Description</h3>
             <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap">
-              {system.system_description}
+              {improvement.improvement_description}
             </p>
           </div>
         )}
 
-        {/* Collection & Analysis Methods */}
+        {/* Expected Benefits */}
+        {improvement.expected_benefits && (
+          <div className="mt-6 pt-6 border-t border-brand-gray1">
+            <h3 className="text-lg font-semibold text-brand-white mb-3">Expected Benefits</h3>
+            <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap">
+              {improvement.expected_benefits}
+            </p>
+          </div>
+        )}
+
+        {/* Implementation Details */}
         <div className="mt-6 pt-6 border-t border-brand-gray1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-semibold text-brand-white mb-3">Collection Methods</h3>
+              <h3 className="text-lg font-semibold text-brand-white mb-3">Implementation Details</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-brand-gray3">Collection Method</label>
+                  <label className="text-sm font-medium text-brand-gray3">Resources Required</label>
                   <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.collection_method || 'Not specified'}
+                    {improvement.resources_required || 'Not specified'}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-brand-gray3">Feedback Categories</label>
+                  <label className="text-sm font-medium text-brand-gray3">Success Metrics</label>
                   <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.feedback_categories || 'Not specified'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Response Time Target</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.response_time_target || 'Not specified'}
+                    {improvement.success_metrics || 'Not specified'}
                   </p>
                 </div>
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-brand-white mb-3">Analysis & Reporting</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Analysis Method</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.analysis_method || 'Not specified'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Reporting Frequency</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.reporting_frequency || 'Not specified'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Escalation Procedures</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.escalation_procedures || 'Not specified'}
-                  </p>
-                </div>
-              </div>
+              <h3 className="text-lg font-semibold text-brand-white mb-3">Implementation Plan</h3>
+              <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap">
+                {improvement.implementation_plan || 'Not specified'}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Improvement Actions */}
-        {system.improvement_actions && (
-          <div className="mt-6 pt-6 border-t border-brand-gray1">
-            <h3 className="text-lg font-semibold text-brand-white mb-3">Improvement Actions</h3>
-            <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap">
-              {system.improvement_actions}
-            </p>
+        {/* Lessons Learned & Follow-up */}
+        <div className="mt-6 pt-6 border-t border-brand-gray1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {improvement.lessons_learned && (
+              <div>
+                <h3 className="text-lg font-semibold text-brand-white mb-3">Lessons Learned</h3>
+                <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap">
+                  {improvement.lessons_learned}
+                </p>
+              </div>
+            )}
+            {improvement.follow_up_actions && (
+              <div>
+                <h3 className="text-lg font-semibold text-brand-white mb-3">Follow-up Actions</h3>
+                <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap">
+                  {improvement.follow_up_actions}
+                </p>
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Notes */}
-        {system.notes && (
-          <div className="mt-6 pt-6 border-t border-brand-gray1">
-            <h3 className="text-lg font-semibold text-brand-white mb-3">Notes</h3>
-            <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap">
-              {system.notes}
-            </p>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

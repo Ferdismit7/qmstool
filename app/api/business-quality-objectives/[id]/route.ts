@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {prisma } from '@/lib/prisma';
 import { getCurrentUserBusinessArea } from '@/lib/auth';
+import { handleFileUploadFromJson, prepareFileDataForPrisma } from '@/lib/fileUpload';
 
 // GET a single business quality objective
 export async function GET(
@@ -20,7 +21,14 @@ export async function GET(
     if (!objective || objective.business_area !== userBusinessArea) {
       return NextResponse.json({ error: 'Business quality objective not found' }, { status: 404 });
     }
-    return NextResponse.json(objective);
+    
+    // Transform BigInt fields to strings for JSON serialization
+    const transformedObjective = {
+      ...objective,
+      file_size: objective.file_size ? objective.file_size.toString() : null
+    };
+    
+    return NextResponse.json(transformedObjective);
   } catch (error) {
     console.error('Error fetching business quality objective:', error);
     return NextResponse.json(
@@ -60,15 +68,31 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized to modify business area' }, { status: 403 });
     }
 
+    // Handle file upload data
+    const fileUploadResult = await handleFileUploadFromJson(request);
+    if (!fileUploadResult.success && fileUploadResult.error) {
+      return NextResponse.json({ error: fileUploadResult.error }, { status: 400 });
+    }
+
+    const fileData = fileUploadResult.data ? prepareFileDataForPrisma(fileUploadResult.data) : {};
+
     const objective = await prisma.businessQualityObjective.update({
       where: { id: parseInt(id) },
       data: {
         ...updateData,
+        ...fileData,
         business_area: userBusinessArea, // Force business area to user's area
         review_date: updateData.review_date ? new Date(updateData.review_date) : null
       }
     });
-    return NextResponse.json(objective);
+    
+    // Transform BigInt fields to strings for JSON serialization
+    const transformedObjective = {
+      ...objective,
+      file_size: objective.file_size ? objective.file_size.toString() : null
+    };
+    
+    return NextResponse.json(transformedObjective);
   } catch (error) {
     console.error('Error updating business quality objective:', error);
     return NextResponse.json(

@@ -21,7 +21,13 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    return NextResponse.json(result);
+    // Transform BigInt fields to strings for JSON serialization
+    const transformedResult = result.map(item => ({
+      ...item,
+      file_size: item.file_size ? item.file_size.toString() : null
+    }));
+    
+    return NextResponse.json(transformedResult);
   } catch (error) {
     console.error('Database Error:', error);
     return NextResponse.json(
@@ -83,7 +89,13 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    return NextResponse.json(result, { status: 201 });
+    // Transform BigInt fields to strings for JSON serialization
+    const transformedResult = {
+      ...result,
+      file_size: result.file_size ? result.file_size.toString() : null
+    };
+
+    return NextResponse.json(transformedResult, { status: 201 });
   } catch (error) {
     console.error('Database Error:', error);
     return NextResponse.json(

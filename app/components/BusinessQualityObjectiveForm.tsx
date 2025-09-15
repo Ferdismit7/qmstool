@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import FileUploadField from './FileUploadField';
 
 /**
  * Interface representing a Business Quality Objective
@@ -40,6 +41,14 @@ interface BusinessQualityObjective {
   status_percentage: number;
   /** Document status of the objective */
   doc_status: string;
+  /** File URL for uploaded document */
+  file_url?: string;
+  /** File name of uploaded document */
+  file_name?: string;
+  /** File size of uploaded document */
+  file_size?: number;
+  /** File type of uploaded document */
+  file_type?: string;
 }
 
 /**
@@ -481,6 +490,39 @@ export default function BusinessQualityObjectiveForm({ objective, mode }: Props)
             <option value="To be reviewed">To be reviewed</option>
           </select>
         </div>
+      </div>
+
+      {/* File Upload Section */}
+      <div className="mt-6">
+        <FileUploadField
+          label="Upload Document"
+          value={{
+            file_url: formData.file_url,
+            file_name: formData.file_name,
+            file_size: formData.file_size,
+            file_type: formData.file_type,
+          }}
+          onChange={(fileData) => {
+            setFormData(prev => ({
+              ...prev,
+              ...fileData,
+              uploaded_at: fileData.uploaded_at ? (typeof fileData.uploaded_at === 'string' ? fileData.uploaded_at : fileData.uploaded_at.toISOString()) : ''
+            }));
+          }}
+          onRemove={() => {
+            setFormData(prev => ({
+              ...prev,
+              file_url: undefined,
+              file_name: undefined,
+              file_size: undefined,
+              file_type: undefined,
+            }));
+          }}
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf"
+          maxSize={10}
+          businessArea={formData.business_area}
+          documentType="quality-objectives"
+        />
       </div>
     </form>
   );

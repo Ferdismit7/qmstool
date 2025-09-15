@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadFileToS3 } from '@/lib/services/s3Service';
-
-type DocumentType = 'business-processes' | 'business-documents' | 'quality-objectives' | 'performance-monitoring' | 'risk-management';
+import { DocumentType, FILE_UPLOAD_CONSTANTS } from '@/app/types/fileUpload';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,17 +8,19 @@ export async function POST(request: NextRequest) {
     
     // Check environment variables with detailed logging
     console.log('Environment variables check:');
-    console.log('- ACCESS_KEY_ID exists:', !!process.env.ACCESS_KEY_ID);
-    console.log('- SECRET_ACCESS_KEY exists:', !!process.env.SECRET_ACCESS_KEY);
-    console.log('- S3_BUCKET_NAME exists:', !!process.env.S3_BUCKET_NAME);
-    console.log('- REGION exists:', !!process.env.REGION);
-    console.log('- S3_BUCKET_NAME value:', process.env.S3_BUCKET_NAME);
-    console.log('- REGION value:', process.env.REGION);
+    // SECURITY FIX: Removed environment variable logging
+    // console.log('- ACCESS_KEY_ID exists:', !!process.env.ACCESS_KEY_ID); // REMOVED
+    // console.log('- SECRET_ACCESS_KEY exists:', !!process.env.SECRET_ACCESS_KEY); // REMOVED
+    // console.log('- S3_BUCKET_NAME exists:', !!process.env.S3_BUCKET_NAME); // REMOVED
+    // console.log('- REGION exists:', !!process.env.REGION); // REMOVED
+    // console.log('- S3_BUCKET_NAME value:', process.env.S3_BUCKET_NAME); // REMOVED
+    // console.log('- REGION value:', process.env.REGION); // REMOVED
     
     if (!process.env.ACCESS_KEY_ID || !process.env.SECRET_ACCESS_KEY) {
       console.error('Missing AWS credentials');
-      console.error('ACCESS_KEY_ID length:', process.env.ACCESS_KEY_ID?.length || 0);
-      console.error('SECRET_ACCESS_KEY length:', process.env.SECRET_ACCESS_KEY?.length || 0);
+      // SECURITY FIX: Removed environment variable logging
+      // console.error('ACCESS_KEY_ID length:', process.env.ACCESS_KEY_ID?.length || 0); // REMOVED
+      // console.error('SECRET_ACCESS_KEY length:', process.env.SECRET_ACCESS_KEY?.length || 0); // REMOVED
       return NextResponse.json(
         { error: 'AWS credentials not configured' },
         { status: 500 }
@@ -63,7 +64,14 @@ export async function POST(request: NextRequest) {
       'business-documents', 
       'quality-objectives',
       'performance-monitoring',
-      'risk-management'
+      'risk-management',
+      'non-conformities',
+      'record-keeping-systems',
+      'business-improvements',
+      'third-party-evaluations',
+      'customer-feedback-systems',
+      'training-sessions',
+      'qms-assessments'
     ];
 
     if (!validDocumentTypes.includes(documentType as DocumentType)) {
@@ -74,30 +82,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
+    // Validate file size using constants
+    if (file.size > FILE_UPLOAD_CONSTANTS.MAX_FILE_SIZE) {
       console.error('File too large:', file.size);
       return NextResponse.json(
-        { error: 'File size must be less than 10MB' },
+        { error: `File size must be less than ${FILE_UPLOAD_CONSTANTS.MAX_FILE_SIZE / 1024 / 1024}MB` },
         { status: 400 }
       );
     }
 
-    // Validate file type
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain',
-      'image/jpeg',
-      'image/jpg',
-      'image/png'
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
+    // Validate file type using constants
+    if (!FILE_UPLOAD_CONSTANTS.ALLOWED_FILE_TYPES.includes(file.type as typeof FILE_UPLOAD_CONSTANTS.ALLOWED_FILE_TYPES[number])) {
       console.error('Unsupported file type:', file.type);
       return NextResponse.json(
         { error: 'File type not supported' },

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiArrowLeft, FiSave } from 'react-icons/fi';
+import FileUploadField from '../../components/FileUploadField';
 
 export default function NewBusinessProcessPage() {
   const router = useRouter();
@@ -23,7 +24,11 @@ export default function NewBusinessProcessPage() {
     targetDate: '',
     processOwner: '',
     remarks: '',
-    reviewDate: ''
+    reviewDate: '',
+    fileUrl: '',
+    fileName: '',
+    fileSize: '',
+    fileType: ''
   });
 
   // Fetch user's business areas on component mount
@@ -341,6 +346,41 @@ export default function NewBusinessProcessPage() {
               onChange={handleInputChange}
               rows={4}
               className="w-full px-4 py-2 rounded bg-brand-gray1 text-brand-white border border-brand-gray2 focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+
+          {/* File Upload Section */}
+          <div className="mt-6">
+            <FileUploadField
+              label="Upload Document"
+              value={{
+                file_url: formData.fileUrl,
+                file_name: formData.fileName,
+                file_size: formData.fileSize ? Number(formData.fileSize) : undefined,
+                file_type: formData.fileType,
+              }}
+              onChange={(fileData) => {
+                setFormData(prev => ({
+                  ...prev,
+                  fileUrl: fileData.file_url || '',
+                  fileName: fileData.file_name || '',
+                  fileSize: fileData.file_size?.toString() || '',
+                  fileType: fileData.file_type || '',
+                }));
+              }}
+              onRemove={() => {
+                setFormData(prev => ({
+                  ...prev,
+                  fileUrl: '',
+                  fileName: '',
+                  fileSize: '',
+                  fileType: '',
+                }));
+              }}
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf"
+              maxSize={10}
+              businessArea={formData.businessArea}
+              documentType="business-processes"
             />
           </div>
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FiFileText, FiTrash2, FiEye, FiDownload, FiUser, FiCalendar } from 'react-icons/fi';
+import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
 
 interface LinkedDocument {
   id: number;
@@ -94,13 +95,20 @@ export default function LinkedDocumentsDisplay({
   };
 
   const handleDownload = (fileUrl: string, fileName: string) => {
-    const link = document.createElement('a');
-    link.href = fileUrl;
-    link.download = fileName;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Extract file ID from URL
+    const fileId = extractFileIdFromUrl(fileUrl);
+    if (fileId) {
+      window.open(`/api/files/${fileId}/download`, '_blank');
+    } else {
+      // Fallback to direct URL
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   if (linkedDocuments.length === 0) {

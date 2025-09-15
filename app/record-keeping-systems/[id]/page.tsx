@@ -5,27 +5,27 @@ import Link from 'next/link';
 import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText } from 'react-icons/fi';
 import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
 
-interface CustomerFeedbackSystem {
+interface RecordKeepingSystem {
   id: number;
   business_area: string;
   sub_business_area?: string;
-  feedback_type?: string;
+  record_type?: string;
   system_name?: string;
   system_description?: string;
-  collection_method?: string;
-  feedback_categories?: string;
-  response_time_target?: string;
-  escalation_procedures?: string;
-  analysis_method?: string;
-  reporting_frequency?: string;
-  improvement_actions?: string;
-  satisfaction_target?: string;
-  current_satisfaction?: string;
-  last_review_date?: string;
-  next_review_date?: string;
+  retention_period?: string;
+  storage_location?: string;
+  access_controls?: string;
+  backup_procedures?: string;
+  disposal_procedures?: string;
+  compliance_status?: string;
+  last_audit_date?: string;
+  next_audit_date?: string;
+  audit_findings?: string;
+  corrective_actions?: string;
   responsible_person?: string;
-  status?: string;
-  progress_percentage?: number;
+  status_percentage?: number;
+  doc_status?: string;
+  progress?: string;
   notes?: string;
   file_url?: string;
   file_name?: string;
@@ -34,8 +34,8 @@ interface CustomerFeedbackSystem {
   uploaded_at?: string;
 }
 
-export default function CustomerFeedbackSystemDetail({ params }: { params: Promise<{ id: string }> }) {
-  const [system, setSystem] = useState<CustomerFeedbackSystem | null>(null);
+export default function RecordKeepingSystemDetail({ params }: { params: Promise<{ id: string }> }) {
+  const [system, setSystem] = useState<RecordKeepingSystem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,25 +51,25 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
           throw new Error('No authentication token found');
         }
 
-        const response = await fetch(`/api/customer-feedback-systems/${id}`, {
+        const response = await fetch(`/api/record-keeping-systems/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         });
         
         if (!response.ok) {
-          throw new Error('Failed to fetch customer feedback system');
+          throw new Error('Failed to fetch record keeping system');
         }
         
         const data = await response.json();
         if (data.success) {
           setSystem(data.data);
         } else {
-          throw new Error(data.error || 'Failed to fetch customer feedback system');
+          throw new Error(data.error || 'Failed to fetch record keeping system');
         }
       } catch (error) {
-        console.error('Error fetching customer feedback system:', error);
-        setError(error instanceof Error ? error.message : 'Failed to fetch customer feedback system');
+        console.error('Error fetching record keeping system:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch record keeping system');
       } finally {
         setIsLoading(false);
       }
@@ -80,14 +80,14 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
 
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
-      case 'ACTIVE':
-      case 'OPERATIONAL':
+      case 'COMPLIANT':
+      case 'COMPLETED':
         return 'bg-green-100 text-green-800';
       case 'IN_PROGRESS':
-      case 'DEVELOPMENT':
+      case 'ONGOING':
         return 'bg-blue-100 text-blue-800';
-      case 'INACTIVE':
-      case 'SUSPENDED':
+      case 'NON_COMPLIANT':
+      case 'NEEDS_ATTENTION':
         return 'bg-red-100 text-red-800';
       case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
@@ -96,15 +96,19 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type?.toUpperCase()) {
-      case 'SURVEY':
-        return 'bg-blue-100 text-blue-800';
-      case 'COMPLAINT':
-        return 'bg-red-100 text-red-800';
-      case 'SUGGESTION':
+  const getProgressColor = (progress: string) => {
+    switch (progress?.toUpperCase()) {
+      case 'COMPLETED':
+      case 'FINISHED':
         return 'bg-green-100 text-green-800';
-      case 'COMPLIMENT':
+      case 'IN_PROGRESS':
+      case 'ONGOING':
+        return 'bg-blue-100 text-blue-800';
+      case 'NOT_STARTED':
+      case 'PENDING':
+        return 'bg-gray-100 text-gray-800';
+      case 'ON_HOLD':
+      case 'SUSPENDED':
         return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -152,7 +156,7 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
   if (!system) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-yellow-800">Customer feedback system not found</p>
+        <p className="text-yellow-800">Record keeping system not found</p>
       </div>
     );
   }
@@ -163,19 +167,19 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link
-            href="/customer-feedback-systems"
+            href="/record-keeping-systems"
             className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
-            title="Back to customer feedback systems"
+            title="Back to record keeping systems"
           >
             <FiArrowLeft size={20} />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-brand-white">Customer Feedback System Details</h1>
+            <h1 className="text-2xl font-bold text-brand-white">Record Keeping System Details</h1>
             <p className="text-brand-gray3 mt-1">{system.system_name || `System ${system.id}`}</p>
           </div>
         </div>
         <Link
-          href={`/customer-feedback-systems/${system.id}/edit`}
+          href={`/record-keeping-systems/${system.id}/edit`}
           className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
         >
           <FiEdit2 size={16} />
@@ -204,10 +208,8 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
                 <p className="text-brand-white">{system.system_name || 'Not specified'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-brand-gray3">Feedback Type</label>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(system.feedback_type || '')}`}>
-                  {system.feedback_type || 'Not set'}
-                </span>
+                <label className="text-sm font-medium text-brand-gray3">Record Type</label>
+                <p className="text-brand-white">{system.record_type || 'Not specified'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-brand-gray3">Responsible Person</label>
@@ -216,29 +218,27 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
             </div>
           </div>
 
-          {/* Status & Performance */}
+          {/* Status & Progress */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-brand-white border-b border-brand-gray1 pb-2">
-              Status & Performance
+              Status & Progress
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-medium text-brand-gray3">Status</label>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(system.status || '')}`}>
-                  {system.status || 'Not set'}
+                <label className="text-sm font-medium text-brand-gray3">Compliance Status</label>
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(system.compliance_status || '')}`}>
+                  {system.compliance_status || 'Not set'}
                 </span>
               </div>
               <div>
                 <label className="text-sm font-medium text-brand-gray3">Progress</label>
-                <p className="text-brand-white font-medium">{system.progress_percentage || 0}%</p>
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(system.progress || '')}`}>
+                  {system.progress || 'Not set'}
+                </span>
               </div>
               <div>
-                <label className="text-sm font-medium text-brand-gray3">Satisfaction Target</label>
-                <p className="text-brand-white">{system.satisfaction_target || 'Not set'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-brand-gray3">Current Satisfaction</label>
-                <p className="text-brand-white">{system.current_satisfaction || 'Not measured'}</p>
+                <label className="text-sm font-medium text-brand-gray3">Status Percentage</label>
+                <p className="text-brand-white font-medium">{system.status_percentage || 0}%</p>
               </div>
             </div>
           </div>
@@ -250,10 +250,10 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-medium text-brand-gray3">Last Review Date</label>
+                <label className="text-sm font-medium text-brand-gray3">Last Audit Date</label>
                 <p className="text-brand-white">
-                  {system.last_review_date ? (() => {
-                    const date = new Date(system.last_review_date);
+                  {system.last_audit_date ? (() => {
+                    const date = new Date(system.last_audit_date);
                     const userTimezoneOffset = date.getTimezoneOffset() * 60000;
                     const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
                     return adjustedDate.toLocaleDateString('en-GB');
@@ -261,10 +261,10 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-brand-gray3">Next Review Date</label>
+                <label className="text-sm font-medium text-brand-gray3">Next Audit Date</label>
                 <p className="text-brand-white">
-                  {system.next_review_date ? (() => {
-                    const date = new Date(system.next_review_date);
+                  {system.next_audit_date ? (() => {
+                    const date = new Date(system.next_audit_date);
                     const userTimezoneOffset = date.getTimezoneOffset() * 60000;
                     const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
                     return adjustedDate.toLocaleDateString('en-GB');
@@ -319,65 +319,64 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
           </div>
         )}
 
-        {/* Collection & Analysis Methods */}
+        {/* Storage & Access Information */}
         <div className="mt-6 pt-6 border-t border-brand-gray1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-semibold text-brand-white mb-3">Collection Methods</h3>
+              <h3 className="text-lg font-semibold text-brand-white mb-3">Storage Information</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-brand-gray3">Collection Method</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.collection_method || 'Not specified'}
-                  </p>
+                  <label className="text-sm font-medium text-brand-gray3">Retention Period</label>
+                  <p className="text-brand-white">{system.retention_period || 'Not specified'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-brand-gray3">Feedback Categories</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.feedback_categories || 'Not specified'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Response Time Target</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.response_time_target || 'Not specified'}
-                  </p>
+                  <label className="text-sm font-medium text-brand-gray3">Storage Location</label>
+                  <p className="text-brand-white">{system.storage_location || 'Not specified'}</p>
                 </div>
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-brand-white mb-3">Analysis & Reporting</h3>
+              <h3 className="text-lg font-semibold text-brand-white mb-3">Access & Procedures</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-brand-gray3">Analysis Method</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.analysis_method || 'Not specified'}
-                  </p>
+                  <label className="text-sm font-medium text-brand-gray3">Access Controls</label>
+                  <p className="text-brand-white">{system.access_controls || 'Not specified'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-brand-gray3">Reporting Frequency</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.reporting_frequency || 'Not specified'}
-                  </p>
+                  <label className="text-sm font-medium text-brand-gray3">Backup Procedures</label>
+                  <p className="text-brand-white">{system.backup_procedures || 'Not specified'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-brand-gray3">Escalation Procedures</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.escalation_procedures || 'Not specified'}
-                  </p>
+                  <label className="text-sm font-medium text-brand-gray3">Disposal Procedures</label>
+                  <p className="text-brand-white">{system.disposal_procedures || 'Not specified'}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Improvement Actions */}
-        {system.improvement_actions && (
+        {/* Audit Information */}
+        {(system.audit_findings || system.corrective_actions) && (
           <div className="mt-6 pt-6 border-t border-brand-gray1">
-            <h3 className="text-lg font-semibold text-brand-white mb-3">Improvement Actions</h3>
-            <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap">
-              {system.improvement_actions}
-            </p>
+            <h3 className="text-lg font-semibold text-brand-white mb-3">Audit Information</h3>
+            <div className="space-y-4">
+              {system.audit_findings && (
+                <div>
+                  <label className="text-sm font-medium text-brand-gray3">Audit Findings</label>
+                  <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap mt-1">
+                    {system.audit_findings}
+                  </p>
+                </div>
+              )}
+              {system.corrective_actions && (
+                <div>
+                  <label className="text-sm font-medium text-brand-gray3">Corrective Actions</label>
+                  <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap mt-1">
+                    {system.corrective_actions}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

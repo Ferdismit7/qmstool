@@ -2,8 +2,8 @@ import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
 import {prisma } from '@/lib/prisma';
 
-// Debug: Print the JWT secret on server start
-console.log('JWT_SECRET:', process.env.JWT_SECRET);
+// SECURITY FIX: Removed JWT_SECRET logging - NEVER log secrets
+// console.log('JWT_SECRET:', process.env.JWT_SECRET); // REMOVED
 
 export interface JWTPayload {
   userId: number;

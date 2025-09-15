@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiArrowLeft, FiEdit2 } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText } from 'react-icons/fi';
 import DocumentLinkingManager from '../../components/DocumentLinkingManager';
+import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
 
 interface BusinessDocument {
   id: number;
@@ -51,6 +52,11 @@ interface BusinessProcess {
   remarks?: string;
   reviewDate?: string;
   linkedDocuments?: LinkedDocument[];
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  file_type?: string;
+  uploaded_at?: string;
 }
 
 export default function BusinessProcessDetailPage() {
@@ -128,6 +134,28 @@ export default function BusinessProcessDetailPage() {
         return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleDownload = () => {
+    if (process?.file_url) {
+      const fileId = extractFileIdFromUrl(process.file_url);
+      if (fileId) {
+        window.open(`/api/files/${fileId}/download`, '_blank');
+      } else {
+        window.open(process.file_url, '_blank');
+      }
+    }
+  };
+
+  const handleView = () => {
+    if (process?.file_url) {
+      const fileId = extractFileIdFromUrl(process.file_url);
+      if (fileId) {
+        window.open(`/api/files/${fileId}/view`, '_blank');
+      } else {
+        window.open(process.file_url, '_blank');
+      }
     }
   };
 
@@ -334,6 +362,46 @@ export default function BusinessProcessDetailPage() {
             </label>
             <div className="bg-brand-gray1 rounded-lg p-4">
               <p className="text-brand-white whitespace-pre-wrap">{process.remarks}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Attached File */}
+        {process.file_name && (
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-brand-gray3 mb-2">
+              Attached File
+            </label>
+            <div className="bg-brand-gray1 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 text-brand-white">
+                    <FiFileText size={16} />
+                    <span className="text-sm">{process.file_name}</span>
+                  </div>
+                  {process.file_size && (
+                    <p className="text-xs text-brand-gray3 mt-1">
+                      {(process.file_size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleView}
+                    className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                    title="View document"
+                  >
+                    <FiEye size={16} />
+                  </button>
+                  <button
+                    onClick={handleDownload}
+                    className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                    title="Download document"
+                  >
+                    <FiDownload size={16} />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

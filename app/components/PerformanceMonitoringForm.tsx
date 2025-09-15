@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import FileUploadField from './FileUploadField';
 
 
 
@@ -37,6 +38,14 @@ type PerformanceMonitoringControl = {
   responsible_persons: string;
   /** Additional remarks or notes */
   remarks: string;
+  /** File URL for uploaded document */
+  file_url?: string;
+  /** File name of uploaded document */
+  file_name?: string;
+  /** File size of uploaded document */
+  file_size?: number;
+  /** File type of uploaded document */
+  file_type?: string;
 }
 
 /**
@@ -458,6 +467,39 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
             className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
           />
         </div>
+      </div>
+
+      {/* File Upload Section */}
+      <div className="mt-6">
+        <FileUploadField
+          label="Upload Document"
+          value={{
+            file_url: formData.file_url,
+            file_name: formData.file_name,
+            file_size: formData.file_size,
+            file_type: formData.file_type,
+          }}
+          onChange={(fileData) => {
+            setFormData(prev => ({
+              ...prev,
+              ...fileData,
+              uploaded_at: fileData.uploaded_at ? (typeof fileData.uploaded_at === 'string' ? fileData.uploaded_at : fileData.uploaded_at.toISOString()) : ''
+            }));
+          }}
+          onRemove={() => {
+            setFormData(prev => ({
+              ...prev,
+              file_url: undefined,
+              file_name: undefined,
+              file_size: undefined,
+              file_type: undefined,
+            }));
+          }}
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf"
+          maxSize={10}
+          businessArea={formData.business_area}
+          documentType="performance-monitoring"
+        />
       </div>
     </form>
   );

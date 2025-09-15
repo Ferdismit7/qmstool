@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { handleFileUploadFromJson, prepareFileDataForPrisma } from '@/lib/fileUpload';
 
 // Helper function to get local time in UTC+2 timezone
 const getLocalTime = () => {
@@ -58,6 +59,14 @@ export async function PUT(
     const body = await request.json();
     console.log('Received update body:', body);
 
+    // Handle file upload data
+    const fileUploadResult = await handleFileUploadFromJson(request);
+    if (!fileUploadResult.success && fileUploadResult.error) {
+      return NextResponse.json({ error: fileUploadResult.error }, { status: 400 });
+    }
+
+    const fileData = fileUploadResult.data ? prepareFileDataForPrisma(fileUploadResult.data) : {};
+
     const feedbackSystem = await prisma.customerFeedbackSystem.update({
       where: {
         id: parseInt(resolvedParams.id),
@@ -74,6 +83,7 @@ export async function PUT(
         doc_status: body.doc_status || 'Not Started',
         progress: body.progress || 'New',
         notes: body.notes || '',
+        ...fileData,
         updated_at: getLocalTime()
       }
     });

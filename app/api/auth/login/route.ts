@@ -1,16 +1,42 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-
 import {prisma }from '@/lib/prisma';
+import { validateEnvironmentVariables, sanitizeInput, isValidEmail, checkRateLimit } from '@/lib/security';
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function POST(request: Request) {
   try {
-    // TEMP DEBUG: Log all environment variables
-    console.log('All env:', process.env);
+    // Initialize secrets from AWS Secrets Manager
+    await initializeSecrets();
+    
+    // Validate environment variables at startup
+    validateEnvironmentVariables();
+    
+    // SECURITY FIX: Removed environment variable logging
+    // console.log('All env:', process.env); // REMOVED - NEVER log all env vars
     console.log('Login attempt started');
     const { email, password } = await request.json();
-    console.log('Login attempt for email:', email);
+    
+    // SECURITY: Sanitize and validate input
+    const sanitizedEmail = sanitizeInput(email);
+    if (!isValidEmail(sanitizedEmail)) {
+      return NextResponse.json(
+        { message: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
+    // SECURITY: Rate limiting
+    const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
+    if (!checkRateLimit(`login:${clientIP}`, 5, 60000)) {
+      return NextResponse.json(
+        { message: 'Too many login attempts. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
+    console.log('Login attempt for email:', sanitizedEmail);
 
     // Check if Prisma is available
     if (!prisma) {
@@ -38,7 +64,7 @@ export async function POST(request: Request) {
     let user;
     try {
       user = await prisma.user.findUnique({
-        where: { email },
+        where: { email: sanitizedEmail },
         select: {
           id: true,
           email: true,
@@ -136,9 +162,11 @@ export async function POST(request: Request) {
       path: '/'
     });
 
-    // Set non-HttpOnly cookie for client-side access
+    // SECURITY FIX: Remove client-side accessible token
+    // Both cookies should be HttpOnly for security
+    // Client-side authentication should use the response body token
     response.cookies.set('clientAuthToken', token, {
-      httpOnly: false, // Allow client-side access
+      httpOnly: true, // SECURITY FIX: Made HttpOnly
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60, // 30 days (matching JWT expiration)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/app/lib/db';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
+// File upload functionality is handled directly in the request body
 
 // GET a single performance monitoring control
 export async function GET(
@@ -64,7 +65,11 @@ export async function PUT(
       proof,
       frequency,
       responsible_persons,
-      remarks
+      remarks,
+      file_url,
+      file_name,
+      file_size,
+      file_type
     } = data;
 
     // Create placeholders for IN clause
@@ -98,12 +103,18 @@ export async function PUT(
         proof = ?,
         frequency = ?,
         responsible_persons = ?,
-        remarks = ?
+        remarks = ?,
+        file_url = ?,
+        file_name = ?,
+        file_size = ?,
+        file_type = ?,
+        uploaded_at = ?
       WHERE id = ? AND business_area IN (${placeholders})
     `, [
       userBusinessArea, sub_business_area, Name_reports, doc_type, priority,
       doc_status, progress, status_percentage, target_date ? new Date(target_date) : null,
-      proof, frequency, responsible_persons, remarks, parseInt(id), ...userBusinessAreas
+      proof, frequency, responsible_persons, remarks, file_url, file_name, file_size, file_type, new Date(),
+      parseInt(id), ...userBusinessAreas
     ]);
 
     if ((result as unknown as { affectedRows: number }).affectedRows === 0) {

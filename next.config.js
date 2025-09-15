@@ -1,22 +1,44 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  env: {
-    ENABLE_AI_FEATURES: process.env.ENABLE_AI_FEATURES,
-    DATABASE_URL: process.env.DATABASE_URL ?? "",
-    JWT_SECRET: process.env.JWT_SECRET ?? "",
-    TZ: "Europe/Stockholm",
-    // AWS S3 Configuration
-    ACCESS_KEY_ID: process.env.ACCESS_KEY_ID ?? "",
-    SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY ?? "",
-    S3_BUCKET_NAME: process.env.S3_BUCKET_NAME ?? "",
-    REGION: process.env.REGION ?? "eu-north-1",
-  },
-  // Amplify compatibility
-  //output: 'standalone',
-  // Handle static assets
+  // SECURITY FIX: Removed env section that exposed secrets to client
+  // Environment variables should NEVER be exposed to the browser
   images: {
     unoptimized: true,
+  },
+  // SECURITY: Add security headers
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; font-src 'self' data:;",
+          },
+        ],
+      },
+    ]
   },
 }
 

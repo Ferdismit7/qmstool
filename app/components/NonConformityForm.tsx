@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import FileUpload from './FileUpload';
+import FileUploadField from './FileUploadField';
 
 
 
@@ -83,14 +83,10 @@ export default function NonConformityForm({ onAdd, onClose, editData }: NonConfo
   });
 
   const [fileData, setFileData] = useState<{
-    file?: File;
-    uploadedFile?: {
-      key: string;
-      url: string;
-      fileName: string;
-      fileSize: number;
-      fileType: string;
-    };
+    file_url?: string;
+    file_name?: string;
+    file_size?: number;
+    file_type?: string;
   }>({});
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -158,50 +154,7 @@ export default function NonConformityForm({ onAdd, onClose, editData }: NonConfo
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleFileUpload = async (file: File) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
-      const response = await fetch('/api/upload-file', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload file');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setFileData({
-          uploadedFile: {
-            key: data.key,
-            url: data.url,
-            fileName: file.name,
-            fileSize: file.size,
-            fileType: file.type,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      setErrors(prev => ({ ...prev, file: 'Failed to upload file' }));
-    }
-  };
-
-  const handleFileRemove = () => {
-    setFileData({});
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors.file;
-      return newErrors;
-    });
-  };
+  // File upload is now handled by the FileUploadField component
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,11 +169,11 @@ export default function NonConformityForm({ onAdd, onClose, editData }: NonConfo
       target_date: formData.target_date || null,
       completion_date: formData.completion_date || null,
       // Add file data if uploaded
-      ...(fileData.uploadedFile && {
-        file_url: fileData.uploadedFile.key,
-        file_name: fileData.uploadedFile.fileName,
-        file_size: fileData.uploadedFile.fileSize,
-        file_type: fileData.uploadedFile.fileType,
+      ...(fileData.file_url && {
+        file_url: fileData.file_url,
+        file_name: fileData.file_name,
+        file_size: fileData.file_size,
+        file_type: fileData.file_type,
       }),
     } as NonConformityFormData;
 
@@ -593,17 +546,33 @@ export default function NonConformityForm({ onAdd, onClose, editData }: NonConfo
         </div>
 
         <div className="md:col-span-2">
-          <FileUpload
-            onFileUpload={handleFileUpload}
-            onFileRemove={handleFileRemove}
-            currentFile={fileData.uploadedFile ? {
-              name: fileData.uploadedFile.fileName,
-              size: fileData.uploadedFile.fileSize,
-              url: fileData.uploadedFile.url
-            } : undefined}
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
-            maxSize={10 * 1024 * 1024} // 10MB
+          <FileUploadField
             label="Upload Supporting Document"
+            value={{
+              file_url: fileData.file_url,
+              file_name: fileData.file_name,
+              file_size: fileData.file_size,
+              file_type: fileData.file_type,
+            }}
+            onChange={(fileData) => {
+              setFileData(prev => ({
+                ...prev,
+                ...fileData
+              }));
+            }}
+            onRemove={() => {
+              setFileData(prev => ({
+                ...prev,
+                file_url: undefined,
+                file_name: undefined,
+                file_size: undefined,
+                file_type: undefined,
+              }));
+            }}
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+            maxSize={10}
+            businessArea={formData.business_area}
+            documentType="non-conformities"
           />
           {errors.file && (
             <p className="mt-1 text-sm text-red-500">{errors.file}</p>
