@@ -21,10 +21,20 @@ function parseDatabaseUrl(url: string) {
     throw new Error('Invalid DATABASE_URL format');
   }
   
+  // Safely decode password, handling special characters
+  let password: string;
+  try {
+    password = decodeURIComponent(match[2]);
+  } catch (error) {
+    // If decoding fails, use the raw password (might contain special chars)
+    console.warn('Failed to decode password, using raw value:', error);
+    password = match[2];
+  }
+  
   return {
     host: match[3],
     user: match[1],
-    password: decodeURIComponent(match[2]),
+    password: password,
     database: match[5],
     port: parseInt(match[4])
   };
