@@ -7,6 +7,7 @@ const secret_name = "qmssecretnamedb";
 
 const client = new SecretsManagerClient({
   region: "eu-north-1",
+  // AWS Amplify will automatically use the IAM role attached to the service
 });
 
 interface Secrets {

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadFileToS3 } from '@/lib/services/s3Service';
 import { DocumentType, FILE_UPLOAD_CONSTANTS } from '@/app/types/fileUpload';
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function POST(request: NextRequest) {
   try {
     console.log('Upload file API called');
+    
+    // Initialize secrets from AWS Secrets Manager
+    await initializeSecrets();
     
     // Check environment variables with detailed logging
     console.log('Environment variables check:');

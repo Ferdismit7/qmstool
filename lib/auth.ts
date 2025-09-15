@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
+import { initializeSecrets } from './awsSecretsManager';
 import {prisma } from '@/lib/prisma';
 
 // SECURITY FIX: Removed JWT_SECRET logging - NEVER log secrets
@@ -115,6 +116,22 @@ export const clientTokenUtils = {
  * @param request - Next.js request object
  * @returns User information from JWT token or null if invalid
  */
+/**
+ * Initialize secrets and get user from token (async wrapper)
+ * @param request - Next.js request object
+ * @returns User information from JWT token or null if invalid
+ */
+export const getUserFromTokenWithSecrets = async (request: NextRequest): Promise<JWTPayload | null> => {
+  try {
+    // Initialize secrets from AWS Secrets Manager
+    await initializeSecrets();
+    return getUserFromToken(request);
+  } catch (error) {
+    console.error('Failed to initialize secrets in getUserFromTokenWithSecrets:', error);
+    return null;
+  }
+};
+
 export const getUserFromToken = (request: NextRequest): JWTPayload | null => {
   try {
     console.log('getUserFromToken called');

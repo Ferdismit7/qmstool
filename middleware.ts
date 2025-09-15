@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 // SECURITY FIX: Removed JWT_SECRET logging - NEVER log secrets
 // console.log('MIDDLEWARE JWT_SECRET:', process.env.JWT_SECRET); // REMOVED
 
 export async function middleware(request: NextRequest) {
   console.log('Middleware called for path:', request.nextUrl.pathname);
+  
+  // Initialize secrets from AWS Secrets Manager
+  try {
+    await initializeSecrets();
+  } catch (error) {
+    console.error('Failed to initialize secrets in middleware:', error);
+    // Continue without auth check if secrets fail to load
+    return NextResponse.next();
+  }
   
   // Skip auth check for auth-related routes
   if (request.nextUrl.pathname.startsWith('/auth')) {
