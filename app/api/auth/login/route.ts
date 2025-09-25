@@ -14,8 +14,12 @@ export async function POST(request: Request) {
       console.warn('Could not initialize secrets, using fallback environment variables:', secretsError);
     }
     
-    // Validate environment variables at startup
-    validateEnvironmentVariables();
+    // Validate environment variables at startup (optional if secrets failed)
+    try {
+      validateEnvironmentVariables();
+    } catch (envError) {
+      console.warn('Environment validation failed, proceeding with available variables:', envError);
+    }
     
     // SECURITY FIX: Removed environment variable logging
     // console.log('All env:', process.env); // REMOVED - NEVER log all env vars
