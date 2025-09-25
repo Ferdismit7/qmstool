@@ -7,8 +7,12 @@ import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function POST(request: Request) {
   try {
-    // Initialize secrets from AWS Secrets Manager
-    await initializeSecrets();
+    // Try to initialize secrets from AWS Secrets Manager (optional for login)
+    try {
+      await initializeSecrets();
+    } catch (secretsError) {
+      console.warn('Could not initialize secrets, using fallback environment variables:', secretsError);
+    }
     
     // Validate environment variables at startup
     validateEnvironmentVariables();
