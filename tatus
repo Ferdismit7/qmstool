@@ -1,0 +1,5 @@
+[33mc2c1b6e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix: resolve middleware AWS credentials error causing HTML error pages
+[33mb60544b[m fix: comprehensive AWS Secrets Manager integration and security improvements
+[33mcd618f3[m fix: handle special characters in database password from AWS Secrets Manager
+[33mf892694[m  fix: update critical files to use AWS Secrets Manager initialization
+[33m22f31e8[m  feat: add AWS Secrets Manager connection test endpoint
