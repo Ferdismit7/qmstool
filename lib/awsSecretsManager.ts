@@ -35,7 +35,21 @@ export const getSecrets = async (): Promise<Secrets> => {
     const lambdaUrl = process.env.LAMBDA_FUNCTION_URL;
     
     if (!lambdaUrl) {
-      throw new Error("LAMBDA_FUNCTION_URL environment variable is not set");
+      console.warn("LAMBDA_FUNCTION_URL not set, using fallback environment variables");
+      // Fallback to environment variables if Lambda URL is not set
+      if (!process.env.JWT_SECRET || !process.env.DATABASE_URL) {
+        throw new Error("Neither Lambda function URL nor required environment variables are set");
+      }
+      
+      const fallbackSecrets: Secrets = {
+        DATABASE_URL: process.env.DATABASE_URL,
+        JWT_SECRET: process.env.JWT_SECRET,
+        S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
+        REGION: process.env.REGION || 'eu-north-1',
+      };
+      
+      cachedSecrets = fallbackSecrets;
+      return fallbackSecrets;
     }
 
     console.log("Calling Lambda function for secrets...");
