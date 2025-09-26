@@ -7,23 +7,30 @@ import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function POST(request: Request) {
   try {
-    // Try to initialize secrets from AWS Secrets Manager (optional for login)
+    console.log('Login attempt started');
+    
+    // Try to initialize secrets from Lambda function
     try {
       await initializeSecrets();
+      console.log('Secrets initialized successfully');
     } catch (secretsError) {
-      console.warn('Could not initialize secrets, using fallback environment variables:', secretsError);
+      console.error('Failed to initialize secrets:', secretsError);
+      return NextResponse.json(
+        { error: 'Failed to initialize application secrets' },
+        { status: 500 }
+      );
     }
     
-    // Validate environment variables at startup (optional if secrets failed)
-    try {
-      validateEnvironmentVariables();
-    } catch (envError) {
-      console.warn('Environment validation failed, proceeding with available variables:', envError);
+    // Check if required environment variables are available
+    if (!process.env.JWT_SECRET || !process.env.DATABASE_URL) {
+      console.error('Required environment variables not available after secrets initialization');
+      return NextResponse.json(
+        { error: 'Application configuration error' },
+        { status: 500 }
+      );
     }
     
-    // SECURITY FIX: Removed environment variable logging
-    // console.log('All env:', process.env); // REMOVED - NEVER log all env vars
-    console.log('Login attempt started');
+    console.log('Environment variables available, proceeding with login');
     const { email, password } = await request.json();
     
     // SECURITY: Sanitize and validate input
