@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import {prisma }from '@/lib/prisma';
-import { validateEnvironmentVariables, sanitizeInput, isValidEmail, checkRateLimit } from '@/lib/security';
+import { sanitizeInput, isValidEmail, checkRateLimit } from '@/lib/security';
 import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function POST(request: Request) {
