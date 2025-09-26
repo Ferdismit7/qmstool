@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import {prisma }from '@/lib/prisma';
 import { sanitizeInput, isValidEmail, checkRateLimit } from '@/lib/security';
-import { initializeSecrets } from '@/lib/awsSecretsManager';
+import { initializeSecrets } from '@/lib/secretsManager';
 
 export async function POST(request: Request) {
   try {
