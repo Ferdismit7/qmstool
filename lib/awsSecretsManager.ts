@@ -32,20 +32,23 @@ export const getSecrets = async (): Promise<Secrets> => {
 
   try {
     // Get Lambda function URL from environment variable
-    const lambdaUrl = process.env.LAMBDA_FUNCTION_URL;
+    const lambdaUrl = process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL || process.env.LAMBDA_FUNCTION_URL;
     
     if (!lambdaUrl) {
       console.warn("LAMBDA_FUNCTION_URL not set, using fallback environment variables");
       // Fallback to environment variables if Lambda URL is not set
-      if (!process.env.JWT_SECRET || !process.env.DATABASE_URL) {
+      const jwtSecret = process.env.NEXT_PUBLIC_JWT_SECRET || process.env.JWT_SECRET;
+      const databaseUrl = process.env.NEXT_PUBLIC_DATABASE_URL || process.env.DATABASE_URL;
+      
+      if (!jwtSecret || !databaseUrl) {
         throw new Error("Neither Lambda function URL nor required environment variables are set");
       }
       
       const fallbackSecrets: Secrets = {
-        DATABASE_URL: process.env.DATABASE_URL,
-        JWT_SECRET: process.env.JWT_SECRET,
-        S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
-        REGION: process.env.REGION || 'eu-north-1',
+        DATABASE_URL: databaseUrl,
+        JWT_SECRET: jwtSecret,
+        S3_BUCKET_NAME: process.env.NEXT_PUBLIC_S3_BUCKET_NAME || process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
+        REGION: process.env.NEXT_PUBLIC_REGION || process.env.REGION || 'eu-north-1',
       };
       
       cachedSecrets = fallbackSecrets;
