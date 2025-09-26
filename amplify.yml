@@ -16,6 +16,13 @@ frontend:
         - echo "Checking AWS credentials..."
         - 'echo "ACCESS_KEY_ID exists: ${ACCESS_KEY_ID:+YES}"'
         - 'echo "SECRET_ACCESS_KEY exists: ${SECRET_ACCESS_KEY:+YES}"'
+        - echo "Checking application environment variables..."
+        - 'echo "LAMBDA_FUNCTION_URL exists: ${LAMBDA_FUNCTION_URL:+YES}"'
+        - 'echo "JWT_SECRET exists: ${JWT_SECRET:+YES}"'
+        - 'echo "DATABASE_URL exists: ${DATABASE_URL:+YES}"'
+        - 'echo "S3_BUCKET_NAME exists: ${S3_BUCKET_NAME:+YES}"'
+        - 'echo "REGION exists: ${REGION:+YES}"'
+        - 'echo "AMPLIFY_ROLE_ARN exists: ${AMPLIFY_ROLE_ARN:+YES}"'
         - echo "Verifying CSS dependencies..."
         - ls -la node_modules/tailwindcss
         - ls -la node_modules/postcss
