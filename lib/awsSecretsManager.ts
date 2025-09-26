@@ -53,6 +53,7 @@ export const getSecrets = async (): Promise<Secrets> => {
     }
 
     console.log("Calling Lambda function for secrets...");
+    console.log("Lambda URL:", lambdaUrl);
     
     const response = await fetch(lambdaUrl, {
       method: 'GET',
@@ -61,13 +62,17 @@ export const getSecrets = async (): Promise<Secrets> => {
       },
     });
 
+    console.log("Lambda response status:", response.status);
+
     if (!response.ok) {
       throw new Error(`Lambda function returned status: ${response.status}`);
     }
 
     const data: LambdaSecretsResponse = await response.json();
+    console.log("Lambda response data:", data);
 
     if (!data.success || !data.secrets) {
+      console.error("Lambda function failed:", data.error);
       throw new Error(data.error || "Lambda function returned unsuccessful response");
     }
 
