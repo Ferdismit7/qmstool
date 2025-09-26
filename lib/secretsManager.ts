@@ -4,6 +4,7 @@ import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-sec
 
 const client = new SecretsManagerClient({
   region: process.env.AWS_REGION || 'eu-north-1',
+  // Let AWS SDK automatically find credentials from IAM role
 });
 
 interface Secrets {
@@ -26,6 +27,8 @@ export const getSecretsFromAWS = async (): Promise<Secrets> => {
 
   try {
     console.log('Fetching secrets from AWS Secrets Manager...');
+    console.log('Region:', process.env.AWS_REGION || 'eu-north-1');
+    console.log('Secret ID: qmssecretnamedb');
     
     const response = await client.send(
       new GetSecretValueCommand({
@@ -33,6 +36,8 @@ export const getSecretsFromAWS = async (): Promise<Secrets> => {
         VersionStage: 'AWSCURRENT',
       })
     );
+    
+    console.log('AWS Secrets Manager response received');
 
     if (!response.SecretString) {
       throw new Error('No secret string found in response');
