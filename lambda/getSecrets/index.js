@@ -27,9 +27,9 @@ exports.handler = async (event) => {
 
     const rawSecrets = JSON.parse(response.SecretString);
     
-    // Build DATABASE_URL from individual components
-    // The database name should match the RDS instance identifier
-    const databaseName = rawSecrets.dbInstanceIdentifier || 'database-qms-1';
+        // Build DATABASE_URL from individual components
+        // Use qmstool database which contains the actual application data
+        const databaseName = 'qmstool';
     
     // Properly encode the password to handle special characters
     let encodedPassword;
