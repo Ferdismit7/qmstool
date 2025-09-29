@@ -40,25 +40,36 @@ function parseDatabaseUrl(url: string) {
   };
 }
 
-// Create a connection pool using DATABASE_URL
-// Note: DATABASE_URL should always be available from AWS Secrets Manager or environment variables
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is required');
+// Lazy-loaded connection pool
+let pool: mysql.Pool | null = null;
+
+// Initialize database connection pool
+function initializePool() {
+  if (pool) {
+    return pool;
+  }
+
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is required');
+  }
+
+  const dbConfig = parseDatabaseUrl(process.env.DATABASE_URL);
+
+  pool = mysql.createPool({
+    ...dbConfig,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+  });
+
+  return pool;
 }
-
-const dbConfig = parseDatabaseUrl(process.env.DATABASE_URL);
-
-const pool = mysql.createPool({
-  ...dbConfig,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
 
 // Query function
 export async function query<T = QueryResult[]>(sql: string, params: unknown[] = []): Promise<T> {
   try {
-    const [results] = await pool.execute(sql, params);
+    const connectionPool = initializePool();
+    const [results] = await connectionPool.execute(sql, params);
     return results as T;
   } catch (error) {
     console.error('Database query error:', error);
