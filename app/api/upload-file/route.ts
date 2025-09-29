@@ -1,7 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadFileToS3 } from '@/lib/services/s3Service';
 import { DocumentType, FILE_UPLOAD_CONSTANTS } from '@/app/types/fileUpload';
 import { initializeSecrets } from '@/lib/awsSecretsManager';
+
+// ISO 27001 Compliant: Upload file via Lambda function
+const uploadFileViaLambda = async (params: {
+  file: Buffer;
+  fileName: string;
+  contentType: string;
+  businessArea: string;
+  documentType: DocumentType;
+  recordId?: number;
+}): Promise<{ key: string; url: string }> => {
+  const { file, fileName, contentType, businessArea, documentType, recordId } = params;
+  
+  // Get Lambda function URL from environment variables
+  const lambdaUrl = process.env.S3_UPLOAD_LAMBDA_URL || process.env.NEXT_PUBLIC_S3_UPLOAD_LAMBDA_URL;
+  
+  if (!lambdaUrl) {
+    throw new Error('S3 upload Lambda function URL not configured');
+  }
+  
+  console.log('Calling S3 upload Lambda function...');
+  
+  // Convert buffer to base64 for transmission
+  const fileData = file.toString('base64');
+  
+  const response = await fetch(lambdaUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      fileData,
+      fileName,
+      contentType,
+      businessArea,
+      documentType,
+      recordId
+    }),
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Lambda upload failed: ${errorData.error || 'Unknown error'}`);
+  }
+  
+  const result = await response.json();
+  
+  if (!result.success) {
+    throw new Error(`Lambda upload failed: ${result.error || 'Unknown error'}`);
+  }
+  
+  return result.data;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,9 +152,9 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    console.log('Buffer created, uploading to S3...');
-    // Upload to S3
-    const result = await uploadFileToS3({
+    console.log('Buffer created, uploading via Lambda...');
+    // Upload via Lambda function (ISO 27001 compliant)
+    const result = await uploadFileViaLambda({
       file: buffer,
       fileName: file.name,
       contentType: file.type,
@@ -112,7 +163,7 @@ export async function POST(request: NextRequest) {
       recordId
     });
 
-    console.log('S3 upload successful:', result);
+    console.log('Lambda upload successful:', result);
 
     return NextResponse.json({
       success: true,
