@@ -3,8 +3,8 @@ import { initializeSecrets } from '@/lib/awsSecretsManager';
 import mysql from 'mysql2/promise';
 
 interface DatabaseResult {
-  exists: boolean;
-  tables?: unknown[];
+  exists?: boolean;
+  tables?: unknown;
   tableCount?: number;
   error?: string;
 }
@@ -56,7 +56,7 @@ export async function GET() {
       results.database_qms_1 = {
         exists: true,
         tables: tables1,
-        tableCount: (tables1 as unknown[]).length
+        tableCount: Array.isArray(tables1) ? tables1.length : 0
       };
       
       await connection1.end();
@@ -82,7 +82,7 @@ export async function GET() {
       results.qmstool = {
         exists: true,
         tables: tables2,
-        tableCount: (tables2 as unknown[]).length
+        tableCount: Array.isArray(tables2) ? tables2.length : 0
       };
       
       await connection2.end();
@@ -97,7 +97,7 @@ export async function GET() {
       success: true,
       message: 'Both databases checked successfully',
       results: results,
-      recommendation: results.qmstool.exists && results.qmstool.tableCount > 0 
+      recommendation: results.qmstool.exists && (results.qmstool.tableCount ?? 0) > 0 
         ? 'Your application data appears to be in the qmstool database. Consider updating the Lambda function to use qmstool instead of database-qms-1.'
         : 'Both databases are accessible. Check which one contains your application data.',
       timestamp: new Date().toISOString()
