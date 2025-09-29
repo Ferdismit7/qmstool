@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DocumentType, FILE_UPLOAD_CONSTANTS } from '@/app/types/fileUpload';
 import { initializeSecrets } from '@/lib/awsSecretsManager';
 
-// ISO 27001 Compliant: Upload file via Lambda function
+// ISO 27001 Compliant: Upload file via existing Lambda function
 const uploadFileViaLambda = async (params: {
   file: Buffer;
   fileName: string;
@@ -13,14 +13,14 @@ const uploadFileViaLambda = async (params: {
 }): Promise<{ key: string; url: string }> => {
   const { file, fileName, contentType, businessArea, documentType, recordId } = params;
   
-  // Get Lambda function URL from environment variables
-  const lambdaUrl = process.env.S3_UPLOAD_LAMBDA_URL || process.env.NEXT_PUBLIC_S3_UPLOAD_LAMBDA_URL;
+  // Get existing Lambda function URL from environment variables
+  const lambdaUrl = process.env.LAMBDA_FUNCTION_URL || process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL;
   
   if (!lambdaUrl) {
-    throw new Error('S3 upload Lambda function URL not configured');
+    throw new Error('Lambda function URL not configured');
   }
   
-  console.log('Calling S3 upload Lambda function...');
+  console.log('Calling existing Lambda function for S3 upload...');
   
   // Convert buffer to base64 for transmission
   const fileData = file.toString('base64');
@@ -31,6 +31,7 @@ const uploadFileViaLambda = async (params: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      action: 'uploadFile',
       fileData,
       fileName,
       contentType,
