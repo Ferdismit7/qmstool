@@ -1,4 +1,4 @@
-// lib/awsSecretsManager.ts - Lambda Function Integration for Secrets Management
+// lib/awsSecretsManager.ts - Lambda Function URL Integration for Secrets Management
 
 interface LambdaSecretsResponse {
   success: boolean;
@@ -21,7 +21,7 @@ interface Secrets {
 let cachedSecrets: Secrets | null = null;
 
 /**
- * Retrieve secrets from Lambda function
+ * Retrieve secrets from Lambda function URL
  * Uses caching to avoid multiple API calls
  */
 export const getSecrets = async (): Promise<Secrets> => {
@@ -31,14 +31,16 @@ export const getSecrets = async (): Promise<Secrets> => {
   }
 
   try {
+    console.log("Calling Lambda function URL for secrets...");
+    
     // Get Lambda function URL from environment variable
-    const lambdaUrl = process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL || process.env.LAMBDA_FUNCTION_URL;
+    const lambdaUrl = process.env.LAMBDA_FUNCTION_URL || process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL;
     
     if (!lambdaUrl) {
       console.warn("LAMBDA_FUNCTION_URL not set, using fallback environment variables");
       // Fallback to environment variables if Lambda URL is not set
-      const jwtSecret = process.env.NEXT_PUBLIC_JWT_SECRET || process.env.JWT_SECRET;
-      const databaseUrl = process.env.NEXT_PUBLIC_DATABASE_URL || process.env.DATABASE_URL;
+      const jwtSecret = process.env.JWT_SECRET;
+      const databaseUrl = process.env.DATABASE_URL;
       
       if (!jwtSecret || !databaseUrl) {
         throw new Error("Neither Lambda function URL nor required environment variables are set");
@@ -47,15 +49,14 @@ export const getSecrets = async (): Promise<Secrets> => {
       const fallbackSecrets: Secrets = {
         DATABASE_URL: databaseUrl,
         JWT_SECRET: jwtSecret,
-        S3_BUCKET_NAME: process.env.NEXT_PUBLIC_S3_BUCKET_NAME || process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
-        REGION: process.env.NEXT_PUBLIC_REGION || process.env.REGION || 'eu-north-1',
+        S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
+        REGION: process.env.REGION || 'eu-north-1',
       };
       
       cachedSecrets = fallbackSecrets;
       return fallbackSecrets;
     }
 
-    console.log("Calling Lambda function for secrets...");
     console.log("Lambda URL:", lambdaUrl);
     
     const response = await fetch(lambdaUrl, {
@@ -95,11 +96,30 @@ export const getSecrets = async (): Promise<Secrets> => {
     // Cache the secrets
     cachedSecrets = secrets;
     
-    console.log("✅ Secrets retrieved successfully from Lambda function");
+    console.log("✅ Secrets retrieved successfully from Lambda function URL");
     return secrets;
   } catch (error) {
-    console.error("Error retrieving secrets from Lambda function:", error);
-    throw new Error("Failed to retrieve secrets from Lambda function");
+    console.error("Error retrieving secrets from Lambda function URL:", error);
+    
+    // Fallback to environment variables if Lambda fails
+    console.warn("Lambda function failed, attempting fallback to environment variables");
+    const jwtSecret = process.env.JWT_SECRET;
+    const databaseUrl = process.env.DATABASE_URL;
+    
+    if (!jwtSecret || !databaseUrl) {
+      throw new Error("Lambda function failed and required environment variables are not set");
+    }
+    
+    const fallbackSecrets: Secrets = {
+      DATABASE_URL: databaseUrl,
+      JWT_SECRET: jwtSecret,
+      S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
+      REGION: process.env.REGION || 'eu-north-1',
+    };
+    
+    cachedSecrets = fallbackSecrets;
+    console.log("✅ Using fallback environment variables");
+    return fallbackSecrets;
   }
 };
 

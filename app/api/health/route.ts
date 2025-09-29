@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { initializeSecrets } from '@/lib/secretsManager';
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function GET() {
   try {

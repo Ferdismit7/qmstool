@@ -3,15 +3,15 @@ import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function GET() {
   try {
-    console.log('Debug secrets endpoint called');
+    console.log('Testing Lambda-based secrets endpoint called');
     
-    // Test 1: Check if we can import the secrets manager
-    console.log('✅ Secrets manager imported successfully');
+    // Test 1: Check if we can import the Lambda secrets manager
+    console.log('✅ Lambda secrets manager imported successfully');
     
-    // Test 2: Try to initialize secrets
-    console.log('Attempting to initialize secrets...');
+    // Test 2: Try to initialize secrets from Lambda
+    console.log('Attempting to initialize secrets from Lambda function...');
     await initializeSecrets();
-    console.log('✅ Secrets initialized successfully');
+    console.log('✅ Secrets initialized successfully from Lambda');
     
     // Test 3: Check if environment variables are set
     const envStatus = {
@@ -19,19 +19,21 @@ export async function GET() {
       JWT_SECRET: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
       S3_BUCKET_NAME: process.env.S3_BUCKET_NAME ? 'SET' : 'NOT SET',
       REGION: process.env.REGION ? 'SET' : 'NOT SET',
+      LAMBDA_FUNCTION_URL: process.env.LAMBDA_FUNCTION_URL ? 'SET' : 'NOT SET',
+      NEXT_PUBLIC_LAMBDA_FUNCTION_URL: process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL ? 'SET' : 'NOT SET',
     };
     
     console.log('Environment variables status:', envStatus);
     
     return NextResponse.json({
       success: true,
-      message: 'Secrets manager working correctly',
+      message: 'Lambda-based secrets manager working correctly',
       environmentVariables: envStatus,
       timestamp: new Date().toISOString()
     });
     
   } catch (error) {
-    console.error('Debug secrets error:', error);
+    console.error('Lambda secrets test error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
