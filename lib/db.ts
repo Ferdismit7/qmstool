@@ -31,7 +31,7 @@ function parseDatabaseUrl(url: string) {
     try {
       // Try double decoding in case it's double-encoded
       password = decodeURIComponent(decodeURIComponent(match[2]));
-    } catch (doubleError) {
+    } catch {
       // If all decoding fails, use the raw password
       console.warn('Failed to decode password, using raw value:', error);
       password = match[2];
