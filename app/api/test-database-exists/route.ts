@@ -46,7 +46,7 @@ export async function GET() {
           break;
         }
       } catch (error) {
-        console.log(`❌ Database '${dbName}' not accessible:`, error.message);
+        console.log(`❌ Database '${dbName}' not accessible:`, error instanceof Error ? error.message : String(error));
       }
     }
     
