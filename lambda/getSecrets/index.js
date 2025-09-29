@@ -30,7 +30,19 @@ exports.handler = async (event) => {
     // Build DATABASE_URL from individual components
     // The database name should match the RDS instance identifier
     const databaseName = rawSecrets.dbInstanceIdentifier || 'database-qms-1';
-    const databaseUrl = `mysql://${rawSecrets.username}:${encodeURIComponent(rawSecrets.password)}@${rawSecrets.host}:${rawSecrets.port}/${databaseName}`;
+    
+    // Properly encode the password to handle special characters
+    let encodedPassword;
+    try {
+      // First decode if it's already encoded, then re-encode properly
+      const decodedPassword = decodeURIComponent(rawSecrets.password);
+      encodedPassword = encodeURIComponent(decodedPassword);
+    } catch (error) {
+      // If decoding fails, just encode the raw password
+      encodedPassword = encodeURIComponent(rawSecrets.password);
+    }
+    
+    const databaseUrl = `mysql://${rawSecrets.username}:${encodedPassword}@${rawSecrets.host}:${rawSecrets.port}/${databaseName}`;
     
     const secrets = {
       DATABASE_URL: databaseUrl,

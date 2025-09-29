@@ -24,11 +24,18 @@ function parseDatabaseUrl(url: string) {
   // Safely decode password, handling special characters
   let password: string;
   try {
+    // First try to decode the password
     password = decodeURIComponent(match[2]);
   } catch (error) {
-    // If decoding fails, use the raw password (might contain special chars)
-    console.warn('Failed to decode password, using raw value:', error);
-    password = match[2];
+    // If decoding fails, try alternative decoding methods
+    try {
+      // Try double decoding in case it's double-encoded
+      password = decodeURIComponent(decodeURIComponent(match[2]));
+    } catch (doubleError) {
+      // If all decoding fails, use the raw password
+      console.warn('Failed to decode password, using raw value:', error);
+      password = match[2];
+    }
   }
   
   return {
