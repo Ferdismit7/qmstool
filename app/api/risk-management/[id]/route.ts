@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const userBusinessArea = getCurrentUserBusinessArea(request);
+    const userBusinessArea = await getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -37,7 +37,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const userBusinessArea = getCurrentUserBusinessArea(request);
+    const userBusinessArea = await getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -127,7 +127,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const userBusinessArea = getCurrentUserBusinessArea(request);
+    const userBusinessArea = await getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

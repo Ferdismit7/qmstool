@@ -15,7 +15,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     if (!user || !user.userId) {
       return NextResponse.json(
         { error: 'Unauthorized - Invalid token' },
@@ -95,7 +95,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     if (!user || !user.userId) {
       return NextResponse.json(
         { error: 'Unauthorized - Invalid token' },
@@ -215,7 +215,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     if (!user || !user.userId) {
       return NextResponse.json(
         { error: 'Unauthorized - Invalid token' },

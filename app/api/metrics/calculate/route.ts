@@ -11,7 +11,7 @@ import { getCurrentUserBusinessArea } from '@/lib/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    const userBusinessArea = getCurrentUserBusinessArea(request);
+    const userBusinessArea = await getCurrentUserBusinessArea(request);
     if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

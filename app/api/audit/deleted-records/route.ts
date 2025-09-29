@@ -5,7 +5,7 @@ import { getCurrentUserBusinessAreas, getUserFromToken } from '@/lib/auth';
 export async function GET(request: NextRequest) {
   try {
     // Check if user is authenticated
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     if (!user || !user.userId) {
       return NextResponse.json(
         { error: 'Unauthorized - Invalid token' },

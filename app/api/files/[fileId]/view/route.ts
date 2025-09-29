@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     // Verify authentication
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },

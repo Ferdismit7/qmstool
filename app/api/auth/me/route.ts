@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     console.log('[API /auth/me] Authorization header:', authHeader);
 
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     console.log('[API /auth/me] Decoded user from token:', user);
     
     if (!user) {

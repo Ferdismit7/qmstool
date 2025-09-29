@@ -10,7 +10,7 @@ interface SoftDeleteRequest {
 export async function POST(request: NextRequest) {
   try {
     // Get current user ID from JWT token
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     if (!user || !user.userId) {
       return NextResponse.json(
         { error: 'Unauthorized - Invalid token' },

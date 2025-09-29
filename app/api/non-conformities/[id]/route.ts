@@ -122,7 +122,7 @@ export async function DELETE(
 ) {
   try {
     // Get current user ID from JWT token
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     if (!user || !user.userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized - Invalid token' },

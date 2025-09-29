@@ -8,7 +8,7 @@ interface SoftDeleteRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     if (!user || !user.userId) {
       return NextResponse.json(
         { error: 'Unauthorized - Invalid token' },
