@@ -123,22 +123,24 @@ export const clientTokenUtils = {
  */
 export const getUserFromTokenWithSecrets = async (request: NextRequest): Promise<JWTPayload | null> => {
   try {
-    // Initialize secrets from AWS Secrets Manager
-    await initializeSecrets();
-    return getUserFromToken(request);
+    // getUserFromToken now handles secrets initialization internally
+    return await getUserFromToken(request);
   } catch (error) {
-    console.error('Failed to initialize secrets in getUserFromTokenWithSecrets:', error);
+    console.error('Failed to get user from token:', error);
     return null;
   }
 };
 
-export const getUserFromToken = (request: NextRequest): JWTPayload | null => {
+export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload | null> => {
   try {
     console.log('getUserFromToken called');
     
-    // Check if JWT_SECRET is available (for build-time safety)
+    // ISO 27001 Compliant: Initialize secrets from Lambda
+    await initializeSecrets();
+    
+    // Check if JWT_SECRET is available after initialization
     if (!process.env.JWT_SECRET) {
-      console.warn('JWT_SECRET not available');
+      console.warn('JWT_SECRET not available after initialization');
       return null;
     }
 
@@ -188,7 +190,7 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
     console.log('Request headers:', Object.fromEntries(request.headers.entries()));
     console.log('Request cookies:', request.cookies.getAll());
     
-    const user = getUserFromToken(request);
+    const user = await getUserFromToken(request);
     console.log('User from token:', user);
     
     if (!user) {
@@ -223,8 +225,13 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
   } catch (error) {
     console.error('Error getting user business areas:', error);
     // Fall back to JWT business area if query fails
-    const user = getUserFromToken(request);
-    return user?.businessArea ? [user.businessArea] : [];
+    try {
+      const user = await getUserFromToken(request);
+      return user?.businessArea ? [user.businessArea] : [];
+    } catch (fallbackError) {
+      console.error('Fallback getUserFromToken also failed:', fallbackError);
+      return [];
+    }
   }
 };
 
@@ -233,8 +240,8 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
  * @param request - Next.js request object
  * @returns Business area string or null if not authenticated
  */
-export const getCurrentUserBusinessArea = (request: NextRequest): string | null => {
-  const user = getUserFromToken(request);
+export const getCurrentUserBusinessArea = async (request: NextRequest): Promise<string | null> => {
+  const user = await getUserFromToken(request);
   return user?.businessArea || null;
 };
 
