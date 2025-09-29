@@ -41,7 +41,7 @@ export async function GET() {
           process.env.DATABASE_URL = newUrl;
           
           // Try to connect
-          const result = await query('SELECT 1 as test');
+          await query('SELECT 1 as test');
           console.log(`✅ Database '${dbName}' exists and is accessible`);
           break;
         }

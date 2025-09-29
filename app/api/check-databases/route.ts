@@ -52,7 +52,7 @@ export async function GET() {
     
     // Check if our target database exists
     const targetDb = 'database-qms-1';
-    const dbExists = databases.some((db: any) => db.Database === targetDb);
+    const dbExists = databases.some((db: { Database: string }) => db.Database === targetDb);
     
     console.log(`Database '${targetDb}' exists:`, dbExists);
     
