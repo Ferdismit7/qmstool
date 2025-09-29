@@ -2,6 +2,18 @@ import { NextResponse } from 'next/server';
 import { initializeSecrets } from '@/lib/awsSecretsManager';
 import mysql from 'mysql2/promise';
 
+interface DatabaseResult {
+  exists: boolean;
+  tables?: unknown[];
+  tableCount?: number;
+  error?: string;
+}
+
+interface DatabaseResults {
+  database_qms_1: DatabaseResult;
+  qmstool: DatabaseResult;
+}
+
 export async function GET() {
   try {
     console.log('Check both databases endpoint called');
@@ -22,9 +34,9 @@ export async function GET() {
       throw new Error('Invalid DATABASE_URL format');
     }
     
-    const [, username, password, host, port, databaseName] = urlMatch;
+    const [, username, password, host, port] = urlMatch;
     
-    const results: any = {
+    const results: DatabaseResults = {
       database_qms_1: {},
       qmstool: {}
     };
@@ -44,7 +56,7 @@ export async function GET() {
       results.database_qms_1 = {
         exists: true,
         tables: tables1,
-        tableCount: (tables1 as any[]).length
+        tableCount: (tables1 as unknown[]).length
       };
       
       await connection1.end();
@@ -70,7 +82,7 @@ export async function GET() {
       results.qmstool = {
         exists: true,
         tables: tables2,
-        tableCount: (tables2 as any[]).length
+        tableCount: (tables2 as unknown[]).length
       };
       
       await connection2.end();
