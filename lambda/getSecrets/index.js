@@ -28,7 +28,9 @@ exports.handler = async (event) => {
     const rawSecrets = JSON.parse(response.SecretString);
     
     // Build DATABASE_URL from individual components
-    const databaseUrl = `mysql://${rawSecrets.username}:${rawSecrets.password}@${rawSecrets.host}:${rawSecrets.port}/${rawSecrets.dbInstanceIdentifier}`;
+    // The database name should match the RDS instance identifier
+    const databaseName = rawSecrets.dbInstanceIdentifier || 'database-qms-1';
+    const databaseUrl = `mysql://${rawSecrets.username}:${encodeURIComponent(rawSecrets.password)}@${rawSecrets.host}:${rawSecrets.port}/${databaseName}`;
     
     const secrets = {
       DATABASE_URL: databaseUrl,
