@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 // Initialize secrets before creating NextAuth handler
 let secretsInitialized = false;
-let authHandler: any = null;
+let authHandler: ReturnType<typeof NextAuth> | null = null;
 
 // Function to get or create the NextAuth handler
 async function getAuthHandler() {
