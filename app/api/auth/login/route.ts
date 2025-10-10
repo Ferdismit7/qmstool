@@ -105,6 +105,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if user has a password (for email/password authentication)
+    if (!user.password) {
+      return NextResponse.json(
+        { message: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
     // Verify password
     console.log('Verifying password...');
     let isValid;
