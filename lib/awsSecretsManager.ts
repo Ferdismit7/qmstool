@@ -7,6 +7,10 @@ interface LambdaSecretsResponse {
     JWT_SECRET: string;
     S3_BUCKET_NAME: string;
     REGION: string;
+    NEXTAUTH_SECRET: string;
+    OKTA_CLIENT_ID: string;
+    OKTA_CLIENT_SECRET: string;
+    OKTA_ISSUER: string;
   };
   error?: string;
 }
