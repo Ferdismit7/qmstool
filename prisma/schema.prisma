@@ -268,9 +268,17 @@ model User {
   id                  Int                   @id @default(autoincrement())
   email               String                @unique(map: "email") @db.VarChar(50)
   username            String                @unique(map: "username") @db.VarChar(20)
-  password            String                @db.VarChar(255)
+  password            String?               @db.VarChar(255) // Made optional for OAuth users
   business_area       String?               @db.VarChar(50)
   created_at          DateTime?             @default(now()) @db.Timestamp(0)
+  // NextAuth fields
+  name                String?               @db.VarChar(191)
+  emailVerified       DateTime?             @db.DateTime(3)
+  image               String?               @db.VarChar(191)
+  // NextAuth relations
+  accounts            Account[]
+  sessions            Session[]
+  // Existing relations
   user_business_areas user_business_areas[]
   businessareas       BusinessAreas?        @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_use_business_area")
   deletedBusinessProcesses BusinessProcessRegister[] @relation("BusinessProcessDeletedBy")
@@ -586,6 +594,42 @@ model user_business_areas {
 
   @@unique([user_id, business_area], map: "unique_user_business")
   @@index([business_area], map: "business_area")
+}
+
+// NextAuth.js models
+model Account {
+  id                String  @id @default(cuid())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 enum QMSStatus {
