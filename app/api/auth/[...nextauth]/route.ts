@@ -2,8 +2,12 @@ import NextAuth from "next-auth";
 import OktaProvider from "next-auth/providers/okta";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 const prisma = new PrismaClient();
+
+// Initialize secrets before creating NextAuth handler
+let secretsInitialized = false;
 
 const handler = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -55,4 +59,29 @@ const handler = NextAuth({
   debug: process.env.NODE_ENV === "development",
 });
 
-export { handler as GET, handler as POST };
+// Wrapper functions to ensure secrets are initialized
+export async function GET(request: Request) {
+  if (!secretsInitialized) {
+    try {
+      await initializeSecrets();
+      secretsInitialized = true;
+    } catch (error) {
+      console.error('Failed to initialize secrets for NextAuth:', error);
+      return new Response('Configuration error', { status: 500 });
+    }
+  }
+  return handler(request);
+}
+
+export async function POST(request: Request) {
+  if (!secretsInitialized) {
+    try {
+      await initializeSecrets();
+      secretsInitialized = true;
+    } catch (error) {
+      console.error('Failed to initialize secrets for NextAuth:', error);
+      return new Response('Configuration error', { status: 500 });
+    }
+  }
+  return handler(request);
+}

@@ -1,7 +1,23 @@
 import { NextResponse } from 'next/server';
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function GET() {
   try {
+    // Initialize secrets first
+    try {
+      await initializeSecrets();
+    } catch (secretsError) {
+      console.error('Failed to initialize secrets:', secretsError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to initialize secrets',
+          details: secretsError instanceof Error ? secretsError.message : String(secretsError),
+          timestamp: new Date().toISOString(),
+        },
+        { status: 500 }
+      );
+    }
     const envVars = {
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT SET',
       OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID ? 'SET' : 'NOT SET',
