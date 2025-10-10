@@ -186,6 +186,10 @@ const getSecrets = async () => {
     JWT_SECRET: rawSecrets.JWT_SECRET,
     S3_BUCKET_NAME: rawSecrets.S3_BUCKET_NAME,
     REGION: rawSecrets.REGION,
+    NEXTAUTH_SECRET: rawSecrets.NEXTAUTH_SECRET,
+    OKTA_CLIENT_ID: rawSecrets.OKTA_CLIENT_ID,
+    OKTA_CLIENT_SECRET: rawSecrets.OKTA_CLIENT_SECRET,
+    OKTA_ISSUER: rawSecrets.OKTA_ISSUER,
   };
 
   console.log('Secrets processed successfully');
