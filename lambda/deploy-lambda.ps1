@@ -53,7 +53,7 @@ try {
       "Action": [
         "secretsmanager:GetSecretValue"
       ],
-      "Resource": "arn:aws:secretsmanager:$Region:*:secret:qmssecretnamedb*"
+      "Resource": "arn:aws:secretsmanager:${Region}:*:secret:qmssecretnamedb*"
     },
     {
       "Effect": "Allow",
@@ -62,7 +62,7 @@ try {
         "logs:CreateLogStream",
         "logs:PutLogEvents"
       ],
-      "Resource": "arn:aws:logs:$Region:*:*"
+      "Resource": "arn:aws:logs:${Region}:*:*"
     }
   ]
 }
