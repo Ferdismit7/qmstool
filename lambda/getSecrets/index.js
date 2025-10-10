@@ -187,6 +187,7 @@ const getSecrets = async () => {
     S3_BUCKET_NAME: rawSecrets.S3_BUCKET_NAME,
     REGION: rawSecrets.REGION,
     NEXTAUTH_SECRET: rawSecrets.NEXTAUTH_SECRET,
+    NEXTAUTH_URL: rawSecrets.NEXTAUTH_URL,
     OKTA_CLIENT_ID: rawSecrets.OKTA_CLIENT_ID,
     OKTA_CLIENT_SECRET: rawSecrets.OKTA_CLIENT_SECRET,
     OKTA_ISSUER: rawSecrets.OKTA_ISSUER,

@@ -8,6 +8,7 @@ interface LambdaSecretsResponse {
     S3_BUCKET_NAME: string;
     REGION: string;
     NEXTAUTH_SECRET: string;
+    NEXTAUTH_URL: string;
     OKTA_CLIENT_ID: string;
     OKTA_CLIENT_SECRET: string;
     OKTA_ISSUER: string;
@@ -21,6 +22,7 @@ interface Secrets {
   S3_BUCKET_NAME: string;
   REGION: string;
   NEXTAUTH_SECRET: string;
+  NEXTAUTH_URL: string;
   OKTA_CLIENT_ID: string;
   OKTA_CLIENT_SECRET: string;
   OKTA_ISSUER: string;
@@ -60,6 +62,7 @@ export const getSecrets = async (): Promise<Secrets> => {
         S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
         REGION: process.env.REGION || 'eu-north-1',
         NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
+        NEXTAUTH_URL: process.env.NEXTAUTH_URL || '',
         OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID || '',
         OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET || '',
         OKTA_ISSUER: process.env.OKTA_ISSUER || '',
@@ -98,6 +101,7 @@ export const getSecrets = async (): Promise<Secrets> => {
       S3_BUCKET_NAME: data.secrets.S3_BUCKET_NAME,
       REGION: data.secrets.REGION,
       NEXTAUTH_SECRET: data.secrets.NEXTAUTH_SECRET,
+      NEXTAUTH_URL: data.secrets.NEXTAUTH_URL,
       OKTA_CLIENT_ID: data.secrets.OKTA_CLIENT_ID,
       OKTA_CLIENT_SECRET: data.secrets.OKTA_CLIENT_SECRET,
       OKTA_ISSUER: data.secrets.OKTA_ISSUER,
@@ -109,6 +113,7 @@ export const getSecrets = async (): Promise<Secrets> => {
     process.env.S3_BUCKET_NAME = secrets.S3_BUCKET_NAME;
     process.env.REGION = secrets.REGION;
     process.env.NEXTAUTH_SECRET = secrets.NEXTAUTH_SECRET;
+    process.env.NEXTAUTH_URL = secrets.NEXTAUTH_URL;
     process.env.OKTA_CLIENT_ID = secrets.OKTA_CLIENT_ID;
     process.env.OKTA_CLIENT_SECRET = secrets.OKTA_CLIENT_SECRET;
     process.env.OKTA_ISSUER = secrets.OKTA_ISSUER;
@@ -136,6 +141,7 @@ export const getSecrets = async (): Promise<Secrets> => {
       S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
       REGION: process.env.REGION || 'eu-north-1',
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL || '',
       OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID || '',
       OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET || '',
       OKTA_ISSUER: process.env.OKTA_ISSUER || '',
