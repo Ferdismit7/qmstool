@@ -37,10 +37,12 @@ export async function GET() {
     let data;
     try {
       data = JSON.parse(text);
-    } catch (error) {
+    } catch (parseError) {
+      console.error('🔍 [Lambda Test] JSON parse error:', parseError);
       return NextResponse.json({
         success: false,
         error: 'Lambda returned non-JSON response',
+        parseError: parseError instanceof Error ? parseError.message : 'Unknown parse error',
         status: response.status,
         body: text.substring(0, 500),
       }, { status: 500 });
