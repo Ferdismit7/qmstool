@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  env: {
-    // Ensure NEXTAUTH_SECRET is available at build time
-    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-  },
+  // Remove env section - secrets should be loaded at runtime via Lambda
+  // env: {
+  //   // SECURITY: Never expose secrets at build time
+  //   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  // },
   images: {
     unoptimized: true,
   },
