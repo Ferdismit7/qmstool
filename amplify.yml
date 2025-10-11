@@ -7,43 +7,7 @@ frontend:
         - echo "Fetching secrets from AWS Secrets Manager for build-time use"
         - aws secretsmanager get-secret-value --secret-id qmssecretnamedb --region eu-north-1 --query SecretString --output text > /tmp/secrets.json
         - echo "Secrets fetched successfully"
-        - |
-          node << 'EOF'
-          const fs = require('fs');
-          const secrets = JSON.parse(fs.readFileSync('/tmp/secrets.json', 'utf8'));
-          const encodePassword = (pass) => encodeURIComponent(pass);
-          const databaseUrl = `mysql://${secrets.username}:${encodePassword(secrets.password)}@${secrets.host}:${secrets.port}/qmstool`;
-          
-          // Set environment variables for build-time
-          process.env.DATABASE_URL = databaseUrl;
-          process.env.JWT_SECRET = secrets.JWT_SECRET;
-          process.env.NEXTAUTH_SECRET = secrets.NEXTAUTH_SECRET;
-          process.env.NEXTAUTH_URL = secrets.NEXTAUTH_URL;
-          process.env.OKTA_CLIENT_ID = secrets.OKTA_CLIENT_ID;
-          process.env.OKTA_CLIENT_SECRET = secrets.OKTA_CLIENT_SECRET;
-          process.env.OKTA_ISSUER = secrets.OKTA_ISSUER;
-          process.env.S3_BUCKET_NAME = secrets.S3_BUCKET_NAME;
-          process.env.REGION = secrets.REGION;
-          process.env.ACCESS_KEY_ID = secrets.ACCESS_KEY_ID;
-          process.env.SECRET_ACCESS_KEY = secrets.SECRET_ACCESS_KEY;
-          
-          // Write to .env file for Next.js build
-          const envContent = `DATABASE_URL="${databaseUrl}"
-          JWT_SECRET="${secrets.JWT_SECRET}"
-          NEXTAUTH_SECRET="${secrets.NEXTAUTH_SECRET}"
-          NEXTAUTH_URL="${secrets.NEXTAUTH_URL}"
-          OKTA_CLIENT_ID="${secrets.OKTA_CLIENT_ID}"
-          OKTA_CLIENT_SECRET="${secrets.OKTA_CLIENT_SECRET}"
-          OKTA_ISSUER="${secrets.OKTA_ISSUER}"
-          S3_BUCKET_NAME="${secrets.S3_BUCKET_NAME}"
-          REGION="${secrets.REGION}"
-          ACCESS_KEY_ID="${secrets.ACCESS_KEY_ID}"
-          SECRET_ACCESS_KEY="${secrets.SECRET_ACCESS_KEY}"
-          LAMBDA_FUNCTION_URL="${process.env.LAMBDA_FUNCTION_URL || ''}"`;
-          
-          fs.writeFileSync('.env.production', envContent);
-          console.log('✅ Environment variables written to .env.production');
-          EOF
+        - node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('/tmp/secrets.json','utf8'));const p=encodeURIComponent(s.password);const db='mysql://'+s.username+':'+p+'@'+s.host+':'+s.port+'/qmstool';fs.writeFileSync('.env.production.local','DATABASE_URL='+db+'\nJWT_SECRET='+s.JWT_SECRET+'\nNEXTAUTH_SECRET='+s.NEXTAUTH_SECRET+'\nNEXTAUTH_URL='+s.NEXTAUTH_URL+'\nOKTA_CLIENT_ID='+s.OKTA_CLIENT_ID+'\nOKTA_CLIENT_SECRET='+s.OKTA_CLIENT_SECRET+'\nOKTA_ISSUER='+s.OKTA_ISSUER+'\nS3_BUCKET_NAME='+s.S3_BUCKET_NAME+'\nREGION='+s.REGION+'\nACCESS_KEY_ID='+s.ACCESS_KEY_ID+'\nSECRET_ACCESS_KEY='+s.SECRET_ACCESS_KEY);console.log('Environment variables written');"
         - echo "Secrets configured for build and runtime"
         - rm /tmp/secrets.json
         - echo "Installing dependencies"
@@ -59,6 +23,9 @@ frontend:
         - echo Build completed successfully
         - echo Checking build output...
         - ls -la .next/
+        - echo Copying .env.production.local to standalone directory...
+        - cp .env.production.local .next/standalone/.env.production.local 2>/dev/null || echo "Standalone directory not found, skipping copy"
+        - echo Environment setup complete
   artifacts:
     baseDirectory: .next
     files:
