@@ -112,7 +112,7 @@ const initializeAuth = async () => {
 };
 
 // Initialize auth and export handlers
-let authHandlerPromise: Promise<any> | null = null;
+let authHandlerPromise: ReturnType<typeof initializeAuth> | null = null;
 
 const getAuthHandler = async () => {
   if (!authHandlerPromise) {
