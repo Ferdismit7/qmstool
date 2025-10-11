@@ -94,21 +94,12 @@ const getAuthOptions = async (): Promise<NextAuthOptions> => {
   };
 };
 
-// Create the NextAuth handler with lazy initialization
-const handler = async (req: Request) => {
-  const authOptions = await getAuthOptions();
-  const nextAuthHandler = NextAuth(authOptions);
-  // NextAuth returns { GET, POST } handlers
-  // @ts-ignore - NextAuth types are complex, using any for simplicity
-  return nextAuthHandler;
-};
-
-// Export GET and POST that call the handler
+// Export GET and POST that call NextAuth with dynamic options
 export async function GET(req: Request) {
   try {
     const authOptions = await getAuthOptions();
     const nextAuthHandler = NextAuth(authOptions);
-    // @ts-ignore
+    // @ts-expect-error - NextAuth types are complex
     return nextAuthHandler.GET(req);
   } catch (error) {
     console.error('❌ [NextAuth GET] Error:', error);
@@ -120,7 +111,7 @@ export async function POST(req: Request) {
   try {
     const authOptions = await getAuthOptions();
     const nextAuthHandler = NextAuth(authOptions);
-    // @ts-ignore
+    // @ts-expect-error - NextAuth types are complex
     return nextAuthHandler.POST(req);
   } catch (error) {
     console.error('❌ [NextAuth POST] Error:', error);
