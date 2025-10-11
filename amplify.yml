@@ -20,7 +20,7 @@ frontend:
           # Parse and export secrets as environment variables
           # Build DATABASE_URL with proper URL encoding for password
           DB_USER=$(cat /tmp/secrets.json | jq -r '.username')
-          DB_PASS=$(cat /tmp/secrets.json | jq -r '.password' | jq -sRr @uri)
+          DB_PASS=$(cat /tmp/secrets.json | jq -r '.password' | jq -sRr '@uri')
           DB_HOST=$(cat /tmp/secrets.json | jq -r '.host')
           DB_PORT=$(cat /tmp/secrets.json | jq -r '.port')
           export DATABASE_URL="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/qmstool"
