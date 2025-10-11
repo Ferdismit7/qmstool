@@ -4,30 +4,47 @@ frontend:
     preBuild:
       commands:
         - echo "Starting build process"
-        - echo "Fetching secrets from AWS Secrets Manager"
+        - echo "Fetching secrets from AWS Secrets Manager for build-time use"
         - aws secretsmanager get-secret-value --secret-id qmssecretnamedb --region eu-north-1 --query SecretString --output text > /tmp/secrets.json
         - echo "Secrets fetched successfully"
         - |
-          node -e "
+          node << 'EOF'
           const fs = require('fs');
           const secrets = JSON.parse(fs.readFileSync('/tmp/secrets.json', 'utf8'));
           const encodePassword = (pass) => encodeURIComponent(pass);
-          const databaseUrl = \`mysql://\${secrets.username}:\${encodePassword(secrets.password)}@\${secrets.host}:\${secrets.port}/qmstool\`;
+          const databaseUrl = `mysql://${secrets.username}:${encodePassword(secrets.password)}@${secrets.host}:${secrets.port}/qmstool`;
           
-          console.log(\`export DATABASE_URL=\"\${databaseUrl}\"\`);
-          console.log(\`export JWT_SECRET=\"\${secrets.JWT_SECRET}\"\`);
-          console.log(\`export NEXTAUTH_SECRET=\"\${secrets.NEXTAUTH_SECRET}\"\`);
-          console.log(\`export NEXTAUTH_URL=\"\${secrets.NEXTAUTH_URL}\"\`);
-          console.log(\`export OKTA_CLIENT_ID=\"\${secrets.OKTA_CLIENT_ID}\"\`);
-          console.log(\`export OKTA_CLIENT_SECRET=\"\${secrets.OKTA_CLIENT_SECRET}\"\`);
-          console.log(\`export OKTA_ISSUER=\"\${secrets.OKTA_ISSUER}\"\`);
-          console.log(\`export S3_BUCKET_NAME=\"\${secrets.S3_BUCKET_NAME}\"\`);
-          console.log(\`export REGION=\"\${secrets.REGION}\"\`);
-          console.log(\`export ACCESS_KEY_ID=\"\${secrets.ACCESS_KEY_ID}\"\`);
-          console.log(\`export SECRET_ACCESS_KEY=\"\${secrets.SECRET_ACCESS_KEY}\"\`);
-          " > /tmp/export_secrets.sh
-        - source /tmp/export_secrets.sh
-        - echo "Secrets exported as environment variables"
+          // Set environment variables for build-time
+          process.env.DATABASE_URL = databaseUrl;
+          process.env.JWT_SECRET = secrets.JWT_SECRET;
+          process.env.NEXTAUTH_SECRET = secrets.NEXTAUTH_SECRET;
+          process.env.NEXTAUTH_URL = secrets.NEXTAUTH_URL;
+          process.env.OKTA_CLIENT_ID = secrets.OKTA_CLIENT_ID;
+          process.env.OKTA_CLIENT_SECRET = secrets.OKTA_CLIENT_SECRET;
+          process.env.OKTA_ISSUER = secrets.OKTA_ISSUER;
+          process.env.S3_BUCKET_NAME = secrets.S3_BUCKET_NAME;
+          process.env.REGION = secrets.REGION;
+          process.env.ACCESS_KEY_ID = secrets.ACCESS_KEY_ID;
+          process.env.SECRET_ACCESS_KEY = secrets.SECRET_ACCESS_KEY;
+          
+          // Write to .env file for Next.js build
+          const envContent = `DATABASE_URL="${databaseUrl}"
+          JWT_SECRET="${secrets.JWT_SECRET}"
+          NEXTAUTH_SECRET="${secrets.NEXTAUTH_SECRET}"
+          NEXTAUTH_URL="${secrets.NEXTAUTH_URL}"
+          OKTA_CLIENT_ID="${secrets.OKTA_CLIENT_ID}"
+          OKTA_CLIENT_SECRET="${secrets.OKTA_CLIENT_SECRET}"
+          OKTA_ISSUER="${secrets.OKTA_ISSUER}"
+          S3_BUCKET_NAME="${secrets.S3_BUCKET_NAME}"
+          REGION="${secrets.REGION}"
+          ACCESS_KEY_ID="${secrets.ACCESS_KEY_ID}"
+          SECRET_ACCESS_KEY="${secrets.SECRET_ACCESS_KEY}"
+          LAMBDA_FUNCTION_URL="${process.env.LAMBDA_FUNCTION_URL || ''}"`;
+          
+          fs.writeFileSync('.env.production', envContent);
+          console.log('✅ Environment variables written to .env.production');
+          EOF
+        - echo "Secrets configured for build and runtime"
         - rm /tmp/secrets.json
         - echo "Installing dependencies"
         - npm ci
