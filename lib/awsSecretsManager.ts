@@ -171,10 +171,23 @@ export const getSecrets = async (): Promise<Secrets> => {
  */
 export const initializeSecrets = async (): Promise<void> => {
   try {
-    await getSecrets();
-    console.log("✅ Secrets initialized successfully from Lambda function");
+    const secrets = await getSecrets();
+    console.log("✅ Secrets initialized successfully");
+    
+    // Verify critical secrets are available
+    if (!secrets.NEXTAUTH_SECRET || !secrets.NEXTAUTH_URL) {
+      console.warn("⚠️ [Secrets] Critical NextAuth secrets missing!");
+      throw new Error("Critical secrets (NEXTAUTH_SECRET, NEXTAUTH_URL) are not available");
+    }
+    
+    console.log("✅ [Secrets] All critical secrets verified");
   } catch (error) {
     console.error("❌ Failed to initialize secrets:", error);
+    // Don't throw if we're using fallback environment variables successfully
+    if (process.env.NEXTAUTH_SECRET && process.env.NEXTAUTH_URL) {
+      console.log("✅ [Secrets] Fallback environment variables are available, continuing...");
+      return;
+    }
     throw error;
   }
 };
