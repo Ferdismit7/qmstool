@@ -3,22 +3,11 @@ frontend:
   phases:
     preBuild:
       commands:
-        - echo "=========================================="
-        - echo "🔐 Fetching secrets from AWS Secrets Manager"
-        - echo "=========================================="
-        - echo "Secret ID: qmssecretnamedb"
-        - echo "Region: eu-north-1"
+        - echo "Starting build process"
+        - echo "Fetching secrets from AWS Secrets Manager"
+        - aws secretsmanager get-secret-value --secret-id qmssecretnamedb --region eu-north-1 --query SecretString --output text > /tmp/secrets.json
+        - echo "Secrets fetched successfully"
         - |
-          # Fetch secrets from AWS Secrets Manager
-          aws secretsmanager get-secret-value \
-            --secret-id qmssecretnamedb \
-            --region eu-north-1 \
-            --query SecretString \
-            --output text > /tmp/secrets.json
-        - echo "✅ Secrets fetched from AWS Secrets Manager"
-        - |
-          # Parse and export secrets as environment variables
-          # Build DATABASE_URL with proper URL encoding for password
           DB_USER=$(cat /tmp/secrets.json | jq -r '.username')
           DB_PASS=$(cat /tmp/secrets.json | jq -r '.password' | jq -sRr '@uri')
           DB_HOST=$(cat /tmp/secrets.json | jq -r '.host')
@@ -34,51 +23,14 @@ frontend:
           export REGION=$(cat /tmp/secrets.json | jq -r '.REGION')
           export ACCESS_KEY_ID=$(cat /tmp/secrets.json | jq -r '.ACCESS_KEY_ID')
           export SECRET_ACCESS_KEY=$(cat /tmp/secrets.json | jq -r '.SECRET_ACCESS_KEY')
-        - echo "✅ Secrets exported as environment variables"
+        - echo "Secrets exported as environment variables"
         - rm /tmp/secrets.json
-        - echo "✅ Temporary secrets file deleted"
-        - echo "=========================================="
-        - echo "📦 Installing dependencies"
-        - echo "=========================================="
+        - echo "Installing dependencies"
         - npm ci
-        - echo "=========================================="
-        - echo "🔧 Setting up Prisma"
-        - echo "=========================================="
-        - echo Checking Prisma installation...
+        - echo "Setting up Prisma"
         - npx prisma --version
-        - echo Generating Prisma client...
         - npx prisma generate
-        - echo Prisma client generated successfully
-        - echo "=========================================="
-        - echo "✅ Verifying environment variables"
-        - echo "=========================================="
-        - 'echo "NODE_ENV is set to ${NODE_ENV:-production}"'
-        - printenv NODE_ENV
-        - echo "Checking AWS credentials..."
-        - 'echo "ACCESS_KEY_ID exists: ${ACCESS_KEY_ID:+YES}"'
-        - 'echo "SECRET_ACCESS_KEY exists: ${SECRET_ACCESS_KEY:+YES}"'
-        - echo "Checking application environment variables..."
-        - 'echo "LAMBDA_FUNCTION_URL exists: ${LAMBDA_FUNCTION_URL:+YES}"'
-        - 'echo "JWT_SECRET exists: ${JWT_SECRET:+YES}"'
-        - 'echo "DATABASE_URL exists: ${DATABASE_URL:+YES}"'
-        - 'echo "S3_BUCKET_NAME exists: ${S3_BUCKET_NAME:+YES}"'
-        - 'echo "REGION exists: ${REGION:+YES}"'
-        - 'echo "AMPLIFY_ROLE_ARN exists: ${AMPLIFY_ROLE_ARN:+YES}"'
-        - echo "Checking NextAuth environment variables..."
-        - 'echo "NEXTAUTH_SECRET exists: ${NEXTAUTH_SECRET:+YES}"'
-        - 'echo "NEXTAUTH_URL exists: ${NEXTAUTH_URL:+YES}"'
-        - 'echo "OKTA_CLIENT_ID exists: ${OKTA_CLIENT_ID:+YES}"'
-        - 'echo "OKTA_CLIENT_SECRET exists: ${OKTA_CLIENT_SECRET:+YES}"'
-        - 'echo "OKTA_ISSUER exists: ${OKTA_ISSUER:+YES}"'
-        - echo "Verifying CSS dependencies..."
-        - ls -la node_modules/tailwindcss
-        - ls -la node_modules/postcss
-        - ls -la node_modules/autoprefixer
-        - echo "Verifying TypeScript dependencies..."
-        - ls -la node_modules/@types/react
-        - ls -la node_modules/typescript
-        - echo "Verifying ESLint dependencies..."
-        - ls -la node_modules/eslint
+        - echo "Prisma client generated successfully"
     build:
       commands:
         - echo Building Next.js app...
