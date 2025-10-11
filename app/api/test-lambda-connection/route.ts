@@ -37,7 +37,7 @@ export async function GET() {
     let data;
     try {
       data = JSON.parse(text);
-    } catch (e) {
+    } catch (error) {
       return NextResponse.json({
         success: false,
         error: 'Lambda returned non-JSON response',

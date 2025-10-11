@@ -4,6 +4,8 @@ frontend:
     preBuild:
       commands:
         - echo "Starting build process"
+        - echo "Installing jq for JSON parsing"
+        - yum install -y jq
         - echo "Fetching secrets from AWS Secrets Manager"
         - aws secretsmanager get-secret-value --secret-id qmssecretnamedb --region eu-north-1 --query SecretString --output text > /tmp/secrets.json
         - echo "Secrets fetched successfully"
