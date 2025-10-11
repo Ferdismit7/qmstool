@@ -7,9 +7,10 @@ frontend:
         - echo "Fetching secrets from AWS Secrets Manager for build-time use"
         - aws secretsmanager get-secret-value --secret-id qmssecretnamedb --region eu-north-1 --query SecretString --output text > /tmp/secrets.json
         - echo "Secrets fetched successfully"
-        - node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('/tmp/secrets.json','utf8'));const p=encodeURIComponent(s.password);const db='mysql://'+s.username+':'+p+'@'+s.host+':'+s.port+'/qmstool';fs.writeFileSync('.env.production.local','DATABASE_URL='+db+'\nJWT_SECRET='+s.JWT_SECRET+'\nNEXTAUTH_SECRET='+s.NEXTAUTH_SECRET+'\nNEXTAUTH_URL='+s.NEXTAUTH_URL+'\nOKTA_CLIENT_ID='+s.OKTA_CLIENT_ID+'\nOKTA_CLIENT_SECRET='+s.OKTA_CLIENT_SECRET+'\nOKTA_ISSUER='+s.OKTA_ISSUER+'\nS3_BUCKET_NAME='+s.S3_BUCKET_NAME+'\nREGION='+s.REGION+'\nACCESS_KEY_ID='+s.ACCESS_KEY_ID+'\nSECRET_ACCESS_KEY='+s.SECRET_ACCESS_KEY);console.log('Environment variables written');"
-        - echo "Secrets configured for build and runtime"
-        - rm /tmp/secrets.json
+        - node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('/tmp/secrets.json','utf8'));const p=encodeURIComponent(s.password);const db='mysql://'+s.username+':'+p+'@'+s.host+':'+s.port+'/qmstool';const env='export DATABASE_URL=\"'+db+'\"\nexport JWT_SECRET=\"'+s.JWT_SECRET+'\"\nexport NEXTAUTH_SECRET=\"'+s.NEXTAUTH_SECRET+'\"\nexport NEXTAUTH_URL=\"'+s.NEXTAUTH_URL+'\"\nexport OKTA_CLIENT_ID=\"'+s.OKTA_CLIENT_ID+'\"\nexport OKTA_CLIENT_SECRET=\"'+s.OKTA_CLIENT_SECRET+'\"\nexport OKTA_ISSUER=\"'+s.OKTA_ISSUER+'\"\nexport S3_BUCKET_NAME=\"'+s.S3_BUCKET_NAME+'\"\nexport REGION=\"'+s.REGION+'\"\nexport ACCESS_KEY_ID=\"'+s.ACCESS_KEY_ID+'\"\nexport SECRET_ACCESS_KEY=\"'+s.SECRET_ACCESS_KEY+'\"';fs.writeFileSync('/tmp/export_env.sh',env);console.log('Export script created');"
+        - source /tmp/export_env.sh
+        - echo "Environment variables exported for build and runtime"
+        - rm /tmp/secrets.json /tmp/export_env.sh
         - echo "Installing dependencies"
         - npm ci
         - echo "Setting up Prisma"
@@ -18,14 +19,12 @@ frontend:
         - echo "Prisma client generated successfully"
     build:
       commands:
-        - echo Building Next.js app...
+        - echo Building Next.js app with environment variables...
         - npm run build
         - echo Build completed successfully
-        - echo Checking build output...
-        - ls -la .next/
-        - echo Copying .env.production.local to standalone directory...
-        - cp .env.production.local .next/standalone/.env.production.local 2>/dev/null || echo "Standalone directory not found, skipping copy"
-        - echo Environment setup complete
+        - echo Verifying environment variables are set...
+        - echo "NEXTAUTH_SECRET is set:" $(if [ -n "$NEXTAUTH_SECRET" ]; then echo "YES"; else echo "NO"; fi)
+        - echo "OKTA_CLIENT_ID is set:" $(if [ -n "$OKTA_CLIENT_ID" ]; then echo "YES"; else echo "NO"; fi)
   artifacts:
     baseDirectory: .next
     files:
