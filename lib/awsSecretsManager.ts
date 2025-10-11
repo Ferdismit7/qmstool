@@ -41,16 +41,25 @@ export const getSecrets = async (): Promise<Secrets> => {
   }
 
   try {
-    console.log("Calling Lambda function URL for secrets...");
+    console.log("🔑 [Secrets] Calling Lambda function URL for secrets...");
     
     // Get Lambda function URL from environment variable
     const lambdaUrl = process.env.LAMBDA_FUNCTION_URL || process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL;
     
     if (!lambdaUrl) {
-      console.warn("LAMBDA_FUNCTION_URL not set, using fallback environment variables");
+      console.warn("⚠️ [Secrets] LAMBDA_FUNCTION_URL not set, using fallback environment variables");
       // Fallback to environment variables if Lambda URL is not set
       const jwtSecret = process.env.JWT_SECRET;
       const databaseUrl = process.env.DATABASE_URL;
+      
+      console.log("🔑 [Secrets] Checking fallback environment variables:");
+      console.log(`  - JWT_SECRET: ${jwtSecret ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - DATABASE_URL: ${databaseUrl ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - NEXTAUTH_URL: ${process.env.NEXTAUTH_URL ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - OKTA_CLIENT_ID: ${process.env.OKTA_CLIENT_ID ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - OKTA_CLIENT_SECRET: ${process.env.OKTA_CLIENT_SECRET ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - OKTA_ISSUER: ${process.env.OKTA_ISSUER ? '✅ SET' : '❌ MISSING'}`);
       
       if (!jwtSecret || !databaseUrl) {
         throw new Error("Neither Lambda function URL nor required environment variables are set");
@@ -69,10 +78,11 @@ export const getSecrets = async (): Promise<Secrets> => {
       };
       
       cachedSecrets = fallbackSecrets;
+      console.log("✅ [Secrets] Using fallback environment variables");
       return fallbackSecrets;
     }
 
-    console.log("Lambda URL:", lambdaUrl);
+    console.log("🔑 [Secrets] Lambda URL:", lambdaUrl);
     
     const response = await fetch(lambdaUrl, {
       method: 'GET',
@@ -81,7 +91,7 @@ export const getSecrets = async (): Promise<Secrets> => {
       },
     });
 
-    console.log("Lambda response status:", response.status);
+    console.log("🔑 [Secrets] Lambda response status:", response.status);
 
     if (!response.ok) {
       throw new Error(`Lambda function returned status: ${response.status}`);
