@@ -101,7 +101,9 @@ const initializeAuth = async () => {
     }
 
     console.log('🔐 [NextAuth] Creating NextAuth handler...');
-    return NextAuth(authOptions);
+    const handler = NextAuth(authOptions);
+    console.log('✅ [NextAuth] Handler created successfully');
+    return handler;
   } catch (error) {
     console.error('❌ [NextAuth] Initialization failed:', error);
     console.error('❌ [NextAuth] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
@@ -109,12 +111,22 @@ const initializeAuth = async () => {
   }
 };
 
+// Initialize auth and export handlers
+let authHandlerPromise: Promise<any> | null = null;
+
+const getAuthHandler = async () => {
+  if (!authHandlerPromise) {
+    authHandlerPromise = initializeAuth();
+  }
+  return authHandlerPromise;
+};
+
 // Create handlers that properly await the auth initialization
 export const GET = async (request: Request) => {
   try {
     console.log('🔐 [NextAuth GET] Request received:', request.url);
-    const handler = await initializeAuth();
-    return handler(request);
+    const handler = await getAuthHandler();
+    return handler.handlers.GET(request);
   } catch (error) {
     console.error('❌ [NextAuth GET] Handler error:', error);
     return NextResponse.json(
@@ -131,8 +143,8 @@ export const GET = async (request: Request) => {
 export const POST = async (request: Request) => {
   try {
     console.log('🔐 [NextAuth POST] Request received:', request.url);
-    const handler = await initializeAuth();
-    return handler(request);
+    const handler = await getAuthHandler();
+    return handler.handlers.POST(request);
   } catch (error) {
     console.error('❌ [NextAuth POST] Handler error:', error);
     return NextResponse.json(
