@@ -8,9 +8,15 @@ const nextConfig = {
     unoptimized: true,
   },
   // Fix for Next.js 15.3.5 webpack minification error
-  swcMinify: false,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
+  },
+  // Disable minification to avoid webpack error
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.optimization.minimize = false;
+    }
+    return config;
   },
   async headers() {
     return [
