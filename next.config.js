@@ -11,11 +11,18 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  // Disable minification to avoid webpack error
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.optimization.minimize = false;
+  // Completely disable minification to avoid webpack error
+  webpack: (config, { isServer, dev }) => {
+    // Disable all minification
+    config.optimization.minimize = false;
+    
+    // Remove the problematic minify-webpack-plugin
+    if (config.plugins) {
+      config.plugins = config.plugins.filter(plugin => {
+        return !plugin.constructor.name.includes('MinifyPlugin');
+      });
     }
+    
     return config;
   },
   async headers() {
