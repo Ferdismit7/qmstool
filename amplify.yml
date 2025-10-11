@@ -4,27 +4,29 @@ frontend:
     preBuild:
       commands:
         - echo "Starting build process"
-        - echo "Installing jq for JSON parsing"
-        - yum install -y jq
         - echo "Fetching secrets from AWS Secrets Manager"
         - aws secretsmanager get-secret-value --secret-id qmssecretnamedb --region eu-north-1 --query SecretString --output text > /tmp/secrets.json
         - echo "Secrets fetched successfully"
         - |
-          DB_USER=$(cat /tmp/secrets.json | jq -r '.username')
-          DB_PASS=$(cat /tmp/secrets.json | jq -r '.password' | jq -sRr '@uri')
-          DB_HOST=$(cat /tmp/secrets.json | jq -r '.host')
-          DB_PORT=$(cat /tmp/secrets.json | jq -r '.port')
-          export DATABASE_URL="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/qmstool"
-          export JWT_SECRET=$(cat /tmp/secrets.json | jq -r '.JWT_SECRET')
-          export NEXTAUTH_SECRET=$(cat /tmp/secrets.json | jq -r '.NEXTAUTH_SECRET')
-          export NEXTAUTH_URL=$(cat /tmp/secrets.json | jq -r '.NEXTAUTH_URL')
-          export OKTA_CLIENT_ID=$(cat /tmp/secrets.json | jq -r '.OKTA_CLIENT_ID')
-          export OKTA_CLIENT_SECRET=$(cat /tmp/secrets.json | jq -r '.OKTA_CLIENT_SECRET')
-          export OKTA_ISSUER=$(cat /tmp/secrets.json | jq -r '.OKTA_ISSUER')
-          export S3_BUCKET_NAME=$(cat /tmp/secrets.json | jq -r '.S3_BUCKET_NAME')
-          export REGION=$(cat /tmp/secrets.json | jq -r '.REGION')
-          export ACCESS_KEY_ID=$(cat /tmp/secrets.json | jq -r '.ACCESS_KEY_ID')
-          export SECRET_ACCESS_KEY=$(cat /tmp/secrets.json | jq -r '.SECRET_ACCESS_KEY')
+          node -e "
+          const fs = require('fs');
+          const secrets = JSON.parse(fs.readFileSync('/tmp/secrets.json', 'utf8'));
+          const encodePassword = (pass) => encodeURIComponent(pass);
+          const databaseUrl = \`mysql://\${secrets.username}:\${encodePassword(secrets.password)}@\${secrets.host}:\${secrets.port}/qmstool\`;
+          
+          console.log(\`export DATABASE_URL=\"\${databaseUrl}\"\`);
+          console.log(\`export JWT_SECRET=\"\${secrets.JWT_SECRET}\"\`);
+          console.log(\`export NEXTAUTH_SECRET=\"\${secrets.NEXTAUTH_SECRET}\"\`);
+          console.log(\`export NEXTAUTH_URL=\"\${secrets.NEXTAUTH_URL}\"\`);
+          console.log(\`export OKTA_CLIENT_ID=\"\${secrets.OKTA_CLIENT_ID}\"\`);
+          console.log(\`export OKTA_CLIENT_SECRET=\"\${secrets.OKTA_CLIENT_SECRET}\"\`);
+          console.log(\`export OKTA_ISSUER=\"\${secrets.OKTA_ISSUER}\"\`);
+          console.log(\`export S3_BUCKET_NAME=\"\${secrets.S3_BUCKET_NAME}\"\`);
+          console.log(\`export REGION=\"\${secrets.REGION}\"\`);
+          console.log(\`export ACCESS_KEY_ID=\"\${secrets.ACCESS_KEY_ID}\"\`);
+          console.log(\`export SECRET_ACCESS_KEY=\"\${secrets.SECRET_ACCESS_KEY}\"\`);
+          " > /tmp/export_secrets.sh
+        - source /tmp/export_secrets.sh
         - echo "Secrets exported as environment variables"
         - rm /tmp/secrets.json
         - echo "Installing dependencies"
