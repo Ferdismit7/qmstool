@@ -48,26 +48,21 @@ export const getSecrets = async (): Promise<Secrets> => {
     
     if (!lambdaUrl) {
       console.warn("⚠️ [Secrets] LAMBDA_FUNCTION_URL not set, using fallback environment variables");
-      // Fallback to environment variables if Lambda URL is not set
-      const jwtSecret = process.env.JWT_SECRET;
-      const databaseUrl = process.env.DATABASE_URL;
       
       console.log("🔑 [Secrets] Checking fallback environment variables:");
-      console.log(`  - JWT_SECRET: ${jwtSecret ? '✅ SET' : '❌ MISSING'}`);
-      console.log(`  - DATABASE_URL: ${databaseUrl ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - JWT_SECRET: ${process.env.JWT_SECRET ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? '✅ SET' : '❌ MISSING'}`);
       console.log(`  - NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? '✅ SET' : '❌ MISSING'}`);
       console.log(`  - NEXTAUTH_URL: ${process.env.NEXTAUTH_URL ? '✅ SET' : '❌ MISSING'}`);
       console.log(`  - OKTA_CLIENT_ID: ${process.env.OKTA_CLIENT_ID ? '✅ SET' : '❌ MISSING'}`);
       console.log(`  - OKTA_CLIENT_SECRET: ${process.env.OKTA_CLIENT_SECRET ? '✅ SET' : '❌ MISSING'}`);
       console.log(`  - OKTA_ISSUER: ${process.env.OKTA_ISSUER ? '✅ SET' : '❌ MISSING'}`);
       
-      if (!jwtSecret || !databaseUrl) {
-        throw new Error("Neither Lambda function URL nor required environment variables are set");
-      }
-      
+      // For NextAuth, we only need NextAuth-specific variables
+      // JWT_SECRET and DATABASE_URL can be empty for NextAuth-only auth
       const fallbackSecrets: Secrets = {
-        DATABASE_URL: databaseUrl,
-        JWT_SECRET: jwtSecret,
+        DATABASE_URL: process.env.DATABASE_URL || '',
+        JWT_SECRET: process.env.JWT_SECRET || '',
         S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
         REGION: process.env.REGION || 'eu-north-1',
         NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
@@ -134,20 +129,27 @@ export const getSecrets = async (): Promise<Secrets> => {
     console.log("✅ Secrets retrieved successfully from Lambda function URL");
     return secrets;
   } catch (error) {
-    console.error("Error retrieving secrets from Lambda function URL:", error);
+    console.error("❌ [Secrets] Error retrieving secrets from Lambda function URL:", error);
+    console.error("❌ [Secrets] Error details:", error instanceof Error ? error.message : 'Unknown error');
     
     // Fallback to environment variables if Lambda fails
-    console.warn("Lambda function failed, attempting fallback to environment variables");
-    const jwtSecret = process.env.JWT_SECRET;
-    const databaseUrl = process.env.DATABASE_URL;
+    console.warn("⚠️ [Secrets] Lambda function failed, attempting fallback to environment variables");
     
-    if (!jwtSecret || !databaseUrl) {
-      throw new Error("Lambda function failed and required environment variables are not set");
-    }
+    // Log what's available
+    console.log("🔑 [Secrets] Available environment variables:");
+    console.log(`  - JWT_SECRET: ${process.env.JWT_SECRET ? '✅' : '❌'}`);
+    console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? '✅' : '❌'}`);
+    console.log(`  - NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? '✅' : '❌'}`);
+    console.log(`  - NEXTAUTH_URL: ${process.env.NEXTAUTH_URL ? '✅' : '❌'}`);
+    console.log(`  - OKTA_CLIENT_ID: ${process.env.OKTA_CLIENT_ID ? '✅' : '❌'}`);
+    console.log(`  - OKTA_CLIENT_SECRET: ${process.env.OKTA_CLIENT_SECRET ? '✅' : '❌'}`);
+    console.log(`  - OKTA_ISSUER: ${process.env.OKTA_ISSUER ? '✅' : '❌'}`);
     
+    // For NextAuth, we only absolutely need NEXTAUTH_SECRET and NEXTAUTH_URL
+    // JWT_SECRET and DATABASE_URL can be empty for NextAuth-only auth
     const fallbackSecrets: Secrets = {
-      DATABASE_URL: databaseUrl,
-      JWT_SECRET: jwtSecret,
+      DATABASE_URL: process.env.DATABASE_URL || '',
+      JWT_SECRET: process.env.JWT_SECRET || '',
       S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
       REGION: process.env.REGION || 'eu-north-1',
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
@@ -158,7 +160,7 @@ export const getSecrets = async (): Promise<Secrets> => {
     };
     
     cachedSecrets = fallbackSecrets;
-    console.log("✅ Using fallback environment variables");
+    console.log("✅ [Secrets] Using fallback environment variables");
     return fallbackSecrets;
   }
 };

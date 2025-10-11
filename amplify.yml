@@ -3,14 +3,55 @@ frontend:
   phases:
     preBuild:
       commands:
-        - echo Installing dependencies...
+        - echo "=========================================="
+        - echo "🔐 Fetching secrets from AWS Secrets Manager"
+        - echo "=========================================="
+        - echo "Secret ID: qmssecretnamedb"
+        - echo "Region: eu-north-1"
+        - |
+          # Fetch secrets from AWS Secrets Manager
+          aws secretsmanager get-secret-value \
+            --secret-id qmssecretnamedb \
+            --region eu-north-1 \
+            --query SecretString \
+            --output text > /tmp/secrets.json
+        - echo "✅ Secrets fetched from AWS Secrets Manager"
+        - |
+          # Parse and export secrets as environment variables
+          # Build DATABASE_URL with proper URL encoding for password
+          DB_USER=$(cat /tmp/secrets.json | jq -r '.username')
+          DB_PASS=$(cat /tmp/secrets.json | jq -r '.password' | jq -sRr @uri)
+          DB_HOST=$(cat /tmp/secrets.json | jq -r '.host')
+          DB_PORT=$(cat /tmp/secrets.json | jq -r '.port')
+          export DATABASE_URL="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/qmstool"
+          export JWT_SECRET=$(cat /tmp/secrets.json | jq -r '.JWT_SECRET')
+          export NEXTAUTH_SECRET=$(cat /tmp/secrets.json | jq -r '.NEXTAUTH_SECRET')
+          export NEXTAUTH_URL=$(cat /tmp/secrets.json | jq -r '.NEXTAUTH_URL')
+          export OKTA_CLIENT_ID=$(cat /tmp/secrets.json | jq -r '.OKTA_CLIENT_ID')
+          export OKTA_CLIENT_SECRET=$(cat /tmp/secrets.json | jq -r '.OKTA_CLIENT_SECRET')
+          export OKTA_ISSUER=$(cat /tmp/secrets.json | jq -r '.OKTA_ISSUER')
+          export S3_BUCKET_NAME=$(cat /tmp/secrets.json | jq -r '.S3_BUCKET_NAME')
+          export REGION=$(cat /tmp/secrets.json | jq -r '.REGION')
+          export ACCESS_KEY_ID=$(cat /tmp/secrets.json | jq -r '.ACCESS_KEY_ID')
+          export SECRET_ACCESS_KEY=$(cat /tmp/secrets.json | jq -r '.SECRET_ACCESS_KEY')
+        - echo "✅ Secrets exported as environment variables"
+        - rm /tmp/secrets.json
+        - echo "✅ Temporary secrets file deleted"
+        - echo "=========================================="
+        - echo "📦 Installing dependencies"
+        - echo "=========================================="
         - npm ci
+        - echo "=========================================="
+        - echo "🔧 Setting up Prisma"
+        - echo "=========================================="
         - echo Checking Prisma installation...
         - npx prisma --version
         - echo Generating Prisma client...
         - npx prisma generate
         - echo Prisma client generated successfully
-        - echo Checking environment variables...
+        - echo "=========================================="
+        - echo "✅ Verifying environment variables"
+        - echo "=========================================="
         - 'echo "NODE_ENV is set to ${NODE_ENV:-production}"'
         - printenv NODE_ENV
         - echo "Checking AWS credentials..."
