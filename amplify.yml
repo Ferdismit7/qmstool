@@ -23,6 +23,12 @@ frontend:
         - 'echo "S3_BUCKET_NAME exists: ${S3_BUCKET_NAME:+YES}"'
         - 'echo "REGION exists: ${REGION:+YES}"'
         - 'echo "AMPLIFY_ROLE_ARN exists: ${AMPLIFY_ROLE_ARN:+YES}"'
+        - echo "Checking NextAuth environment variables..."
+        - 'echo "NEXTAUTH_SECRET exists: ${NEXTAUTH_SECRET:+YES}"'
+        - 'echo "NEXTAUTH_URL exists: ${NEXTAUTH_URL:+YES}"'
+        - 'echo "OKTA_CLIENT_ID exists: ${OKTA_CLIENT_ID:+YES}"'
+        - 'echo "OKTA_CLIENT_SECRET exists: ${OKTA_CLIENT_SECRET:+YES}"'
+        - 'echo "OKTA_ISSUER exists: ${OKTA_ISSUER:+YES}"'
         - echo "Verifying CSS dependencies..."
         - ls -la node_modules/tailwindcss
         - ls -la node_modules/postcss

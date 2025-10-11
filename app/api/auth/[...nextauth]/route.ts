@@ -6,19 +6,18 @@ import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 const prisma = new PrismaClient();
 
-// Initialize secrets before creating NextAuth handler
+// Initialize secrets once at module load
 let secretsInitialized = false;
-let authHandler: ReturnType<typeof NextAuth> | null = null;
+let authOptions: NextAuthOptions | null = null;
 
-// Function to get or create the NextAuth handler
-async function getAuthHandler() {
+const initializeAuth = async () => {
   if (!secretsInitialized) {
     await initializeSecrets();
     secretsInitialized = true;
   }
 
-  if (!authHandler) {
-    const authOptions: NextAuthOptions = {
+  if (!authOptions) {
+    authOptions = {
       adapter: PrismaAdapter(prisma),
       providers: [
         OktaProvider({
@@ -33,7 +32,6 @@ async function getAuthHandler() {
       },
       callbacks: {
         async jwt({ token, user, account }) {
-          // Persist the OAuth access_token and or the user id to the token right after signin
           if (account) {
             token.accessToken = account.access_token;
             token.provider = account.provider;
@@ -46,7 +44,6 @@ async function getAuthHandler() {
           return token;
         },
         async session({ session, token }) {
-          // Send properties to the client
           if (token && session.user) {
             session.user.id = token.id as string;
             session.user.email = token.email as string;
@@ -57,7 +54,6 @@ async function getAuthHandler() {
           return session;
         },
         async signIn() {
-          // Allow sign in
           return true;
         },
       },
@@ -67,30 +63,18 @@ async function getAuthHandler() {
       },
       debug: process.env.NODE_ENV === "development",
     };
-
-    authHandler = NextAuth(authOptions);
   }
 
-  return authHandler;
-}
+  return NextAuth(authOptions);
+};
 
-// Wrapper functions to ensure secrets are initialized
-export async function GET(request: Request) {
-  try {
-    const handler = await getAuthHandler();
-    return handler(request);
-  } catch (error) {
-    console.error('Failed to initialize NextAuth:', error);
-    return new Response('Configuration error', { status: 500 });
-  }
-}
+// Create handlers that properly await the auth initialization
+export const GET = async (request: Request) => {
+  const handler = await initializeAuth();
+  return handler(request);
+};
 
-export async function POST(request: Request) {
-  try {
-    const handler = await getAuthHandler();
-    return handler(request);
-  } catch (error) {
-    console.error('Failed to initialize NextAuth:', error);
-    return new Response('Configuration error', { status: 500 });
-  }
-}
+export const POST = async (request: Request) => {
+  const handler = await initializeAuth();
+  return handler(request);
+};

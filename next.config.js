@@ -1,14 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  // SECURITY FIX: Removed env section that exposed secrets to client
-  // Environment variables should NEVER be exposed to the browser
+  env: {
+    // Ensure NEXTAUTH_SECRET is available at build time
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  },
   images: {
     unoptimized: true,
   },
-  // SECURITY: Add security headers
   async headers() {
     return [
+      {
+        source: '/api/auth/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, max-age=0',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [
