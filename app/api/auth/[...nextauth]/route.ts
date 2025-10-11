@@ -99,7 +99,6 @@ export async function GET(req: Request) {
   try {
     const authOptions = await getAuthOptions();
     const nextAuthHandler = NextAuth(authOptions);
-    // @ts-expect-error - NextAuth types are complex
     return nextAuthHandler.GET(req);
   } catch (error) {
     console.error('❌ [NextAuth GET] Error:', error);
@@ -111,7 +110,6 @@ export async function POST(req: Request) {
   try {
     const authOptions = await getAuthOptions();
     const nextAuthHandler = NextAuth(authOptions);
-    // @ts-expect-error - NextAuth types are complex
     return nextAuthHandler.POST(req);
   } catch (error) {
     console.error('❌ [NextAuth POST] Error:', error);
