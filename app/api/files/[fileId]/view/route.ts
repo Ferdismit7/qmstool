@@ -12,27 +12,32 @@ export async function GET(
     // Initialize secrets
     await initializeSecrets();
     
-    // Check for NextAuth session cookies (multiple possible names)
-    const sessionToken = request.cookies.get('next-auth.session-token')?.value || 
-                        request.cookies.get('__Secure-next-auth.session-token')?.value ||
-                        request.cookies.get('authjs.session-token')?.value ||
-                        request.cookies.get('__Secure-authjs.session-token')?.value;
+    // Check for authentication tokens (custom JWT or NextAuth)
+    const authToken = request.cookies.get('authToken')?.value || 
+                     request.cookies.get('clientAuthToken')?.value;
+    const nextAuthToken = request.cookies.get('next-auth.session-token')?.value || 
+                         request.cookies.get('__Secure-next-auth.session-token')?.value ||
+                         request.cookies.get('authjs.session-token')?.value ||
+                         request.cookies.get('__Secure-authjs.session-token')?.value;
     
     const allCookies = request.cookies.getAll();
     console.log('Session check:', { 
-      hasSessionToken: !!sessionToken,
+      hasAuthToken: !!authToken,
+      hasNextAuthToken: !!nextAuthToken,
       totalCookies: allCookies.length,
       cookies: allCookies.map(c => ({ name: c.name, hasValue: !!c.value }))
     });
     
-    if (!sessionToken) {
+    // Accept either custom JWT token or NextAuth session token
+    if (!authToken && !nextAuthToken) {
       return NextResponse.json(
         { 
-          error: 'Unauthorized - No session token found',
+          error: 'Unauthorized - No authentication token found',
           debug: {
             totalCookies: allCookies.length,
             cookieNames: allCookies.map(c => c.name),
-            hasNextAuthCookies: allCookies.some(c => c.name.includes('next-auth') || c.name.includes('authjs'))
+            hasAuthToken: !!authToken,
+            hasNextAuthToken: !!nextAuthToken
           }
         },
         { status: 401 }
