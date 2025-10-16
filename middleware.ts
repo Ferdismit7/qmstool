@@ -63,9 +63,8 @@ export default withAuth(
 export const config = {
   matcher: [
     /*
-     * Protect all routes except auth, static files, and API routes
-     * NextAuth handles authentication for protected routes
+     * Temporarily disable middleware to test NextAuth
+     * '/((?!auth|_next|favicon.ico|images|api).*)'
      */
-    '/((?!auth|_next|favicon.ico|images|api).*)'
   ]
 }; 
