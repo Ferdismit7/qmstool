@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Test if NextAuth can initialize with just environment variables
-    const testHandler = NextAuth({
+    NextAuth({
       providers: [
         OktaProvider({
           clientId: process.env.OKTA_CLIENT_ID!,
