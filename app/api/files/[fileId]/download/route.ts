@@ -148,7 +148,11 @@ export async function GET(
   } catch (error) {
     console.error('Error downloading file:', error);
     return NextResponse.json(
-      { error: 'Failed to download file' },
+      { 
+        error: 'Failed to download file',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }

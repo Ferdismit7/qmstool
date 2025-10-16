@@ -65,9 +65,11 @@ export async function GET(
     ];
 
     let fileRecord: Record<string, unknown> | null = null;
+    console.log('Searching for fileId:', decodedFileId);
 
     for (const table of tables) {
       try {
+        console.log(`Searching in table: ${table}`);
         const result = await ((prisma as unknown) as Record<string, { findFirst: (args: unknown) => Promise<unknown> }>)[table as string].findFirst({
           where: {
             file_url: {
@@ -84,8 +86,11 @@ export async function GET(
         });
 
         if (result) {
+          console.log(`Found file in table ${table}:`, result);
           fileRecord = result as Record<string, unknown>;
           break;
+        } else {
+          console.log(`No file found in table ${table}`);
         }
       } catch (error) {
         console.error(`Error searching in ${table}:`, error);
@@ -106,6 +111,8 @@ export async function GET(
 
     // Handle file URL - could be S3 URL or local path
     const fileUrl = fileRecord.file_url as string;
+    console.log('Processing file URL:', fileUrl);
+    
     if (!fileUrl) {
       return NextResponse.json(
         { error: 'Invalid file URL' },
@@ -117,6 +124,7 @@ export async function GET(
 
     if (fileUrl.includes('s3.amazonaws.com/')) {
       // Handle S3 URLs
+      console.log('Processing S3 URL');
       const urlParts = fileUrl.split('s3.amazonaws.com/');
       if (urlParts.length !== 2) {
         return NextResponse.json(
@@ -125,7 +133,9 @@ export async function GET(
         );
       }
       const s3Key = urlParts[1];
+      console.log('S3 Key:', s3Key);
       viewUrl = await getSignedDownloadUrl(s3Key);
+      console.log('Generated signed URL:', viewUrl);
     } else if (fileUrl.startsWith('/uploads/')) {
       // Handle local file paths - serve directly from the file system
       // For now, we'll return an error since we don't have local file serving set up
@@ -147,7 +157,11 @@ export async function GET(
   } catch (error) {
     console.error('Error viewing file:', error);
     return NextResponse.json(
-      { error: 'Failed to view file' },
+      { 
+        error: 'Failed to view file',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
