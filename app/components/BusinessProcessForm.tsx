@@ -23,6 +23,7 @@ type BusinessProcess = {
   file_name?: string;
   file_size?: number;
   file_type?: string;
+  uploaded_at?: string;
 }
 
 type Props = {
