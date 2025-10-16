@@ -118,7 +118,12 @@ export default function BusinessProcessForm({ mode, process }: Props) {
         targetDate: formData.target_date,
         processOwner: formData.process_owner,
         remarks: formData.remarks,
-        reviewDate: formData.review_date
+        reviewDate: formData.review_date,
+        file_url: formData.file_url,
+        file_name: formData.file_name,
+        file_size: formData.file_size,
+        file_type: formData.file_type,
+        uploaded_at: formData.uploaded_at
       };
       
       console.log('Submitting API data:', apiData);

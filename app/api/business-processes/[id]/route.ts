@@ -20,6 +20,11 @@ const transformBusinessProcess = (dbProcess: unknown) => {
     update_date: Date | null;
     remarks: string | null;
     review_date: Date | null;
+    file_url: string | null;
+    file_name: string | null;
+    file_size: bigint | null;
+    file_type: string | null;
+    uploaded_at: Date | null;
     linkedDocuments?: Array<{
       id: number;
       business_process_id: number;
@@ -63,6 +68,11 @@ const transformBusinessProcess = (dbProcess: unknown) => {
     updateDate: p.update_date,
     remarks: p.remarks,
     reviewDate: p.review_date,
+    file_url: p.file_url,
+    file_name: p.file_name,
+    file_size: p.file_size ? Number(p.file_size) : null,
+    file_type: p.file_type,
+    uploaded_at: p.uploaded_at,
     linkedDocuments: p.linkedDocuments || [],
   };
 };
@@ -82,6 +92,11 @@ const transformFrontendToAPI = (frontendData: unknown) => {
     processOwner?: string;
     remarks?: string;
     reviewDate?: string;
+    file_url?: string;
+    file_name?: string;
+    file_size?: number;
+    file_type?: string;
+    uploaded_at?: string;
   };
   return {
     sub_business_area: f.subBusinessArea,
@@ -96,6 +111,11 @@ const transformFrontendToAPI = (frontendData: unknown) => {
     process_owner: f.processOwner,
     remarks: f.remarks,
     review_date: f.reviewDate,
+    file_url: f.file_url,
+    file_name: f.file_name,
+    file_size: f.file_size,
+    file_type: f.file_type,
+    uploaded_at: f.uploaded_at ? new Date(f.uploaded_at) : null,
   };
 };
 
@@ -223,6 +243,11 @@ export async function PUT(
       process_owner,
       remarks,
       review_date,
+      file_url,
+      file_name,
+      file_size,
+      file_type,
+      uploaded_at,
     } = data;
 
     // Validate required fields
@@ -264,7 +289,12 @@ export async function PUT(
         process_owner: process_owner,
         update_date: new Date(),
         remarks: remarks,
-        review_date: review_date ? new Date(review_date) : null
+        review_date: review_date ? new Date(review_date) : null,
+        file_url: file_url,
+        file_name: file_name,
+        file_size: file_size,
+        file_type: file_type,
+        uploaded_at: uploaded_at
       }
     });
 

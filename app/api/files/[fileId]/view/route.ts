@@ -25,6 +25,7 @@ export async function GET(
     
     // Find the file in the database by searching for the fileId in file_url
     const tables = [
+      'businessProcessRegister',
       'businessDocumentRegister',
       'businessQualityObjective', 
       'performanceMonitoringControl',

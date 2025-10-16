@@ -19,6 +19,11 @@ interface FrontendData {
   processOwner?: string;
   remarks?: string;
   reviewDate?: string;
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  file_type?: string;
+  uploaded_at?: string;
 }
 
 // Helper function to transform database fields to component expected format
@@ -39,6 +44,11 @@ const transformBusinessProcess = (dbProcess: unknown) => {
     update_date: Date | null;
     remarks: string | null;
     review_date: Date | null;
+    file_url: string | null;
+    file_name: string | null;
+    file_size: bigint | null;
+    file_type: string | null;
+    uploaded_at: Date | null;
     deleted_at: Date | null;
     deleted_by: number | null;
   };
@@ -58,6 +68,11 @@ const transformBusinessProcess = (dbProcess: unknown) => {
     updateDate: p.update_date?.toISOString() || null,
     remarks: p.remarks,
     reviewDate: p.review_date?.toISOString() || null,
+    file_url: p.file_url,
+    file_name: p.file_name,
+    file_size: p.file_size ? Number(p.file_size) : null,
+    file_type: p.file_type,
+    uploaded_at: p.uploaded_at?.toISOString() || null,
     deletedAt: p.deleted_at,
     deletedBy: p.deleted_by,
   };
@@ -77,6 +92,11 @@ const transformFrontendToAPI = (frontendData: FrontendData) => ({
   process_owner: frontendData.processOwner,
   remarks: frontendData.remarks,
   review_date: frontendData.reviewDate,
+  file_url: frontendData.file_url,
+  file_name: frontendData.file_name,
+  file_size: frontendData.file_size,
+  file_type: frontendData.file_type,
+  uploaded_at: frontendData.uploaded_at ? new Date(frontendData.uploaded_at) : null,
 });
 
 export async function GET(request: NextRequest) {
