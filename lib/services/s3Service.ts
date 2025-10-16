@@ -2,11 +2,15 @@ import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } fro
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { UploadFileParams } from '@/app/types/fileUpload';
 
-// Create S3 client - AWS SDK will automatically find credentials
-// Note: REGION will be set by AWS Secrets Manager via initializeSecrets()
+// Create S3 client with explicit credentials from environment variables
+// These are set by AWS Secrets Manager via initializeSecrets()
 const s3Client = new S3Client({
-    region: process.env.REGION || 'eu-north-1',
-  });
+  region: process.env.REGION || 'eu-north-1',
+  credentials: {
+    accessKeyId: process.env.ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.SECRET_ACCESS_KEY || '',
+  },
+});
 
 export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: string; url: string }> => {
   const { file, fileName, contentType, businessArea, documentType, recordId } = params;
@@ -67,12 +71,27 @@ export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: s
 
 export const getSignedDownloadUrl = async (key: string): Promise<string> => {
   const bucketName = process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1';
+  
+  console.log('S3 credentials check:', {
+    hasAccessKey: !!process.env.ACCESS_KEY_ID,
+    hasSecretKey: !!process.env.SECRET_ACCESS_KEY,
+    region: process.env.REGION,
+    bucketName: bucketName
+  });
+  
   const command = new GetObjectCommand({
     Bucket: bucketName,
     Key: key,
   });
 
-  return await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
+  try {
+    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
+    console.log('Generated signed URL successfully');
+    return signedUrl;
+  } catch (error) {
+    console.error('Failed to generate signed URL:', error);
+    throw error;
+  }
 };
 
 export const deleteFileFromS3 = async (key: string): Promise<void> => {
