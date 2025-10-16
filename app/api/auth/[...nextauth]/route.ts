@@ -1,13 +1,8 @@
 import NextAuth from "next-auth";
 import OktaProvider from "next-auth/providers/okta";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 // Create NextAuth handler with configuration
 const handler = NextAuth({
-  adapter: PrismaAdapter(prisma),
   providers: [
     OktaProvider({
       clientId: process.env.OKTA_CLIENT_ID!,
