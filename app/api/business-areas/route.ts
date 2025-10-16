@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import {prisma } from '@/lib/prisma';
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function GET() {
   try {
+    // Initialize secrets from AWS Secrets Manager
+    await initializeSecrets();
+    
     // Fetch business areas using Prisma
     const businessAreas = await prisma.businessAreas.findMany({
       select: { business_area: true },
@@ -21,6 +25,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // Initialize secrets from AWS Secrets Manager
+    await initializeSecrets();
+    
     const { business_area } = await request.json();
 
     if (!business_area || typeof business_area !== 'string' || business_area.trim() === '') {
