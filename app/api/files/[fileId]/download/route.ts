@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import { getSignedDownloadUrl } from '@/lib/services/s3Service';
 import { prisma } from '@/lib/prisma';
 import { initializeSecrets } from '@/lib/awsSecretsManager';
-import { authOptions } from '@/lib/auth-config';
 
 // GET /api/files/[fileId]/download - Download a file with access control
 export async function GET(
@@ -14,11 +12,18 @@ export async function GET(
     // Initialize secrets
     await initializeSecrets();
     
-    // Verify authentication using NextAuth session
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
+    // Check for NextAuth session cookies
+    const sessionToken = request.cookies.get('next-auth.session-token')?.value || 
+                        request.cookies.get('__Secure-next-auth.session-token')?.value;
+    
+    console.log('Session check:', { 
+      hasSessionToken: !!sessionToken,
+      cookies: request.cookies.getAll().map(c => ({ name: c.name, hasValue: !!c.value }))
+    });
+    
+    if (!sessionToken) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - No session token found' },
         { status: 401 }
       );
     }
@@ -83,7 +88,7 @@ export async function GET(
 
     // Check access - for now, allow access if user is authenticated
     // TODO: Implement proper business area access control with NextAuth
-    console.log('File access check - user:', session.user.email, 'business_area:', fileRecord.business_area);
+    console.log('File access check - business_area:', fileRecord.business_area);
 
     // Handle file URL - could be S3 URL or local path
     const fileUrl = fileRecord.file_url as string;
