@@ -181,11 +181,11 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
       review_date: formData.review_date || null,
       remarks: formData.remarks || null,
       // Add file data if uploaded
-      ...(fileData.file_url && {
-        file_url: fileData.file_url,
-        file_name: fileData.file_name,
-        file_size: fileData.file_size,
-        file_type: fileData.file_type,
+      ...(formData.file_url && {
+        file_url: formData.file_url,
+        file_name: formData.file_name,
+        file_size: formData.file_size,
+        file_type: formData.file_type,
         // Let the server set the timestamp to ensure consistency
       }),
     };
