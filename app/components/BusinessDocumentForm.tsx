@@ -517,7 +517,7 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
             }}
             accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
             maxSize={10}
-            businessArea={formData.business_area || 'default'}
+            businessArea={formData.business_area || userBusinessAreas[0] || 'General'}
             documentType="business-documents"
           />
           {errors.file && (
