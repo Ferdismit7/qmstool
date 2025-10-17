@@ -2,15 +2,16 @@ import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } fro
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { UploadFileParams } from '@/app/types/fileUpload';
 
-// Create S3 client with explicit credentials from environment variables
-// These are set by AWS Secrets Manager via initializeSecrets()
-const s3Client = new S3Client({
-  region: process.env.REGION || 'eu-north-1',
-  credentials: {
-    accessKeyId: process.env.ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.SECRET_ACCESS_KEY || '',
-  },
-});
+// Create S3 client dynamically to ensure credentials are available
+const createS3Client = () => {
+  return new S3Client({
+    region: process.env.REGION || 'eu-north-1',
+    credentials: {
+      accessKeyId: process.env.ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.SECRET_ACCESS_KEY || '',
+    },
+  });
+};
 
 export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: string; url: string }> => {
   const { file, fileName, contentType, businessArea, documentType, recordId } = params;
@@ -51,6 +52,7 @@ export const uploadFileToS3 = async (params: UploadFileParams): Promise<{ key: s
 
   try {
     console.log('Sending S3 command...');
+    const s3Client = createS3Client();
     await s3Client.send(command);
     console.log('S3 upload successful');
     
@@ -85,6 +87,7 @@ export const getSignedDownloadUrl = async (key: string): Promise<string> => {
   });
 
   try {
+    const s3Client = createS3Client();
     const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
     console.log('Generated signed URL successfully');
     return signedUrl;
@@ -101,6 +104,7 @@ export const deleteFileFromS3 = async (key: string): Promise<void> => {
     Key: key,
   });
 
+  const s3Client = createS3Client();
   await s3Client.send(command);
 };
 
