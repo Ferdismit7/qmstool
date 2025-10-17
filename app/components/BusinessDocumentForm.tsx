@@ -75,7 +75,6 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     uploaded_at: '',
   });
 
-  const [fileData, setFileData] = useState<FileUploadData>({});
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [userBusinessAreas, setUserBusinessAreas] = useState<string[]>([]);
