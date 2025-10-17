@@ -189,11 +189,11 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
       review_date: formData.review_date || null,
       remarks: formData.remarks || null,
       // Add file data if uploaded
-      ...(fileData.uploadedFile && {
-        file_url: fileData.uploadedFile.key,
-        file_name: fileData.uploadedFile.fileName,
-        file_size: fileData.uploadedFile.fileSize,
-        file_type: fileData.uploadedFile.fileType,
+      ...(fileData.file_url && {
+        file_url: fileData.file_url,
+        file_name: fileData.file_name,
+        file_size: fileData.file_size,
+        file_type: fileData.file_type,
         // Let the server set the timestamp to ensure consistency
       }),
     };
@@ -510,7 +510,10 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
             onChange={(fileData) => {
               setFormData(prev => ({
                 ...prev,
-                ...fileData,
+                file_url: fileData.file_url || '',
+                file_name: fileData.file_name || '',
+                file_size: fileData.file_size || 0,
+                file_type: fileData.file_type || '',
                 uploaded_at: fileData.uploaded_at ? (typeof fileData.uploaded_at === 'string' ? fileData.uploaded_at : fileData.uploaded_at.toISOString()) : ''
               }));
             }}
