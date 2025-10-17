@@ -4,11 +4,29 @@ import { UploadFileParams } from '@/app/types/fileUpload';
 
 // Create S3 client dynamically to ensure credentials are available
 const createS3Client = () => {
+  const accessKeyId = process.env.ACCESS_KEY_ID || '';
+  const secretAccessKey = process.env.SECRET_ACCESS_KEY || '';
+  const region = process.env.REGION || 'eu-north-1';
+  
+  console.log('Creating S3 client with credentials:', {
+    hasAccessKey: !!accessKeyId,
+    accessKeyLength: accessKeyId.length,
+    accessKeyPreview: accessKeyId ? `${accessKeyId.substring(0, 4)}...` : 'EMPTY',
+    hasSecretKey: !!secretAccessKey,
+    secretKeyLength: secretAccessKey.length,
+    region: region,
+    allEnvVars: Object.keys(process.env).filter(key => key.includes('ACCESS') || key.includes('SECRET') || key.includes('REGION') || key.includes('S3'))
+  });
+  
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error(`Missing AWS credentials: ACCESS_KEY_ID=${!!accessKeyId}, SECRET_ACCESS_KEY=${!!secretAccessKey}`);
+  }
+  
   return new S3Client({
-    region: process.env.REGION || 'eu-north-1',
+    region: region,
     credentials: {
-      accessKeyId: process.env.ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.SECRET_ACCESS_KEY || '',
+      accessKeyId: accessKeyId,
+      secretAccessKey: secretAccessKey,
     },
   });
 };

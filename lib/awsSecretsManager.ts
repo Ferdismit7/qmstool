@@ -12,6 +12,8 @@ interface LambdaSecretsResponse {
     OKTA_CLIENT_ID: string;
     OKTA_CLIENT_SECRET: string;
     OKTA_ISSUER: string;
+    ACCESS_KEY_ID: string;
+    SECRET_ACCESS_KEY: string;
   };
   error?: string;
 }
@@ -26,6 +28,8 @@ interface Secrets {
   OKTA_CLIENT_ID: string;
   OKTA_CLIENT_SECRET: string;
   OKTA_ISSUER: string;
+  ACCESS_KEY_ID: string;
+  SECRET_ACCESS_KEY: string;
 }
 
 let cachedSecrets: Secrets | null = null;
@@ -70,6 +74,8 @@ export const getSecrets = async (): Promise<Secrets> => {
         OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID || '',
         OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET || '',
         OKTA_ISSUER: process.env.OKTA_ISSUER || '',
+        ACCESS_KEY_ID: process.env.ACCESS_KEY_ID || '',
+        SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY || '',
       };
       
       cachedSecrets = fallbackSecrets;
@@ -110,6 +116,8 @@ export const getSecrets = async (): Promise<Secrets> => {
       OKTA_CLIENT_ID: data.secrets.OKTA_CLIENT_ID,
       OKTA_CLIENT_SECRET: data.secrets.OKTA_CLIENT_SECRET,
       OKTA_ISSUER: data.secrets.OKTA_ISSUER,
+      ACCESS_KEY_ID: data.secrets.ACCESS_KEY_ID,
+      SECRET_ACCESS_KEY: data.secrets.SECRET_ACCESS_KEY,
     };
     
     // Set environment variables
@@ -122,6 +130,8 @@ export const getSecrets = async (): Promise<Secrets> => {
     process.env.OKTA_CLIENT_ID = secrets.OKTA_CLIENT_ID;
     process.env.OKTA_CLIENT_SECRET = secrets.OKTA_CLIENT_SECRET;
     process.env.OKTA_ISSUER = secrets.OKTA_ISSUER;
+    process.env.ACCESS_KEY_ID = secrets.ACCESS_KEY_ID;
+    process.env.SECRET_ACCESS_KEY = secrets.SECRET_ACCESS_KEY;
 
     // Cache the secrets
     cachedSecrets = secrets;
@@ -157,6 +167,8 @@ export const getSecrets = async (): Promise<Secrets> => {
       OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID || '',
       OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET || '',
       OKTA_ISSUER: process.env.OKTA_ISSUER || '',
+      ACCESS_KEY_ID: process.env.ACCESS_KEY_ID || '',
+      SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY || '',
     };
     
     cachedSecrets = fallbackSecrets;
