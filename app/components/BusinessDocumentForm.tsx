@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { BusinessDocument } from '../types/businessDocument';
-import { FileUploadData } from '../types/fileUpload';
 import FileUploadField from './FileUploadField';
 
 /**
