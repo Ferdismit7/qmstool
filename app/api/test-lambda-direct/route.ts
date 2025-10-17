@@ -2,20 +2,17 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    console.log('Testing Lambda function directly...');
-    
-    const lambdaUrl = process.env.LAMBDA_FUNCTION_URL;
-    console.log('Lambda URL:', lambdaUrl);
+    const lambdaUrl = process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL;
     
     if (!lambdaUrl) {
       return NextResponse.json({
         success: false,
-        error: 'LAMBDA_FUNCTION_URL not set',
-        timestamp: new Date().toISOString()
+        error: 'NEXT_PUBLIC_LAMBDA_FUNCTION_URL not set'
       }, { status: 500 });
     }
     
-    console.log('Calling Lambda function...');
+    console.log('Testing Lambda function directly...');
+    console.log('Lambda URL:', lambdaUrl);
     
     const response = await fetch(lambdaUrl, {
       method: 'GET',
@@ -25,17 +22,13 @@ export async function GET() {
     });
     
     console.log('Lambda response status:', response.status);
-    console.log('Lambda response headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('Lambda error response:', errorText);
-      
       return NextResponse.json({
         success: false,
         error: `Lambda function returned status: ${response.status}`,
-        errorResponse: errorText,
-        timestamp: new Date().toISOString()
+        errorText: errorText
       }, { status: 500 });
     }
     
@@ -44,17 +37,21 @@ export async function GET() {
     
     return NextResponse.json({
       success: true,
-      lambdaResponse: data,
-      timestamp: new Date().toISOString()
+      lambdaUrl: lambdaUrl,
+      responseStatus: response.status,
+      hasSecrets: !!data.secrets,
+      secretKeys: data.secrets ? Object.keys(data.secrets) : [],
+      hasAccessKey: !!(data.secrets?.ACCESS_KEY_ID),
+      hasSecretKey: !!(data.secrets?.SECRET_ACCESS_KEY),
+      fullResponse: data
     });
     
   } catch (error) {
-    console.error('Lambda test error:', error);
+    console.error('Error testing Lambda function:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      errorType: error instanceof Error ? error.name : 'Unknown',
-      timestamp: new Date().toISOString()
+      stack: error instanceof Error ? error.stack : undefined
     }, { status: 500 });
   }
 }

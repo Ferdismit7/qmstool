@@ -14,7 +14,7 @@ const uploadFileViaLambda = async (params: {
   const { file, fileName, contentType, businessArea, documentType, recordId } = params;
   
   // Get existing Lambda function URL from environment variables
-  const lambdaUrl = process.env.LAMBDA_FUNCTION_URL || process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL;
+  const lambdaUrl = process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL || process.env.LAMBDA_FUNCTION_URL;
   
   if (!lambdaUrl) {
     throw new Error('Lambda function URL not configured');
