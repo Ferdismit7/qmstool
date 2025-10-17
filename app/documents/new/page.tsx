@@ -15,22 +15,12 @@ export default function NewDocument() {
     try {
       setError(null);
 
-      // Get token from multiple sources to ensure compatibility
-      const token = sessionStorage.getItem('authToken') || 
-                   localStorage.getItem('authToken') ||
-                   (typeof window !== 'undefined' ? window.document.cookie.split('; ').find((row: string) => row.startsWith('authToken='))?.split('=')[1] : null) ||
-                   (typeof window !== 'undefined' ? window.document.cookie.split('; ').find((row: string) => row.startsWith('clientAuthToken='))?.split('=')[1] : null);
-      
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
+      // Authentication is handled automatically via cookies
       const response = await fetch('/api/business-documents', {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(document),
       });
 
