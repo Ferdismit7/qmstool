@@ -213,7 +213,6 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
           file_type: '',
           uploaded_at: '',
         });
-        setFileData({});
       }
     } catch (error) {
       console.error('Error submitting form:', error);
