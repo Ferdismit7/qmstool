@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { BusinessDocument } from '../types/businessDocument';
+import { FileUploadData } from '../types/fileUpload';
 import FileUploadField from './FileUploadField';
 
 /**
@@ -74,16 +75,7 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
     uploaded_at: '',
   });
 
-  const [fileData, setFileData] = useState<{
-    file?: File;
-    uploadedFile?: {
-      key: string;
-      url: string;
-      fileName: string;
-      fileSize: number;
-      fileType: string;
-    };
-  }>({});
+  const [fileData, setFileData] = useState<FileUploadData>({});
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [userBusinessAreas, setUserBusinessAreas] = useState<string[]>([]);
