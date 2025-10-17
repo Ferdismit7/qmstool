@@ -78,9 +78,16 @@ export const getSecrets = async (): Promise<Secrets> => {
         SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY || '',
       };
       
-      cachedSecrets = fallbackSecrets;
-      console.log("✅ [Secrets] Using fallback environment variables");
-      return fallbackSecrets;
+    cachedSecrets = fallbackSecrets;
+    console.log("✅ [Secrets] Using fallback environment variables");
+    console.log("🔑 [Secrets] Fallback AWS Credentials check:", {
+      hasAccessKey: !!fallbackSecrets.ACCESS_KEY_ID,
+      accessKeyLength: fallbackSecrets.ACCESS_KEY_ID?.length || 0,
+      accessKeyPreview: fallbackSecrets.ACCESS_KEY_ID ? `${fallbackSecrets.ACCESS_KEY_ID.substring(0, 4)}...` : 'EMPTY',
+      hasSecretKey: !!fallbackSecrets.SECRET_ACCESS_KEY,
+      secretKeyLength: fallbackSecrets.SECRET_ACCESS_KEY?.length || 0
+    });
+    return fallbackSecrets;
     }
 
     console.log("🔑 [Secrets] Lambda URL:", lambdaUrl);
@@ -137,6 +144,13 @@ export const getSecrets = async (): Promise<Secrets> => {
     cachedSecrets = secrets;
     
     console.log("✅ Secrets retrieved successfully from Lambda function URL");
+    console.log("🔑 [Secrets] AWS Credentials check:", {
+      hasAccessKey: !!secrets.ACCESS_KEY_ID,
+      accessKeyLength: secrets.ACCESS_KEY_ID?.length || 0,
+      accessKeyPreview: secrets.ACCESS_KEY_ID ? `${secrets.ACCESS_KEY_ID.substring(0, 4)}...` : 'EMPTY',
+      hasSecretKey: !!secrets.SECRET_ACCESS_KEY,
+      secretKeyLength: secrets.SECRET_ACCESS_KEY?.length || 0
+    });
     return secrets;
   } catch (error) {
     console.error("❌ [Secrets] Error retrieving secrets from Lambda function URL:", error);
@@ -173,6 +187,13 @@ export const getSecrets = async (): Promise<Secrets> => {
     
     cachedSecrets = fallbackSecrets;
     console.log("✅ [Secrets] Using fallback environment variables");
+    console.log("🔑 [Secrets] Fallback AWS Credentials check:", {
+      hasAccessKey: !!fallbackSecrets.ACCESS_KEY_ID,
+      accessKeyLength: fallbackSecrets.ACCESS_KEY_ID?.length || 0,
+      accessKeyPreview: fallbackSecrets.ACCESS_KEY_ID ? `${fallbackSecrets.ACCESS_KEY_ID.substring(0, 4)}...` : 'EMPTY',
+      hasSecretKey: !!fallbackSecrets.SECRET_ACCESS_KEY,
+      secretKeyLength: fallbackSecrets.SECRET_ACCESS_KEY?.length || 0
+    });
     return fallbackSecrets;
   }
 };
