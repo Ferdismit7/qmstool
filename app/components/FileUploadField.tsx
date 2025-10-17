@@ -76,12 +76,20 @@ export default function FileUploadField({
       formData.append('businessArea', businessArea);
       formData.append('documentType', documentType);
 
-      const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+      // Get token from multiple sources to ensure compatibility
+      const token = sessionStorage.getItem('authToken') || 
+                   localStorage.getItem('authToken') ||
+                   (typeof window !== 'undefined' ? window.document.cookie.split('; ').find((row: string) => row.startsWith('authToken='))?.split('=')[1] : null) ||
+                   (typeof window !== 'undefined' ? window.document.cookie.split('; ').find((row: string) => row.startsWith('clientAuthToken='))?.split('=')[1] : null);
+      
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch('/api/upload-file', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers,
         body: formData,
       });
 

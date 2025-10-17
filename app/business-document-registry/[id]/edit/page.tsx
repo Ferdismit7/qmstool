@@ -65,11 +65,22 @@ export default function EditBusinessDocument({ params }: { params: Promise<{ id:
       const { id } = await params;
       setError(null);
 
+      // Get token from multiple sources to ensure compatibility
+      const token = sessionStorage.getItem('authToken') || 
+                   localStorage.getItem('authToken') ||
+                   (typeof window !== 'undefined' ? window.document.cookie.split('; ').find((row: string) => row.startsWith('authToken='))?.split('=')[1] : null) ||
+                   (typeof window !== 'undefined' ? window.document.cookie.split('; ').find((row: string) => row.startsWith('clientAuthToken='))?.split('=')[1] : null);
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`/api/business-documents/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(updatedDocument),
       });
 
