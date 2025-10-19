@@ -42,7 +42,7 @@ const uploadFileViaLambda = async (params: {
   });
   
   if (!response.ok) {
-    let parsed: any = null;
+    let parsed: { error?: string; message?: string } | null = null;
     let raw = '';
     try {
       parsed = await response.json();
