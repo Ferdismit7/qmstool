@@ -499,20 +499,17 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
             onChange={(fileData) => {
               setFormData(prev => ({
                 ...prev,
-                file_url: fileData.file_url || '',
-                file_name: fileData.file_name || '',
-                file_size: fileData.file_size || 0,
-                file_type: fileData.file_type || '',
+                ...fileData,
                 uploaded_at: fileData.uploaded_at ? (typeof fileData.uploaded_at === 'string' ? fileData.uploaded_at : fileData.uploaded_at.toISOString()) : ''
               }));
             }}
             onRemove={() => {
               setFormData(prev => ({
                 ...prev,
-                file_url: '',
-                file_name: '',
-                file_size: 0,
-                file_type: '',
+                file_url: undefined as unknown as string,
+                file_name: undefined as unknown as string,
+                file_size: undefined as unknown as number,
+                file_type: undefined as unknown as string,
               }));
             }}
             accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png"

@@ -60,7 +60,17 @@ export async function POST(request: NextRequest) {
     console.log('Upload file API called');
     
     // Initialize secrets from AWS Secrets Manager
+    console.log('Initializing secrets...');
     await initializeSecrets();
+    console.log('Secrets initialized successfully');
+    
+    // Check Lambda function URL availability
+    const lambdaUrl = process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL || process.env.LAMBDA_FUNCTION_URL;
+    console.log('Lambda URL check:', {
+      hasNextPublicUrl: !!process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL,
+      hasLambdaUrl: !!process.env.LAMBDA_FUNCTION_URL,
+      finalUrl: lambdaUrl ? 'SET' : 'NOT SET'
+    });
     
     // Check environment variables with detailed logging
     console.log('Environment variables check:');
@@ -186,10 +196,35 @@ export async function POST(request: NextRequest) {
       name: error instanceof Error ? error.name : 'Unknown'
     });
     
+    // Check if it's a secrets initialization error
+    if (error instanceof Error && error.message.includes('secrets')) {
+      return NextResponse.json(
+        { 
+          error: 'Secrets initialization failed',
+          details: error.message,
+          type: 'secrets_error'
+        },
+        { status: 500 }
+      );
+    }
+    
+    // Check if it's a Lambda URL error
+    if (error instanceof Error && error.message.includes('Lambda function URL not configured')) {
+      return NextResponse.json(
+        { 
+          error: 'Lambda function URL not configured',
+          details: error.message,
+          type: 'lambda_url_error'
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { 
         error: 'Failed to upload file',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        type: 'upload_error'
       },
       { status: 500 }
     );
