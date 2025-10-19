@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { initializeSecrets } from '@/lib/awsSecretsManager';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('Test upload file endpoint called');
     
