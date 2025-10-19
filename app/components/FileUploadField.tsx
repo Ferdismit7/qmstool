@@ -84,7 +84,16 @@ export default function FileUploadField({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload file');
+        // Try to get the actual error message from the response
+        let errorMessage = 'Failed to upload file';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.details || errorMessage;
+        } catch {
+          // If we can't parse the error response, use the status text
+          errorMessage = `Upload failed (${response.status}): ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();

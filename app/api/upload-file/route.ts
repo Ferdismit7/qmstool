@@ -42,8 +42,17 @@ const uploadFileViaLambda = async (params: {
   });
   
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Lambda upload failed: ${errorData.error || 'Unknown error'}`);
+    let parsed: any = null;
+    let raw = '';
+    try {
+      parsed = await response.json();
+    } catch {
+      try {
+        raw = await response.text();
+      } catch {}
+    }
+    const message = parsed?.error || parsed?.message || raw || 'Unknown error';
+    throw new Error(`Lambda upload failed (${response.status}): ${message}`);
   }
   
   const result = await response.json();
@@ -168,7 +177,7 @@ export async function POST(request: NextRequest) {
     const result = await uploadFileViaLambda({
       file: buffer,
       fileName: file.name,
-      contentType: file.type,
+      contentType: file.type || 'application/octet-stream',
       businessArea,
       documentType: documentType as DocumentType,
       recordId
