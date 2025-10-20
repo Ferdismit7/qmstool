@@ -1,9 +1,12 @@
 import NextAuth from "next-auth";
 import OktaProvider from "next-auth/providers/okta";
 import { NextResponse } from 'next/server';
+import { initializeSecrets } from '@/lib/awsSecretsManager';
 
 export async function GET() {
   try {
+    // Ensure secrets are initialized so env vars are present at runtime
+    await initializeSecrets();
     // Test if NextAuth can initialize with just environment variables
     NextAuth({
       providers: [
