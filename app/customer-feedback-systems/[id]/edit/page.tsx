@@ -15,6 +15,11 @@ interface CustomerFeedbackSystem {
   doc_status: 'On-Track' | 'Completed' | 'Minor Challenges' | 'Major Challenges' | 'Not Started';
   progress: 'To be reviewed' | 'Completed' | 'In progress' | 'New';
   notes: string;
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  file_type?: string;
+  uploaded_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -66,7 +71,12 @@ export default function EditCustomerFeedbackSystemPage() {
           throw new Error('Failed to fetch feedback system');
         }
         
-        const feedbackData: CustomerFeedbackSystem = await feedbackResponse.json();
+        const responseData = await feedbackResponse.json();
+        if (!responseData.success) {
+          throw new Error(responseData.error || 'Failed to fetch feedback system');
+        }
+        
+        const feedbackData = responseData.data;
         
         // Format date for input field
         const lastReviewDate = feedbackData.last_review_date 

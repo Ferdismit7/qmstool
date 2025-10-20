@@ -77,6 +77,11 @@ export async function PUT(
       document_owner,
       remarks,
       review_date,
+      file_url,
+      file_name,
+      file_size,
+      file_type,
+      uploaded_at,
     } = data;
 
     // Create placeholders for IN clause
@@ -98,13 +103,15 @@ export async function PUT(
         sub_business_area = ?, document_name = ?, name_and_numbering = ?,
         document_type = ?, version = ?, progress = ?, doc_status = ?, status_percentage = ?,
         priority = ?, target_date = ?, document_owner = ?, update_date = NOW(),
-        remarks = ?, review_date = ?
+        remarks = ?, review_date = ?, file_url = ?, file_name = ?, file_size = ?, 
+        file_type = ?, uploaded_at = ?
       WHERE business_area IN (${placeholders}) AND id = ?
     `, [
       sub_business_area, document_name, name_and_numbering, document_type,
       version, progress, doc_status, status_percentage, priority,
       target_date ? new Date(target_date) : null, document_owner, remarks,
-      review_date ? new Date(review_date) : null, ...userBusinessAreas, parseInt(id)
+      review_date ? new Date(review_date) : null, file_url, file_name, file_size,
+      file_type, uploaded_at ? new Date(uploaded_at) : null, ...userBusinessAreas, parseInt(id)
     ]);
 
     if ((result as unknown as { affectedRows: number }).affectedRows === 0) {

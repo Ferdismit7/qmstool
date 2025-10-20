@@ -26,14 +26,14 @@ export async function GET(
     `, queryParams);
 
     if (!control) {
-      return NextResponse.json({ error: 'Performance monitoring control not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Performance monitoring control not found' }, { status: 404 });
     }
 
-    return NextResponse.json(control);
+    return NextResponse.json({ success: true, data: control });
   } catch (error) {
     console.error('Error fetching performance monitoring control:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch performance monitoring control' },
+      { success: false, error: 'Failed to fetch performance monitoring control' },
       { status: 500 }
     );
   }
@@ -83,7 +83,7 @@ export async function PUT(
     `, queryParams);
 
     if (!existingControl) {
-      return NextResponse.json({ error: 'Performance monitoring control not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Performance monitoring control not found' }, { status: 404 });
     }
 
     // Use the first business area for updates
@@ -118,7 +118,7 @@ export async function PUT(
     ]);
 
     if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
-      return NextResponse.json({ error: 'Performance monitoring control not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Performance monitoring control not found' }, { status: 404 });
     }
 
     // Fetch the updated record
@@ -127,11 +127,11 @@ export async function PUT(
       WHERE id = ? AND business_area IN (${placeholders})
     `, [parseInt(id), ...userBusinessAreas]);
 
-    return NextResponse.json(updatedControl);
+    return NextResponse.json({ success: true, data: updatedControl });
   } catch (error) {
     console.error('Error updating performance monitoring control:', error);
     return NextResponse.json(
-      { error: 'Failed to update performance monitoring control' },
+      { success: false, error: 'Failed to update performance monitoring control' },
       { status: 500 }
     );
   }
@@ -161,7 +161,7 @@ export async function DELETE(
     `, queryParams);
 
     if (!existingControl) {
-      return NextResponse.json({ error: 'Performance monitoring control not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Performance monitoring control not found' }, { status: 404 });
     }
 
     const result = await query(`
@@ -170,7 +170,7 @@ export async function DELETE(
     `, queryParams);
 
     if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
-      return NextResponse.json({ error: 'Performance monitoring control not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Performance monitoring control not found' }, { status: 404 });
     }
 
     return NextResponse.json(

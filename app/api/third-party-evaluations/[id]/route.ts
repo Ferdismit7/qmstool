@@ -24,14 +24,14 @@ export async function GET(
     });
 
     if (!evaluation) {
-      return NextResponse.json({ error: 'Evaluation not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Evaluation not found' }, { status: 404 });
     }
 
-    return NextResponse.json(evaluation);
+    return NextResponse.json({ success: true, data: evaluation });
   } catch (error) {
     console.error('Error fetching third-party evaluation:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch evaluation' },
+      { success: false, error: 'Failed to fetch evaluation' },
       { status: 500 }
     );
   }
@@ -89,11 +89,11 @@ export async function PUT(
       }
     });
 
-    return NextResponse.json(evaluation);
+    return NextResponse.json({ success: true, data: evaluation });
   } catch (error) {
     console.error('Error updating third-party evaluation:', error);
     return NextResponse.json(
-      { error: 'Failed to update evaluation' },
+      { success: false, error: 'Failed to update evaluation' },
       { status: 500 }
     );
   }

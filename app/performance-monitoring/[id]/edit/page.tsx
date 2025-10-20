@@ -39,8 +39,11 @@ export default function EditPerformanceMonitoringPage({
         setError(null);
         const response = await fetch(`/api/performance-monitoring/${id}`);
         if (!response.ok) throw new Error('Failed to fetch control');
-        const data = await response.json();
-        setControl(data);
+        const responseData = await response.json();
+        if (!responseData.success) {
+          throw new Error(responseData.error || 'Failed to fetch control');
+        }
+        setControl(responseData.data);
       } catch (err) {
         console.error('Error fetching control:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch control');

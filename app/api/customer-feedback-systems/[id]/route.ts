@@ -32,14 +32,14 @@ export async function GET(
     });
 
     if (!feedbackSystem) {
-      return NextResponse.json({ error: 'Feedback system not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Feedback system not found' }, { status: 404 });
     }
 
-    return NextResponse.json(feedbackSystem);
+    return NextResponse.json({ success: true, data: feedbackSystem });
   } catch (error) {
     console.error('Error fetching customer feedback system:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch feedback system' },
+      { success: false, error: 'Failed to fetch feedback system' },
       { status: 500 }
     );
   }
@@ -88,11 +88,11 @@ export async function PUT(
       }
     });
 
-    return NextResponse.json(feedbackSystem);
+    return NextResponse.json({ success: true, data: feedbackSystem });
   } catch (error) {
     console.error('Error updating customer feedback system:', error);
     return NextResponse.json(
-      { error: 'Failed to update feedback system' },
+      { success: false, error: 'Failed to update feedback system' },
       { status: 500 }
     );
   }

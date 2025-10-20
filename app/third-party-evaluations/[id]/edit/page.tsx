@@ -65,7 +65,12 @@ export default function EditThirdPartyEvaluationPage() {
         // Fetch evaluation data
         const evaluationResponse = await fetch(`/api/third-party-evaluations/${evaluationId}`);
         if (evaluationResponse.ok) {
-          const evaluationData = await evaluationResponse.json();
+          const responseData = await evaluationResponse.json();
+          if (!responseData.success) {
+            throw new Error(responseData.error || 'Failed to fetch evaluation');
+          }
+          
+          const evaluationData = responseData.data;
           setEvaluation(evaluationData);
           
           // Format date for input field

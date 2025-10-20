@@ -292,43 +292,49 @@ export default function DocumentDetail({ params }: { params: Promise<{ id: strin
                   })() : 'Not specified'}
                 </p>
               </div>
-              {document.file_name && (
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Attached File</label>
-                  <div className="flex items-center gap-3 mt-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 text-brand-white">
-                        <FiFileText size={16} />
-                        <span className="text-sm">{document.file_name}</span>
-                      </div>
-                      {document.file_size && (
-                        <p className="text-xs text-brand-gray3 mt-1">
-                          {(document.file_size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleView}
-                        className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
-                        title="View document"
-                      >
-                        <FiEye size={16} />
-                      </button>
-                      <button
-                        onClick={handleDownload}
-                        className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
-                        title="Download document"
-                      >
-                        <FiDownload size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
+
+        {/* Attached File */}
+        {document.file_name && (
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-brand-gray3 mb-2">
+              Attached File
+            </label>
+            <div className="bg-brand-gray1 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 text-brand-white">
+                    <FiFileText size={16} />
+                    <span className="text-sm">{document.file_name}</span>
+                  </div>
+                  {document.file_size && (
+                    <p className="text-xs text-brand-gray3 mt-1">
+                      {(document.file_size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleView}
+                    className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                    title="View document"
+                  >
+                    <FiEye size={16} />
+                  </button>
+                  <button
+                    onClick={handleDownload}
+                    className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                    title="Download document"
+                  >
+                    <FiDownload size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Remarks */}
         {document.remarks && (

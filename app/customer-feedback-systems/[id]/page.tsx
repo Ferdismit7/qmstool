@@ -8,30 +8,20 @@ import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
 interface CustomerFeedbackSystem {
   id: number;
   business_area: string;
-  sub_business_area?: string;
-  feedback_type?: string;
-  system_name?: string;
-  system_description?: string;
-  collection_method?: string;
-  feedback_categories?: string;
-  response_time_target?: string;
-  escalation_procedures?: string;
-  analysis_method?: string;
-  reporting_frequency?: string;
-  improvement_actions?: string;
-  satisfaction_target?: string;
-  current_satisfaction?: string;
-  last_review_date?: string;
-  next_review_date?: string;
-  responsible_person?: string;
-  status?: string;
-  progress_percentage?: number;
-  notes?: string;
+  has_feedback_system: 'Yes' | 'No' | 'Planned';
+  document_reference: string;
+  last_review_date: string;
+  status_percentage: number;
+  doc_status: 'On-Track' | 'Completed' | 'Minor Challenges' | 'Major Challenges' | 'Not Started';
+  progress: 'To be reviewed' | 'Completed' | 'In progress' | 'New';
+  notes: string;
   file_url?: string;
   file_name?: string;
   file_size?: number;
   file_type?: string;
   uploaded_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function CustomerFeedbackSystemDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -195,23 +185,16 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
               <div>
                 <label className="text-sm font-medium text-brand-gray3">Business Area</label>
                 <p className="text-brand-white">{system.business_area}</p>
-                {system.sub_business_area && (
-                  <p className="text-sm text-brand-gray3">{system.sub_business_area}</p>
-                )}
               </div>
               <div>
-                <label className="text-sm font-medium text-brand-gray3">System Name</label>
-                <p className="text-brand-white">{system.system_name || 'Not specified'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-brand-gray3">Feedback Type</label>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(system.feedback_type || '')}`}>
-                  {system.feedback_type || 'Not set'}
+                <label className="text-sm font-medium text-brand-gray3">Has Feedback System</label>
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(system.has_feedback_system || '')}`}>
+                  {system.has_feedback_system || 'Not set'}
                 </span>
               </div>
               <div>
-                <label className="text-sm font-medium text-brand-gray3">Responsible Person</label>
-                <p className="text-brand-white">{system.responsible_person || 'Not specified'}</p>
+                <label className="text-sm font-medium text-brand-gray3">Document Reference</label>
+                <p className="text-brand-white">{system.document_reference || 'Not specified'}</p>
               </div>
             </div>
           </div>
@@ -223,22 +206,20 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-medium text-brand-gray3">Status</label>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(system.status || '')}`}>
-                  {system.status || 'Not set'}
+                <label className="text-sm font-medium text-brand-gray3">Document Status</label>
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(system.doc_status || '')}`}>
+                  {system.doc_status || 'Not set'}
                 </span>
               </div>
               <div>
                 <label className="text-sm font-medium text-brand-gray3">Progress</label>
-                <p className="text-brand-white font-medium">{system.progress_percentage || 0}%</p>
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(system.progress || '')}`}>
+                  {system.progress || 'Not set'}
+                </span>
               </div>
               <div>
-                <label className="text-sm font-medium text-brand-gray3">Satisfaction Target</label>
-                <p className="text-brand-white">{system.satisfaction_target || 'Not set'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-brand-gray3">Current Satisfaction</label>
-                <p className="text-brand-white">{system.current_satisfaction || 'Not measured'}</p>
+                <label className="text-sm font-medium text-brand-gray3">Status Percentage</label>
+                <p className="text-brand-white font-medium">{system.status_percentage || 0}%</p>
               </div>
             </div>
           </div>
@@ -258,17 +239,6 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
                     const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
                     return adjustedDate.toLocaleDateString('en-GB');
                   })() : 'Not set'}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-brand-gray3">Next Review Date</label>
-                <p className="text-brand-white">
-                  {system.next_review_date ? (() => {
-                    const date = new Date(system.next_review_date);
-                    const userTimezoneOffset = date.getTimezoneOffset() * 60000;
-                    const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
-                    return adjustedDate.toLocaleDateString('en-GB');
-                  })() : 'Not scheduled'}
                 </p>
               </div>
               {system.file_name && (
@@ -308,78 +278,6 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
             </div>
           </div>
         </div>
-
-        {/* System Description */}
-        {system.system_description && (
-          <div className="mt-6 pt-6 border-t border-brand-gray1">
-            <h3 className="text-lg font-semibold text-brand-white mb-3">System Description</h3>
-            <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap">
-              {system.system_description}
-            </p>
-          </div>
-        )}
-
-        {/* Collection & Analysis Methods */}
-        <div className="mt-6 pt-6 border-t border-brand-gray1">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-semibold text-brand-white mb-3">Collection Methods</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Collection Method</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.collection_method || 'Not specified'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Feedback Categories</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.feedback_categories || 'Not specified'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Response Time Target</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.response_time_target || 'Not specified'}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-brand-white mb-3">Analysis & Reporting</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Analysis Method</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.analysis_method || 'Not specified'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Reporting Frequency</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.reporting_frequency || 'Not specified'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-brand-gray3">Escalation Procedures</label>
-                  <p className="text-brand-white bg-brand-gray1/30 p-3 rounded-lg whitespace-pre-wrap">
-                    {system.escalation_procedures || 'Not specified'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Improvement Actions */}
-        {system.improvement_actions && (
-          <div className="mt-6 pt-6 border-t border-brand-gray1">
-            <h3 className="text-lg font-semibold text-brand-white mb-3">Improvement Actions</h3>
-            <p className="text-brand-white bg-brand-gray1/30 p-4 rounded-lg whitespace-pre-wrap">
-              {system.improvement_actions}
-            </p>
-          </div>
-        )}
 
         {/* Notes */}
         {system.notes && (

@@ -1,7 +1,21 @@
 import NextAuth from "next-auth";
 import { authOptions } from "@/lib/auth-config";
+import { initializeSecrets } from "@/lib/awsSecretsManager";
 
-// Create NextAuth handler with configuration
-const handler = NextAuth(authOptions);
+// Initialize secrets before creating the NextAuth handler
+async function getHandler() {
+  await initializeSecrets();
+  return NextAuth(authOptions);
+}
 
-export { handler as GET, handler as POST };
+export const GET = async (req: Request) => {
+  const handler = await getHandler();
+  // @ts-ignore NextAuth returns a handler compatible with Next.js route
+  return handler(req);
+};
+
+export const POST = async (req: Request) => {
+  const handler = await getHandler();
+  // @ts-ignore NextAuth returns a handler compatible with Next.js route
+  return handler(req);
+};
