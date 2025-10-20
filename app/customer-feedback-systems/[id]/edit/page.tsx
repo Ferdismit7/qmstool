@@ -5,26 +5,6 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { FiArrowLeft, FiSave } from 'react-icons/fi';
 
-// Local type retained for reference only; not directly used in component logic
-type CustomerFeedbackSystem = {
-  id: number;
-  business_area: string;
-  has_feedback_system: 'Yes' | 'No' | 'Planned';
-  document_reference: string;
-  last_review_date: string;
-  status_percentage: number;
-  doc_status: 'On-Track' | 'Completed' | 'Minor Challenges' | 'Major Challenges' | 'Not Started';
-  progress: 'To be reviewed' | 'Completed' | 'In progress' | 'New';
-  notes: string;
-  file_url?: string;
-  file_name?: string;
-  file_size?: number;
-  file_type?: string;
-  uploaded_at?: string;
-  created_at: string;
-  updated_at: string;
-};
-
 export default function EditCustomerFeedbackSystemPage() {
   const router = useRouter();
   const params = useParams();

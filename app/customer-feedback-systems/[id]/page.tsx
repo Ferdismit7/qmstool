@@ -161,7 +161,7 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-brand-white">Customer Feedback System Details</h1>
-            <p className="text-brand-gray3 mt-1">{system.system_name || `System ${system.id}`}</p>
+            <p className="text-brand-gray3 mt-1">{`System ${system.id}`}</p>
           </div>
         </div>
         <Link

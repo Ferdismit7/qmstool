@@ -10,12 +10,10 @@ async function getHandler() {
 
 export const GET = async (req: Request) => {
   const handler = await getHandler();
-  // @ts-expect-error NextAuth returns a handler compatible with Next.js route
   return handler(req);
 };
 
 export const POST = async (req: Request) => {
   const handler = await getHandler();
-  // @ts-expect-error NextAuth returns a handler compatible with Next.js route
   return handler(req);
 };
