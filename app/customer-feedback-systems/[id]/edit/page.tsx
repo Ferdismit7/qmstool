@@ -5,7 +5,8 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { FiArrowLeft, FiSave } from 'react-icons/fi';
 
-interface CustomerFeedbackSystem {
+// Local type retained for reference only; not directly used in component logic
+type CustomerFeedbackSystem = {
   id: number;
   business_area: string;
   has_feedback_system: 'Yes' | 'No' | 'Planned';
@@ -22,7 +23,7 @@ interface CustomerFeedbackSystem {
   uploaded_at?: string;
   created_at: string;
   updated_at: string;
-}
+};
 
 export default function EditCustomerFeedbackSystemPage() {
   const router = useRouter();
