@@ -27,7 +27,7 @@ export async function GET() {
       
       // Check if we can create a NextAuth instance
       const NextAuth = (await import('next-auth')).default;
-      const testAuth = NextAuth(authOptions);
+      NextAuth(authOptions);
       console.log('✅ [Debug] NextAuth instance created successfully');
       
       return NextResponse.json({
