@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user, account }) {
       if (account) {
         token.accessToken = account.access_token;
         token.provider = account.provider;
@@ -37,8 +37,7 @@ export const authOptions: NextAuthOptions = {
           if (email) {
             const baseUsername = usernameFromEmail(email, name || null);
             // Make username unique if needed
-            let candidate = baseUsername;
-            let idx = 1;
+            const candidate = baseUsername;
             // Attempt up to 5 variations to avoid conflicts on the 20-char limit
             // Prefer stable username if available
             const existing = await prisma.user.findUnique({ where: { email } });
