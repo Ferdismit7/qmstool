@@ -15,10 +15,10 @@ async function getHandler() {
   return NextAuth(authOptions);
 }
 
-export const GET = async (req: Request, ctx: any) => {
+export const GET = async (req: Request, ctx: unknown) => {
   try {
     const handler = await getHandler();
-    const res = await handler(req as any, ctx as any);
+    const res = await handler(req as unknown as Request, ctx as unknown as Record<string, unknown>);
     try {
       // If NextAuth returned a 500, surface the body to help debugging
       if (typeof res?.status === 'number' && res.status >= 500) {
@@ -33,10 +33,10 @@ export const GET = async (req: Request, ctx: any) => {
   }
 };
 
-export const POST = async (req: Request, ctx: any) => {
+export const POST = async (req: Request, ctx: unknown) => {
   try {
     const handler = await getHandler();
-    const res = await handler(req as any, ctx as any);
+    const res = await handler(req as unknown as Request, ctx as unknown as Record<string, unknown>);
     try {
       if (typeof res?.status === 'number' && res.status >= 500) {
         const text = await res.text();
