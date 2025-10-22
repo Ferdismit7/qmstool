@@ -168,7 +168,7 @@ export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload
       console.log('No token found in cookies or headers – trying NextAuth JWT cookie fallback');
       try {
         const { getToken: getNextAuthToken } = await import('next-auth/jwt');
-        const nat = await getNextAuthToken({ req: request as unknown as Request, secret: process.env.NEXTAUTH_SECRET });
+        const nat = await getNextAuthToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
         if (nat?.email) {
           const username = (nat.name || nat.email || '').toString();
           const payload: JWTPayload = {
