@@ -141,7 +141,7 @@ export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload
     // Check if JWT_SECRET is available after initialization
     if (!process.env.JWT_SECRET) {
       console.warn('JWT_SECRET not available after initialization');
-      return null;
+      // Don't return yet – we can still try NextAuth session fallback
     }
 
     // First try to get token from HttpOnly cookies (for server-side requests)
@@ -165,7 +165,46 @@ export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload
     }
     
     if (!token) {
-      console.log('No token found in cookies or headers');
+      console.log('No token found in cookies or headers – trying NextAuth JWT cookie fallback');
+      try {
+        const { getToken: getNextAuthToken } = await import('next-auth/jwt');
+        const nat = await getNextAuthToken({ req: request as unknown as Request, secret: process.env.NEXTAUTH_SECRET });
+        if (nat?.email) {
+          const username = (nat.name || nat.email || '').toString();
+          const payload: JWTPayload = {
+            userId: 0,
+            email: nat.email as string,
+            businessArea: '',
+            username,
+          };
+          console.log('Using NextAuth JWT cookie fallback payload:', payload);
+          return payload;
+        }
+      } catch (jwtErr) {
+        console.log('NextAuth getToken fallback failed:', jwtErr);
+      }
+
+      console.log('Trying NextAuth session fallback');
+      try {
+        const { getServerSession } = await import('next-auth');
+        const { authOptions } = await import('@/lib/auth-config');
+        const session = await getServerSession(authOptions);
+        if (session?.user?.email) {
+          // Map minimal payload from session; downstream can resolve business areas by email
+          const username = (session.user.name || session.user.email || '').toString();
+          const payload: JWTPayload = {
+            userId: 0,
+            email: session.user.email as string,
+            businessArea: '',
+            username,
+          };
+          console.log('Using NextAuth session fallback payload:', payload);
+          return payload;
+        }
+      } catch (sessionErr) {
+        console.log('NextAuth session fallback failed:', sessionErr);
+      }
+      console.log('No token and no NextAuth session');
       return null;
     }
 
@@ -205,7 +244,9 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
     });
 
     if (!userRecord) {
-      return [];
+      console.log('No local user record for email, falling back to all business areas');
+      const allAreas = await prisma.businessAreas.findMany({ select: { business_area: true } });
+      return allAreas.map(a => a.business_area);
     }
 
     // Get all business areas for this user from user_business_areas table
@@ -216,9 +257,14 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
       ORDER BY business_area ASC
     ` as unknown as Array<{ business_area: string }>;
 
-    // If no business areas found in user_business_areas table, fall back to primary business area
-    if (userBusinessAreas.length === 0 && user.businessArea) {
-      return [user.businessArea];
+    // If no business areas mapped, fall back to all areas (authenticated via NextAuth)
+    if (userBusinessAreas.length === 0) {
+      if (user.businessArea) {
+        return [user.businessArea];
+      }
+      console.log('User has no mapped business areas, returning all areas fallback');
+      const allAreas = await prisma.businessAreas.findMany({ select: { business_area: true } });
+      return allAreas.map(a => a.business_area);
     }
 
     return userBusinessAreas.map((row: unknown) => (row as { business_area: string }).business_area);
@@ -227,7 +273,10 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
     // Fall back to JWT business area if query fails
     try {
       const user = await getUserFromToken(request);
-      return user?.businessArea ? [user.businessArea] : [];
+      if (user?.businessArea) return [user.businessArea];
+      console.log('Query failed and no JWT businessArea, returning all areas as last resort');
+      const allAreas = await prisma.businessAreas.findMany({ select: { business_area: true } });
+      return allAreas.map(a => a.business_area);
     } catch (fallbackError) {
       console.error('Fallback getUserFromToken also failed:', fallbackError);
       return [];
