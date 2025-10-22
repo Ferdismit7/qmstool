@@ -209,10 +209,11 @@ export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload
     }
 
     console.log('Attempting to verify JWT token...');
-    const decoded = jwt.verify<JWTPayload>(
+    // jsonwebtoken typings don't support generics; cast via unknown first
+    const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET as jwt.Secret
-    );
+    ) as unknown as JWTPayload;
     console.log('JWT verification successful:', decoded);
     return decoded;
   } catch (error) {
