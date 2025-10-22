@@ -1,5 +1,5 @@
 import { initializeSecrets } from "@/lib/awsSecretsManager";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 // Ensure this route runs on the Node.js runtime (some providers don't work on Edge)
 export const runtime = 'nodejs';
@@ -15,10 +15,10 @@ async function getHandler() {
   return NextAuth(authOptions);
 }
 
-export const GET = async (req: NextRequest, ctx: { params: { nextauth: string[] } }) => {
+export const GET = async (req: Request, ctx: any) => {
   try {
     const handler = await getHandler();
-    const res = await handler(req, ctx as unknown as Record<string, unknown>);
+    const res = await handler(req as any, ctx as any);
     try {
       // If NextAuth returned a 500, surface the body to help debugging
       if (typeof res?.status === 'number' && res.status >= 500) {
@@ -33,10 +33,10 @@ export const GET = async (req: NextRequest, ctx: { params: { nextauth: string[] 
   }
 };
 
-export const POST = async (req: NextRequest, ctx: { params: { nextauth: string[] } }) => {
+export const POST = async (req: Request, ctx: any) => {
   try {
     const handler = await getHandler();
-    const res = await handler(req, ctx as unknown as Record<string, unknown>);
+    const res = await handler(req as any, ctx as any);
     try {
       if (typeof res?.status === 'number' && res.status >= 500) {
         const text = await res.text();
