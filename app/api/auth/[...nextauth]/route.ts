@@ -1,5 +1,3 @@
-import NextAuth from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { initializeSecrets } from "@/lib/awsSecretsManager";
 import { NextResponse } from "next/server";
 
@@ -10,7 +8,10 @@ export const revalidate = 0;
 
 // Initialize secrets before creating the NextAuth handler
 async function getHandler() {
+  // Ensure secrets are loaded before importing auth config
   await initializeSecrets();
+  const NextAuth = (await import('next-auth')).default;
+  const { authOptions } = await import('@/lib/auth-config');
   return NextAuth(authOptions);
 }
 
