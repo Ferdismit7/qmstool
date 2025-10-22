@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
-import {prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+
+const usernameFromEmail = (email?: string | null, fallback?: string | null) => {
+  const base = (email?.split('@')[0] || fallback || 'user')
+    .replace(/[^a-zA-Z0-9_\-]/g, '')
+    .slice(0, 18);
+  return base || 'user';
+};
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,9 +18,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: tokenUser.userId },
-    });
+    // Prefer lookup by id when valid (>0), else fallback to email
+    let user = tokenUser.userId && tokenUser.userId > 0
+      ? await prisma.user.findUnique({ where: { id: tokenUser.userId } })
+      : null;
+
+    if (!user && tokenUser.email) {
+      user = await prisma.user.findUnique({ where: { email: tokenUser.email } });
+    }
+
+    // If still not found, auto-provision from session token
+    if (!user && tokenUser.email) {
+      const candidate = usernameFromEmail(tokenUser.email, tokenUser.username);
+      user = await prisma.user.upsert({
+        where: { email: tokenUser.email },
+        update: {},
+        create: { email: tokenUser.email, username: candidate },
+      });
+    }
 
     if (!user) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
