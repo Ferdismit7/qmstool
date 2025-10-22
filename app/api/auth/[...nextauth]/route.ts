@@ -18,9 +18,17 @@ async function getHandler() {
 export const GET = async (req: Request) => {
   try {
     const handler = await getHandler();
-    return handler(req);
+    const res = await handler(req);
+    try {
+      // If NextAuth returned a 500, surface the body to help debugging
+      if (typeof res?.status === 'number' && res.status >= 500) {
+        const text = await res.text();
+        return NextResponse.json({ success: false, route: 'GET', upstreamStatus: res.status, upstreamBody: text?.slice(0, 2000) }, { status: 500 });
+      }
+    } catch {}
+    return res;
   } catch (error) {
-    console.error('[NextAuth][GET] Initialization error:', error);
+    console.error('[NextAuth][GET] Initialization/handler error:', error);
     return NextResponse.json({ success: false, route: 'GET', error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 };
@@ -28,9 +36,16 @@ export const GET = async (req: Request) => {
 export const POST = async (req: Request) => {
   try {
     const handler = await getHandler();
-    return handler(req);
+    const res = await handler(req);
+    try {
+      if (typeof res?.status === 'number' && res.status >= 500) {
+        const text = await res.text();
+        return NextResponse.json({ success: false, route: 'POST', upstreamStatus: res.status, upstreamBody: text?.slice(0, 2000) }, { status: 500 });
+      }
+    } catch {}
+    return res;
   } catch (error) {
-    console.error('[NextAuth][POST] Initialization error:', error);
+    console.error('[NextAuth][POST] Initialization/handler error:', error);
     return NextResponse.json({ success: false, route: 'POST', error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 };
