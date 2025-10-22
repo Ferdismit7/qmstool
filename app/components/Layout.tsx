@@ -7,10 +7,12 @@ import LogoutButton from './LogoutButton';
 import PageTransition from './PageTransition';
 import Link from 'next/link';
 import { clientTokenUtils } from '@/lib/auth';
+import { useSession } from 'next-auth/react';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { data: session, status: sessionStatus } = useSession();
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -97,6 +99,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       setIsLoading(true);
       
+      // If NextAuth session is authenticated, trust it and set user
+      if (sessionStatus === 'authenticated' && session?.user) {
+        const derivedName = session.user.name || session.user.email || 'User';
+        setUser({ username: derivedName });
+        setIsLoading(false);
+        return;
+      }
+
       const token = clientTokenUtils.getToken();
       console.log('Initial token check:', token ? 'Token found' : 'No token');
       
@@ -134,7 +144,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const timer = setTimeout(initializeAuth, 200); // Increased delay to 200ms
     
     return () => clearTimeout(timer);
-  }, [fetchUserData]);
+  }, [fetchUserData, session, sessionStatus]);
 
   // Listen for storage changes (when authToken is updated)
   useEffect(() => {
@@ -171,7 +181,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [fetchUserData]);
 
   useEffect(() => {
-    if (!isLoading && !user && pathname !== '/auth') {
+    if (!isLoading && !user && pathname !== '/auth' && sessionStatus !== 'authenticated') {
       // Add a longer delay to prevent race conditions during token refresh
       const timer = setTimeout(() => {
         const token = clientTokenUtils.getToken();
@@ -190,7 +200,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       
       return () => clearTimeout(timer);
     }
-  }, [isLoading, user, pathname, router, fetchUserData]);
+  }, [isLoading, user, pathname, router, fetchUserData, sessionStatus]);
 
   const getInitials = (username: string) => {
     const initial = username.charAt(0).toUpperCase();
