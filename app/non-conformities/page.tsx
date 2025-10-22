@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Notification from '../components/Notification';
-import { clientTokenUtils } from '@/lib/auth';
 
 interface NonConformity {
   id: number;
@@ -60,27 +59,15 @@ export default function NonConformitiesPage() {
   const fetchNonConformities = useCallback(async () => {
     try {
       setIsLoading(true);
-      const token = clientTokenUtils.getToken();
-      
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch('/api/non-conformities', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await fetch('/api/non-conformities', { credentials: 'include' });
       
       if (!response.ok) {
         throw new Error('Failed to fetch non-conformities');
       }
       const data = await response.json();
-      if (data.success) {
-        setNonConformities(data.data);
-      } else {
-        throw new Error(data.error || 'Failed to fetch non-conformities');
-      }
+      // Support both {success,data} and array responses
+      const rows = Array.isArray(data) ? data : (data.data ?? []);
+      setNonConformities(rows);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -149,17 +136,9 @@ export default function NonConformitiesPage() {
     if (!nonConformityToDelete) return;
 
     try {
-      const token = clientTokenUtils.getToken();
-      
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
       const response = await fetch(`/api/non-conformities?id=${nonConformityToDelete.id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       if (!response.ok) {

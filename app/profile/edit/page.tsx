@@ -15,12 +15,7 @@ export default function EditProfilePage() {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        const response = await fetch('/api/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        const response = await fetch('/api/profile', { credentials: 'include' });
 
         if (!response.ok) {
           throw new Error('Failed to fetch user data');

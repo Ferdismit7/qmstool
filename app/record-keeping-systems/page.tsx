@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Notification from '../components/Notification';
-import { clientTokenUtils } from '@/lib/auth';
 
 interface RecordKeepingSystem {
   id: number;
@@ -63,27 +62,14 @@ export default function RecordKeepingSystemsPage() {
   const fetchRecordKeepingSystems = useCallback(async () => {
     try {
       setIsLoading(true);
-      const token = clientTokenUtils.getToken();
-      
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch('/api/record-keeping-systems', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await fetch('/api/record-keeping-systems', { credentials: 'include' });
       
       if (!response.ok) {
         throw new Error('Failed to fetch record keeping systems');
       }
       const data = await response.json();
-      if (data.success) {
-        setRecordKeepingSystems(data.data);
-      } else {
-        throw new Error(data.error || 'Failed to fetch record keeping systems');
-      }
+      const rows = Array.isArray(data) ? data : (data.data ?? []);
+      setRecordKeepingSystems(rows);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -142,17 +128,9 @@ export default function RecordKeepingSystemsPage() {
     if (!recordKeepingSystemToDelete) return;
 
     try {
-      const token = clientTokenUtils.getToken();
-      
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
       const response = await fetch(`/api/record-keeping-systems?id=${recordKeepingSystemToDelete.id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       if (!response.ok) {

@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Notification from '../components/Notification';
-import { clientTokenUtils } from '@/lib/auth';
 
 interface BusinessImprovement {
   id: number;
@@ -68,27 +67,14 @@ export default function BusinessImprovementsPage() {
   const fetchBusinessImprovements = useCallback(async () => {
     try {
       setIsLoading(true);
-      const token = clientTokenUtils.getToken();
-      
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch('/api/business-improvements', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await fetch('/api/business-improvements', { credentials: 'include' });
       
       if (!response.ok) {
         throw new Error('Failed to fetch business improvements');
       }
       const data = await response.json();
-      if (data.success) {
-        setBusinessImprovements(data.data);
-      } else {
-        throw new Error(data.error || 'Failed to fetch business improvements');
-      }
+      const rows = Array.isArray(data) ? data : (data.data ?? []);
+      setBusinessImprovements(rows);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -165,17 +151,9 @@ export default function BusinessImprovementsPage() {
     if (!businessImprovementToDelete) return;
 
     try {
-      const token = clientTokenUtils.getToken();
-      
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
       const response = await fetch(`/api/business-improvements?id=${businessImprovementToDelete.id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       if (!response.ok) {
