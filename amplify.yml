@@ -10,8 +10,6 @@ frontend:
         - node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('/tmp/secrets.json','utf8'));const p=encodeURIComponent(s.password);const db='mysql://'+s.username+':'+p+'@'+s.host+':'+s.port+'/qmstool';const envsh='export DATABASE_URL=\"'+db+'\"\nexport JWT_SECRET=\"'+s.JWT_SECRET+'\"\nexport NEXTAUTH_SECRET=\"'+s.NEXTAUTH_SECRET+'\"\nexport NEXTAUTH_URL=\"'+s.NEXTAUTH_URL+'\"\nexport OKTA_CLIENT_ID=\"'+s.OKTA_CLIENT_ID+'\"\nexport OKTA_CLIENT_SECRET=\"'+s.OKTA_CLIENT_SECRET+'\"\nexport OKTA_ISSUER=\"'+s.OKTA_ISSUER+'\"\nexport S3_BUCKET_NAME=\"'+s.S3_BUCKET_NAME+'\"\nexport REGION=\"'+s.REGION+'\"\nexport ACCESS_KEY_ID=\"'+s.ACCESS_KEY_ID+'\"\nexport SECRET_ACCESS_KEY=\"'+s.SECRET_ACCESS_KEY+'\"';const envfile='DATABASE_URL='+db+'\nJWT_SECRET='+s.JWT_SECRET+'\nNEXTAUTH_SECRET='+s.NEXTAUTH_SECRET+'\nNEXTAUTH_URL='+s.NEXTAUTH_URL+'\nOKTA_CLIENT_ID='+s.OKTA_CLIENT_ID+'\nOKTA_CLIENT_SECRET='+s.OKTA_CLIENT_SECRET+'\nOKTA_ISSUER='+s.OKTA_ISSUER+'\nS3_BUCKET_NAME='+s.S3_BUCKET_NAME+'\nREGION='+s.REGION+'\nACCESS_KEY_ID='+s.ACCESS_KEY_ID+'\nSECRET_ACCESS_KEY='+s.SECRET_ACCESS_KEY;fs.writeFileSync('/tmp/export_env.sh',envsh);fs.writeFileSync('.env.production.local',envfile);console.log('Environment files created');"
         - source /tmp/export_env.sh
         - echo "Environment variables exported for build and runtime"
-        - echo "Clearing caches (node_modules and .next)"
-        - rm -rf node_modules .next .next/cache || true
         - rm /tmp/secrets.json /tmp/export_env.sh
         - echo "Installing dependencies"
         - npm ci
