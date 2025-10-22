@@ -24,10 +24,9 @@ export async function GET(request: NextRequest) {
     });
 
     if (!userRecord) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      // Auto-provisioned users may not be in local DB yet; fall back to all areas
+      const allAreas = await prisma.businessAreas.findMany({ select: { business_area: true } });
+      return NextResponse.json({ businessAreas: allAreas.map(a => a.business_area) });
     }
 
     // Try to fetch business areas from user_business_areas table
@@ -46,9 +45,14 @@ export async function GET(request: NextRequest) {
       console.log('user_business_areas table does not exist or is empty, using primary business area');
     }
 
-    // If no business areas found in user_business_areas table, use primary business area
-    if (businessAreas.length === 0 && userRecord.business_area) {
-      businessAreas = [userRecord.business_area];
+    // If no business areas found in mapping, use primary business area or all areas as fallback
+    if (businessAreas.length === 0) {
+      if (userRecord.business_area) {
+        businessAreas = [userRecord.business_area];
+      } else {
+        const allAreas = await prisma.businessAreas.findMany({ select: { business_area: true } });
+        businessAreas = allAreas.map(a => a.business_area);
+      }
     }
 
     return NextResponse.json({

@@ -209,6 +209,10 @@ export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload
     }
 
     console.log('Attempting to verify JWT token...');
+    // Guard against bogus tokens like 'null' or 'undefined'
+    if (token === 'null' || token === 'undefined' || !token.trim()) {
+      throw new Error('Invalid bearer token placeholder');
+    }
     // jsonwebtoken typings don't support generics; cast via unknown first
     const decoded = jwt.verify(
       token,
@@ -217,7 +221,38 @@ export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload
     console.log('JWT verification successful:', decoded);
     return decoded;
   } catch (error) {
-    console.log('JWT verification failed:', error);
+    console.log('JWT verification failed, attempting NextAuth fallbacks:', error);
+    try {
+      const { getToken: getNextAuthToken } = await import('next-auth/jwt');
+      const nat = await getNextAuthToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+      if (nat?.email) {
+        const username = (nat.name || nat.email || '').toString();
+        const payload: JWTPayload = {
+          userId: 0,
+          email: nat.email as string,
+          businessArea: '',
+          username,
+        };
+        console.log('Using NextAuth JWT cookie after JWT failure:', payload);
+        return payload;
+      }
+    } catch {}
+    try {
+      const { getServerSession } = await import('next-auth');
+      const { authOptions } = await import('@/lib/auth-config');
+      const session = await getServerSession(authOptions);
+      if (session?.user?.email) {
+        const username = (session.user.name || session.user.email || '').toString();
+        const payload: JWTPayload = {
+          userId: 0,
+          email: session.user.email as string,
+          businessArea: '',
+          username,
+        };
+        console.log('Using NextAuth session after JWT failure:', payload);
+        return payload;
+      }
+    } catch {}
     return null;
   }
 };
