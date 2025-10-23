@@ -149,6 +149,9 @@ model BusinessDocumentRegister {
   businessareas      BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bdr_business_area")
   deletedBy          User?          @relation("BusinessDocumentDeletedBy", fields: [deleted_by], references: [id])
   linkedProcesses    BusinessProcessDocumentLink[]
+  // Document-to-document links
+  relatedDocumentsPrimary BusinessDocumentLink[] @relation("PrimaryDocument")
+  relatedDocumentsRelated BusinessDocumentLink[] @relation("RelatedDocument")
 
   @@index([business_area], map: "fk_bdr_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
@@ -175,6 +178,27 @@ model BusinessProcessDocumentLink {
   @@index([created_by], map: "idx_created_by")
   @@index([created_at], map: "idx_created_at")
   @@map("business_process_document_links")
+}
+
+/// Links between Business Documents (e.g., policy related to SOP)
+model BusinessDocumentLink {
+  id                   Int      @id @default(autoincrement())
+  primary_document_id  Int
+  related_document_id  Int
+  created_at           DateTime @default(now()) @db.Timestamp(0)
+  updated_at           DateTime @default(now()) @updatedAt @db.Timestamp(0)
+  created_by           Int?
+
+  primaryDocument      BusinessDocumentRegister @relation("PrimaryDocument", fields: [primary_document_id], references: [id], onDelete: Cascade)
+  relatedDocument      BusinessDocumentRegister @relation("RelatedDocument", fields: [related_document_id], references: [id], onDelete: Cascade)
+  createdBy            User? @relation("BusinessDocumentLinkCreatedBy", fields: [created_by], references: [id])
+
+  @@unique([primary_document_id, related_document_id], map: "unique_document_link_pair")
+  @@index([primary_document_id], map: "idx_primary_document_id")
+  @@index([related_document_id], map: "idx_related_document_id")
+  @@index([created_by], map: "idx_document_link_created_by")
+  @@index([created_at], map: "idx_document_link_created_at")
+  @@map("business_document_links")
 }
 
 model PerformanceMonitoringControl {
@@ -295,6 +319,7 @@ model User {
   deletedQMSAssessments QMSAssessment[] @relation("QMSAssessmentDeletedBy")
   createdBusinessQualityObjectiveProgress BusinessQualityObjectiveProgress[] @relation("BusinessQualityObjectiveProgressCreatedBy")
   createdBusinessProcessDocumentLinks BusinessProcessDocumentLink[] @relation("BusinessProcessDocumentLinkCreatedBy")
+  createdBusinessDocumentLinks BusinessDocumentLink[] @relation("BusinessDocumentLinkCreatedBy")
 
   @@index([business_area], map: "fk_use_business_area")
   @@map("users")

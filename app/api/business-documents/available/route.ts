@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const documentType = searchParams.get('documentType');
     const search = searchParams.get('search');
     const excludeProcessId = searchParams.get('excludeProcessId');
+    const excludeDocumentId = searchParams.get('excludeDocumentId');
 
     // Build where clause
     const whereClause: Record<string, unknown> = {
@@ -49,6 +50,14 @@ export async function GET(request: NextRequest) {
             business_process_id: processId
           }
         };
+      }
+    }
+
+    // Exclude a specific document (avoid linking a document to itself)
+    if (excludeDocumentId) {
+      const docId = parseInt(excludeDocumentId);
+      if (!isNaN(docId)) {
+        whereClause.id = { not: docId };
       }
     }
 

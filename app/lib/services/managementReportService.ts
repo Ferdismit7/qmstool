@@ -74,6 +74,50 @@ interface OperationalExcellenceMetrics {
   recurringIssues: number;
   improvementInitiatives: number;
   completedImprovements: number;
+  nonConformityMetrics: {
+    totalNonConformities: number;
+    openNonConformities: number;
+    closedNonConformities: number;
+    averageResolutionTime: number;
+    criticalNonConformities: number;
+    highPriorityNonConformities: number;
+    overdueNonConformities: number;
+  };
+  businessImprovementMetrics: {
+    totalImprovements: number;
+    completedImprovements: number;
+    inProgressImprovements: number;
+    plannedImprovements: number;
+    averageCompletionTime: number;
+    highPriorityImprovements: number;
+  };
+  recordKeepingMetrics: {
+    totalRecordSystems: number;
+    compliantSystems: number;
+    nonCompliantSystems: number;
+    averageComplianceScore: number;
+    overdueAudits: number;
+  };
+  performanceMonitoringMetrics: {
+    totalControls: number;
+    completedControls: number;
+    overdueControls: number;
+    averagePerformanceScore: number;
+    criticalControls: number;
+  };
+  thirdPartyEvaluationMetrics: {
+    totalEvaluations: number;
+    completedEvaluations: number;
+    pendingEvaluations: number;
+    averageEvaluationScore: number;
+    overdueEvaluations: number;
+  };
+  customerFeedbackMetrics: {
+    totalFeedbackSystems: number;
+    activeSystems: number;
+    averageSatisfactionScore: number;
+    responseRate: number;
+  };
 }
 
 interface ResourceManagementMetrics {
@@ -354,17 +398,224 @@ export class ManagementReportService {
   /**
    * Calculates operational excellence metrics
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private static async calculateOperationalExcellenceMetrics(businessArea: string): Promise<OperationalExcellenceMetrics> {
-    // Note: Non-conformities and improvements data would need to be implemented
-    // For now, returning placeholder data
+    // Fetch all operational data in parallel
+    const [
+      nonConformities,
+      businessImprovements,
+      recordKeepingSystems,
+      performanceControls,
+      thirdPartyEvaluations,
+      customerFeedbackSystems
+    ] = await Promise.all([
+      prisma.nonConformity.findMany({
+        where: {
+          business_area: businessArea,
+          deleted_at: null
+        }
+      }),
+      prisma.businessImprovement.findMany({
+        where: {
+          business_area: businessArea,
+          deleted_at: null
+        }
+      }),
+      prisma.recordKeepingSystem.findMany({
+        where: {
+          business_area: businessArea,
+          deleted_at: null
+        }
+      }),
+      prisma.performanceMonitoringControl.findMany({
+        where: {
+          business_area: businessArea,
+          deleted_at: null
+        }
+      }),
+      prisma.thirdPartyEvaluation.findMany({
+        where: {
+          business_area: businessArea,
+          deleted_at: null
+        }
+      }),
+      prisma.customerFeedbackSystem.findMany({
+        where: {
+          business_area: businessArea,
+          deleted_at: null
+        }
+      })
+    ]);
+
+    // Calculate Non-Conformity Metrics
+    const totalNonConformities = nonConformities.length;
+    const openNonConformities = nonConformities.filter(nc => 
+      ['Open', 'In Progress'].includes(nc.status || '')
+    ).length;
+    const closedNonConformities = nonConformities.filter(nc => nc.status === 'Closed').length;
+    const criticalNonConformities = nonConformities.filter(nc => nc.priority === 'Critical').length;
+    const highPriorityNonConformities = nonConformities.filter(nc => 
+      ['Critical', 'High'].includes(nc.priority || '')
+    ).length;
+    
+    // Calculate overdue non-conformities
+    const today = new Date();
+    const overdueNonConformities = nonConformities.filter(nc => {
+      if (!nc.target_date) return false;
+      return new Date(nc.target_date) < today && nc.status !== 'Closed';
+    }).length;
+
+    // Calculate average resolution time (in days)
+    const resolvedNonConformities = nonConformities.filter(nc => 
+      nc.status === 'Closed' && nc.created_at && nc.actual_resolution_date
+    );
+    const averageResolutionTime = resolvedNonConformities.length > 0
+      ? resolvedNonConformities.reduce((sum, nc) => {
+          const created = new Date(nc.created_at!);
+          const resolved = new Date(nc.actual_resolution_date!);
+          return sum + Math.ceil((resolved.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+        }, 0) / resolvedNonConformities.length
+      : 0;
+
+    // Calculate Business Improvement Metrics
+    const totalImprovements = businessImprovements.length;
+    const completedImprovements = businessImprovements.filter(bi => bi.status === 'Completed').length;
+    const inProgressImprovements = businessImprovements.filter(bi => bi.status === 'In Progress').length;
+    const plannedImprovements = businessImprovements.filter(bi => bi.status === 'Planned').length;
+    const highPriorityImprovements = businessImprovements.filter(bi => 
+      ['Critical', 'High'].includes(bi.priority || '')
+    ).length;
+
+    // Calculate average completion time for improvements
+    const completedImprovementsWithDates = businessImprovements.filter(bi => 
+      bi.status === 'Completed' && bi.created_at && bi.actual_completion_date
+    );
+    const averageCompletionTime = completedImprovementsWithDates.length > 0
+      ? completedImprovementsWithDates.reduce((sum, bi) => {
+          const created = new Date(bi.created_at!);
+          const completed = new Date(bi.actual_completion_date!);
+          return sum + Math.ceil((completed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+        }, 0) / completedImprovementsWithDates.length
+      : 0;
+
+    // Calculate Record Keeping Metrics
+    const totalRecordSystems = recordKeepingSystems.length;
+    const compliantSystems = recordKeepingSystems.filter(rks => 
+      rks.compliance_status === 'Compliant'
+    ).length;
+    const nonCompliantSystems = recordKeepingSystems.filter(rks => 
+      rks.compliance_status === 'Non-Compliant'
+    ).length;
+    
+    // Calculate average compliance score
+    const averageComplianceScore = totalRecordSystems > 0
+      ? recordKeepingSystems.reduce((sum, rks) => sum + (Number(rks.status_percentage) || 0), 0) / totalRecordSystems
+      : 0;
+
+    // Calculate overdue audits
+    const overdueAudits = recordKeepingSystems.filter(rks => {
+      if (!rks.next_audit_date) return false;
+      return new Date(rks.next_audit_date) < today;
+    }).length;
+
+    // Calculate Performance Monitoring Metrics
+    const totalControls = performanceControls.length;
+    const completedControls = performanceControls.filter(pc => pc.doc_status === 'Completed').length;
+    const overdueControls = performanceControls.filter(pc => {
+      if (!pc.target_date) return false;
+      return new Date(pc.target_date) < today && pc.doc_status !== 'Completed';
+    }).length;
+    const criticalControls = performanceControls.filter(pc => pc.priority === 'High').length;
+    
+    // Calculate average performance score
+    const averagePerformanceScore = totalControls > 0
+      ? performanceControls.reduce((sum, pc) => sum + (Number(pc.status_percentage) || 0), 0) / totalControls
+      : 0;
+
+    // Calculate Third Party Evaluation Metrics
+    const totalEvaluations = thirdPartyEvaluations.length;
+    const completedEvaluations = thirdPartyEvaluations.filter(tpe => 
+      tpe.evaluation_status === 'Completed'
+    ).length;
+    const pendingEvaluations = thirdPartyEvaluations.filter(tpe => 
+      tpe.evaluation_status === 'Pending'
+    ).length;
+    const overdueEvaluations = thirdPartyEvaluations.filter(tpe => {
+      if (!tpe.next_evaluation_date) return false;
+      return new Date(tpe.next_evaluation_date) < today;
+    }).length;
+    
+    // Calculate average evaluation score
+    const averageEvaluationScore = totalEvaluations > 0
+      ? thirdPartyEvaluations.reduce((sum, tpe) => sum + (Number(tpe.evaluation_score) || 0), 0) / totalEvaluations
+      : 0;
+
+    // Calculate Customer Feedback Metrics
+    const totalFeedbackSystems = customerFeedbackSystems.length;
+    const activeSystems = customerFeedbackSystems.filter(cfs => 
+      cfs.status === 'Active'
+    ).length;
+    
+    // Calculate average satisfaction score
+    const averageSatisfactionScore = totalFeedbackSystems > 0
+      ? customerFeedbackSystems.reduce((sum, cfs) => sum + (Number(cfs.satisfaction_score) || 0), 0) / totalFeedbackSystems
+      : 0;
+
+    // Calculate response rate
+    const responseRate = totalFeedbackSystems > 0
+      ? customerFeedbackSystems.reduce((sum, cfs) => sum + (Number(cfs.response_rate) || 0), 0) / totalFeedbackSystems
+      : 0;
+
     return {
-      openNonConformities: 0,
-      closedNonConformities: 0,
-      averageResolutionTime: 0,
-      recurringIssues: 0,
-      improvementInitiatives: 0,
-      completedImprovements: 0
+      openNonConformities,
+      closedNonConformities,
+      averageResolutionTime,
+      recurringIssues: 0, // Would need additional logic to identify recurring issues
+      improvementInitiatives: totalImprovements,
+      completedImprovements,
+      nonConformityMetrics: {
+        totalNonConformities,
+        openNonConformities,
+        closedNonConformities,
+        averageResolutionTime,
+        criticalNonConformities,
+        highPriorityNonConformities,
+        overdueNonConformities
+      },
+      businessImprovementMetrics: {
+        totalImprovements,
+        completedImprovements,
+        inProgressImprovements,
+        plannedImprovements,
+        averageCompletionTime,
+        highPriorityImprovements
+      },
+      recordKeepingMetrics: {
+        totalRecordSystems,
+        compliantSystems,
+        nonCompliantSystems,
+        averageComplianceScore,
+        overdueAudits
+      },
+      performanceMonitoringMetrics: {
+        totalControls,
+        completedControls,
+        overdueControls,
+        averagePerformanceScore,
+        criticalControls
+      },
+      thirdPartyEvaluationMetrics: {
+        totalEvaluations,
+        completedEvaluations,
+        pendingEvaluations,
+        averageEvaluationScore,
+        overdueEvaluations
+      },
+      customerFeedbackMetrics: {
+        totalFeedbackSystems,
+        activeSystems,
+        averageSatisfactionScore,
+        responseRate
+      }
     };
   }
 
@@ -418,25 +669,83 @@ export class ManagementReportService {
     customerFocus: CustomerFocusMetrics;
   }): number {
     const weights = {
-      qualityObjectives: 0.35, // Increased weight for actual percentage data
-      processManagement: 0.30, // Increased weight for actual percentage data
-      compliance: 0.25, // Increased weight for actual percentage data
-      riskManagement: 0.10, // Reduced weight since it's not percentage-based
-      operationalExcellence: 0.00, // No weight since it's placeholder data
-      resourceManagement: 0.00, // No weight since it's placeholder data
-      customerFocus: 0.00 // No weight since it's placeholder data
+      qualityObjectives: 0.25, // Core QMS component
+      processManagement: 0.20, // Core QMS component
+      compliance: 0.20, // Core QMS component
+      riskManagement: 0.15, // Important for risk mitigation
+      operationalExcellence: 0.15, // Now includes real data from all operational pages
+      resourceManagement: 0.03, // Training and development
+      customerFocus: 0.02 // Customer satisfaction
     };
 
     // Calculate risk score based on risk distribution
     const riskScore = 100 - (metrics.riskManagement.riskDistribution.high * 10);
 
+    // Calculate operational excellence score from multiple metrics
+    const operationalScore = this.calculateOperationalScore(metrics.operationalExcellence);
+
+    // Calculate resource management score
+    const resourceScore = metrics.resourceManagement.trainingSessionsCompleted > 0 ? 85 : 0;
+
+    // Calculate customer focus score
+    const customerScore = metrics.customerFocus.customerSatisfactionScore;
+
     const score = 
       (metrics.qualityObjectives.completionRate * weights.qualityObjectives) +
       (metrics.processManagement.completionRate * weights.processManagement) +
       (metrics.compliance.complianceRate * weights.compliance) +
-      (riskScore * weights.riskManagement);
+      (riskScore * weights.riskManagement) +
+      (operationalScore * weights.operationalExcellence) +
+      (resourceScore * weights.resourceManagement) +
+      (customerScore * weights.customerFocus);
 
     return Math.min(Math.max(score, 0), 100);
+  }
+
+  /**
+   * Calculates operational excellence score from multiple operational metrics
+   */
+  private static calculateOperationalScore(operationalMetrics: OperationalExcellenceMetrics): number {
+    const scores: number[] = [];
+
+    // Non-conformity score (lower is better)
+    const ncResolutionRate = operationalMetrics.nonConformityMetrics.totalNonConformities > 0
+      ? (operationalMetrics.nonConformityMetrics.closedNonConformities / operationalMetrics.nonConformityMetrics.totalNonConformities) * 100
+      : 100;
+    scores.push(ncResolutionRate);
+
+    // Business improvement score
+    const improvementRate = operationalMetrics.businessImprovementMetrics.totalImprovements > 0
+      ? (operationalMetrics.businessImprovementMetrics.completedImprovements / operationalMetrics.businessImprovementMetrics.totalImprovements) * 100
+      : 100;
+    scores.push(improvementRate);
+
+    // Record keeping compliance score
+    const recordComplianceRate = operationalMetrics.recordKeepingMetrics.totalRecordSystems > 0
+      ? (operationalMetrics.recordKeepingMetrics.compliantSystems / operationalMetrics.recordKeepingMetrics.totalRecordSystems) * 100
+      : 100;
+    scores.push(recordComplianceRate);
+
+    // Performance monitoring score
+    const performanceRate = operationalMetrics.performanceMonitoringMetrics.totalControls > 0
+      ? (operationalMetrics.performanceMonitoringMetrics.completedControls / operationalMetrics.performanceMonitoringMetrics.totalControls) * 100
+      : 100;
+    scores.push(performanceRate);
+
+    // Third party evaluation score
+    const evaluationRate = operationalMetrics.thirdPartyEvaluationMetrics.totalEvaluations > 0
+      ? (operationalMetrics.thirdPartyEvaluationMetrics.completedEvaluations / operationalMetrics.thirdPartyEvaluationMetrics.totalEvaluations) * 100
+      : 100;
+    scores.push(evaluationRate);
+
+    // Customer feedback score
+    const feedbackScore = operationalMetrics.customerFeedbackMetrics.totalFeedbackSystems > 0
+      ? operationalMetrics.customerFeedbackMetrics.averageSatisfactionScore
+      : 100;
+    scores.push(feedbackScore);
+
+    // Return average of all operational scores
+    return scores.reduce((sum, score) => sum + score, 0) / scores.length;
   }
 
   /**

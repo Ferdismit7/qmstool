@@ -51,6 +51,11 @@ export default function CategorizedDocumentsDisplay({
 
   // Group documents by type
   const categorizedDocuments = linkedDocuments.reduce((acc, link) => {
+    // Safety check for businessDocument
+    if (!link.businessDocument) {
+      console.warn('Linked document missing businessDocument:', link);
+      return acc;
+    }
     const type = link.businessDocument.document_type || 'Other';
     if (!acc[type]) {
       acc[type] = [];
@@ -159,7 +164,7 @@ export default function CategorizedDocumentsDisplay({
         <FiFileText size={48} className="mx-auto text-brand-gray3 mb-3" />
         <h3 className="text-lg font-medium text-brand-white mb-2">No Documents Linked</h3>
         <p className="text-brand-gray3">
-          This business process doesn&apos;t have any linked documents yet.
+          No linked documents yet.
         </p>
       </div>
     );
@@ -213,7 +218,14 @@ export default function CategorizedDocumentsDisplay({
               {isExpanded && (
                 <div className="border-t border-brand-gray1">
                   <div className="p-4 space-y-3">
-                    {documents.map((link) => (
+                    {documents.map((link) => {
+                      // Safety check for businessDocument
+                      if (!link.businessDocument) {
+                        console.warn('Linked document missing businessDocument:', link);
+                        return null;
+                      }
+                      
+                      return (
                       <div
                         key={link.id}
                         className="bg-brand-gray1/50 border border-brand-gray1/50 rounded-lg p-4 hover:border-brand-primary/30 transition-colors cursor-pointer"
@@ -322,7 +334,8 @@ export default function CategorizedDocumentsDisplay({
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

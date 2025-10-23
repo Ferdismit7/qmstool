@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { ManagementReportService } from '@/app/lib/services/managementReportService';
 
 export async function GET() {
   try {
@@ -58,9 +59,21 @@ export async function GET() {
       // Count minor/major challenges (from businessprocessregister only)
       const minorChallenges = processes.filter((p: unknown) => (p as { progress: string }).progress === 'Minor Challenges').length;
       const majorChallenges = processes.filter((p: unknown) => (p as { progress: string }).progress === 'Major Challenges').length;
+      
+      // Get management report health score for this business area
+      let overallHealthScore = avgProgress; // fallback to avgProgress
+      try {
+        const managementReport = await ManagementReportService.generateManagementReport(area);
+        overallHealthScore = managementReport.overallHealthScore;
+      } catch (error) {
+        console.warn(`Could not generate management report for ${area}:`, error);
+        // Use avgProgress as fallback
+      }
+      
       results.push({
         businessArea: area,
         overallProgress: avgProgress,
+        overallHealthScore: Math.round(overallHealthScore),
         minorChallenges,
         majorChallenges
       });

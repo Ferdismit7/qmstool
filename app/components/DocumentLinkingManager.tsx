@@ -34,7 +34,8 @@ interface LinkedDocument {
 }
 
 interface DocumentLinkingManagerProps {
-  businessProcessId: number;
+  businessProcessId?: number;
+  businessDocumentId?: number;
   businessArea?: string;
   linkedDocuments: LinkedDocument[];
   onLinkedDocumentsChange: (documents: LinkedDocument[]) => void;
@@ -44,6 +45,7 @@ interface DocumentLinkingManagerProps {
 
 export default function DocumentLinkingManager({
   businessProcessId,
+  businessDocumentId,
   businessArea,
   linkedDocuments,
   onLinkedDocumentsChange,
@@ -65,15 +67,18 @@ export default function DocumentLinkingManager({
   const handleLinkDocuments = async (documentIds: number[]) => {
     try {
       setError(null);
-
-      const response = await fetch(`/api/business-processes/${businessProcessId}/documents`, {
+      const endpoint = businessProcessId
+        ? `/api/business-processes/${businessProcessId}/documents`
+        : `/api/business-document-registry/${businessDocumentId}/links`;
+      const payload = businessProcessId
+        ? { documentIds }
+        : { relatedDocumentIds: documentIds };
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          documentIds: documentIds
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
@@ -95,7 +100,10 @@ export default function DocumentLinkingManager({
 
   const handleUnlinkDocument = async (documentId: number) => {
     try {
-      const response = await fetch(`/api/business-processes/${businessProcessId}/documents?documentId=${documentId}`, {
+      const url = businessProcessId
+        ? `/api/business-processes/${businessProcessId}/documents?documentId=${documentId}`
+        : `/api/business-document-registry/${businessDocumentId}/links?relatedId=${documentId}`;
+      const response = await fetch(url, {
         method: 'DELETE',
       });
 
@@ -117,11 +125,29 @@ export default function DocumentLinkingManager({
 
   const fetchLinkedDocuments = async () => {
     try {
-      const response = await fetch(`/api/business-processes/${businessProcessId}/documents`);
+      const url = businessProcessId
+        ? `/api/business-processes/${businessProcessId}/documents`
+        : `/api/business-document-registry/${businessDocumentId}/links`;
+      const response = await fetch(url);
       const result = await response.json();
 
       if (result.success) {
-        onLinkedDocumentsChange(result.data);
+        if (businessDocumentId) {
+          // For document-to-document linking, normalize the data to match the expected structure
+          const normalized = (result.data as any[]).map((link) => ({
+            id: link.id,
+            business_process_id: 0, // Not applicable for document-to-document links
+            business_document_id: link.related_document_id,
+            created_at: link.created_at,
+            updated_at: link.updated_at,
+            created_by: link.created_by ?? null,
+            businessDocument: link.relatedDocument, // Map relatedDocument to businessDocument
+            createdBy: link.createdBy ?? null,
+          }));
+          onLinkedDocumentsChange(normalized);
+        } else {
+          onLinkedDocumentsChange(result.data);
+        }
       }
     } catch (err) {
       console.error('Error fetching linked documents:', err);
@@ -180,7 +206,8 @@ export default function DocumentLinkingManager({
         onLinkDocuments={handleLinkDocuments}
         businessArea={businessArea}
         excludeProcessId={businessProcessId}
-        businessProcessName={`Business Process #${businessProcessId}`}
+        excludeDocumentId={businessDocumentId}
+        businessProcessName={businessProcessId ? `Business Process #${businessProcessId}` : undefined}
       />
     </div>
   );

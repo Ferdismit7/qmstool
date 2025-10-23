@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText, FiTrash2 } from 'react-icons/fi';
 import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
+import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
+import Notification from '@/app/components/Notification';
+import { useRouter } from 'next/navigation';
 
 interface NonConformity {
   id: number;
@@ -32,9 +35,22 @@ interface NonConformity {
 }
 
 export default function NonConformityDetail({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
   const [nonConformity, setNonConformity] = useState<NonConformity | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     const fetchNonConformity = async () => {
@@ -144,6 +160,48 @@ export default function NonConformityDetail({ params }: { params: Promise<{ id: 
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!nonConformity) return;
+
+    try {
+      const response = await fetch('/api/non-conformities/soft-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: nonConformity.id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete non-conformity');
+      }
+
+      await response.json();
+      
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Success',
+        message: 'Non-conformity successfully deleted'
+      });
+      
+      // Redirect to the list page after successful deletion
+      setTimeout(() => {
+        router.push('/non-conformities');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Delete failed:', error);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to delete non-conformity'
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -192,6 +250,13 @@ export default function NonConformityDetail({ params }: { params: Promise<{ id: 
           <FiEdit2 size={16} />
           Edit Non-Conformity
         </Link>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          <FiTrash2 size={16} />
+          Delete Non-Conformity
+        </button>
       </div>
 
       {/* Non-Conformity Details */}
@@ -388,6 +453,24 @@ export default function NonConformityDetail({ params }: { params: Promise<{ id: 
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        itemName={nonConformity?.nc_number || `NC-${nonConformity?.id}` || ''}
+        itemType="non-conformity"
+      />
+
+      {/* Notification */}
+      <Notification
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+      />
     </div>
   );
 }

@@ -77,7 +77,20 @@ export async function GET(
     return NextResponse.json({
       success: true,
       objectiveId,
-      progressEntries
+      progressEntries: progressEntries.map((e) => ({
+        id: e.id,
+        month: e.month,
+        year: e.year,
+        percentage: Number(e.percentage),
+        notes: e.notes ?? undefined,
+        created_at: e.created_at as unknown as string,
+        updated_at: e.updated_at as unknown as string,
+        createdBy: e.createdBy ? {
+          id: e.createdBy.id,
+          username: e.createdBy.username ?? undefined,
+          email: e.createdBy.email ?? undefined,
+        } : undefined,
+      }))
     });
 
   } catch (error) {

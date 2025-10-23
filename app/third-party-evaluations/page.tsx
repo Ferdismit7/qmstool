@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
+import { FiPlus } from 'react-icons/fi';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Notification from '../components/Notification';
 
@@ -40,7 +40,6 @@ export default function ThirdPartyEvaluationsPage() {
     title: '',
     message: ''
   });
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
   useEffect(() => {
     fetchEvaluations();
@@ -150,23 +149,6 @@ export default function ThirdPartyEvaluationsPage() {
     }
   };
 
-  const handleDropdownToggle = (evaluationId: number) => {
-    setOpenDropdown(openDropdown === evaluationId ? null : evaluationId);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openDropdown !== null) {
-        const target = event.target as Element;
-        if (!target.closest('.dropdown-overlay')) {
-          setOpenDropdown(null);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdown]);
 
   const handleViewEvaluation = (evaluationId: number) => {
     router.push(`/third-party-evaluations/${evaluationId}`);
@@ -227,14 +209,11 @@ export default function ThirdPartyEvaluationsPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                   Last Evaluation
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider w-32">
                   Status
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                   Progress
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                  Actions
                 </th>
               </tr>
             </thead>
@@ -288,9 +267,9 @@ export default function ThirdPartyEvaluationsPage() {
                         return adjustedDate.toLocaleDateString('en-GB');
                       })() : 'Not set'}
                     </td>
-                    <td className="px-4 py-3 align-top">
+                    <td className="px-4 py-3 align-top w-32">
                       <div>
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(evaluation.doc_status)}`}>
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${getStatusColor(evaluation.doc_status)}`}>
                           {evaluation.doc_status}
                         </span>
                         <div className="text-xs text-brand-gray3 mt-1">
@@ -302,97 +281,6 @@ export default function ThirdPartyEvaluationsPage() {
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(evaluation.progress)}`}>
                         {evaluation.progress}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      {/* Desktop Actions */}
-                      <div className="hidden md:flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Link
-                          href={`/third-party-evaluations/${evaluation.id}`}
-                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                          title="View details"
-                        >
-                          <FiEye size={16} />
-                        </Link>
-                        <Link
-                          href={`/third-party-evaluations/${evaluation.id}/edit`}
-                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                          title="Edit evaluation"
-                        >
-                          <FiEdit2 size={16} />
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteClick(evaluation)}
-                          className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
-                          title="Delete evaluation"
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
-                      </div>
-
-                      {/* Mobile Actions Dropdown */}
-                      <div className="md:hidden relative">
-                        <button
-                          onClick={() => handleDropdownToggle(evaluation.id)}
-                          className="text-brand-gray3 hover:text-brand-white transition-colors"
-                        >
-                          <FiMoreVertical size={16} />
-                        </button>
-
-                        {/* Mobile Overlay */}
-                        {openDropdown === evaluation.id && (
-                          <div className="dropdown-overlay fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                            <div 
-                              className="bg-brand-dark border border-brand-gray2 rounded-lg p-6 w-full max-w-sm"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div className="text-lg font-semibold text-brand-white mb-4 text-left">
-                                Actions for &ldquo;{evaluation.supplier_name}&rdquo;
-                              </div>
-                              <div className="space-y-3">
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleViewEvaluation(evaluation.id);
-                                  }}
-                                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
-                                >
-                                  <FiEye size={18} />
-                                  View Details
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleEditEvaluation(evaluation.id);
-                                  }}
-                                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
-                                >
-                                  <FiEdit2 size={18} />
-                                  Edit Evaluation
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleDeleteClick(evaluation);
-                                  }}
-                                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                >
-                                  <FiTrash2 size={18} />
-                                  Delete Evaluation
-                                </button>
-                                <button
-                                  onClick={() => setOpenDropdown(null)}
-                                  className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-left"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
                     </td>
                   </tr>
                 ))

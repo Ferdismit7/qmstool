@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical, FiTrendingUp } from 'react-icons/fi';
+import { FiPlus } from 'react-icons/fi';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Notification from '../components/Notification';
 
@@ -33,7 +33,6 @@ export default function BusinessQualityObjectivesPage() {
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [objectiveToDelete, setObjectiveToDelete] = useState<BusinessQualityObjective | null>(null);
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [notification, setNotification] = useState({
     isOpen: false,
     type: 'success' as 'success' | 'error',
@@ -146,39 +145,6 @@ export default function BusinessQualityObjectivesPage() {
     }
   };
 
-  const handleDropdownToggle = (objectiveId: number) => {
-    setOpenDropdown(openDropdown === objectiveId ? null : objectiveId);
-  };
-
-  const handleViewObjective = (objectiveId: number) => {
-    console.log('View objective clicked:', objectiveId);
-    setOpenDropdown(null);
-    router.push(`/business-quality-objectives/${objectiveId}`);
-  };
-
-  const handleEditObjective = (objectiveId: number) => {
-    console.log('Edit objective clicked:', objectiveId);
-    setOpenDropdown(null);
-    router.push(`/business-quality-objectives/${objectiveId}/edit`);
-  };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Don't close if clicking inside the dropdown
-      const target = event.target as Element;
-      if (target.closest('.dropdown-overlay')) {
-        return;
-      }
-      
-      if (openDropdown !== null) {
-        setOpenDropdown(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdown]);
 
   if (isLoading) {
     return (
@@ -232,7 +198,7 @@ export default function BusinessQualityObjectivesPage() {
                   <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Responsible
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider w-32">
                     Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
@@ -241,15 +207,12 @@ export default function BusinessQualityObjectivesPage() {
                   <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Review Date
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-gray1">
                 {objectives.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-brand-gray3">
+                    <td colSpan={7} className="px-4 py-8 text-center text-brand-gray3">
                       No business quality objectives found. Create your first objective to get started.
                     </td>
                   </tr>
@@ -292,9 +255,9 @@ export default function BusinessQualityObjectivesPage() {
                           {objective.responsible_person_team || 'Not specified'}
                         </div>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-top w-32">
                         <div>
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(objective.doc_status || '')}`}>
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${getStatusColor(objective.doc_status || '')}`}>
                             {objective.doc_status || 'Not set'}
                           </span>
                           <div className="text-xs text-brand-gray3 mt-1">
@@ -315,129 +278,6 @@ export default function BusinessQualityObjectivesPage() {
                           const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
                           return adjustedDate.toLocaleDateString('en-GB');
                         })() : 'Not set'}
-                      </td>
-                      <td className="px-4 py-3 align-top">
-                        {/* Desktop view - always visible icons */}
-                        <div className="hidden md:flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Link
-                            href={`/business-quality-objectives/${objective.id}`}
-                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                            title="View details"
-                          >
-                            <FiEye size={16} />
-                          </Link>
-                          <Link
-                            href={`/business-quality-objectives/${objective.id}/edit`}
-                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                            title="Edit objective"
-                          >
-                            <FiEdit2 size={16} />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteClick(objective)}
-                            className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
-                            title="Delete objective"
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
-                        </div>
-
-                        {/* Mobile view - dropdown menu */}
-                        <div className="md:hidden relative">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDropdownToggle(objective.id);
-                            }}
-                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                            title="More actions"
-                          >
-                            <FiMoreVertical size={16} />
-                          </button>
-                          
-                          {openDropdown === objective.id && (
-                            <>
-                              {/* Overlay backdrop */}
-                              <div 
-                                className="fixed inset-0 bg-black bg-opacity-50 z-40"
-                                onClick={() => setOpenDropdown(null)}
-                              />
-                              {/* Dropdown overlay */}
-                              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 dropdown-overlay">
-                                <div 
-                                  className="bg-brand-gray2 border border-brand-gray1 rounded-lg shadow-xl w-full max-w-sm"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <div className="p-4">
-                                    <div className="text-lg font-semibold text-brand-white mb-4 text-left">
-                                      Actions for &ldquo;{objective.qms_main_objectives}&rdquo;
-                                    </div>
-                                    <div className="space-y-2">
-                                      <button
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          console.log('View button clicked for objective:', objective.id);
-                                          handleViewObjective(objective.id);
-                                        }}
-                                        className="flex items-center gap-3 px-4 py-3 text-brand-white hover:bg-brand-gray1 transition-colors rounded-lg w-full text-left"
-                                      >
-                                        <FiEye size={18} />
-                                        <span className="text-base">View Details</span>
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          console.log('Edit button clicked for objective:', objective.id);
-                                          handleEditObjective(objective.id);
-                                        }}
-                                        className="flex items-center gap-3 px-4 py-3 text-brand-white hover:bg-brand-gray1 transition-colors rounded-lg w-full text-left"
-                                      >
-                                        <FiEdit2 size={18} />
-                                        <span className="text-base">Edit Objective</span>
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          console.log('Progress tracking clicked for objective:', objective.id);
-                                          router.push(`/business-quality-objectives/${objective.id}`);
-                                        }}
-                                        className="flex items-center gap-3 px-4 py-3 text-brand-white hover:bg-brand-gray1 transition-colors rounded-lg w-full text-left"
-                                      >
-                                        <FiTrendingUp size={18} />
-                                        <span className="text-base">Track Progress</span>
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteClick(objective);
-                                          setOpenDropdown(null);
-                                        }}
-                                        className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-brand-gray1 transition-colors rounded-lg w-full text-left"
-                                      >
-                                        <FiTrash2 size={18} />
-                                        <span className="text-base">Delete Objective</span>
-                                      </button>
-                                    </div>
-                                    <div className="mt-4 pt-4 border-t border-brand-gray1">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setOpenDropdown(null);
-                                        }}
-                                        className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-left"
-                                      >
-                                        Cancel
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
                       </td>
                     </tr>
                   ))

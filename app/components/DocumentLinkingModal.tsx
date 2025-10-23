@@ -25,6 +25,7 @@ interface DocumentLinkingModalProps {
   onLinkDocuments: (documentIds: number[]) => Promise<void>;
   businessArea?: string;
   excludeProcessId?: number;
+  excludeDocumentId?: number;
   businessProcessName?: string;
 }
 
@@ -34,6 +35,7 @@ export default function DocumentLinkingModal({
   onLinkDocuments,
   businessArea,
   excludeProcessId,
+  excludeDocumentId,
   businessProcessName,
 }: DocumentLinkingModalProps) {
   const [selectedDocuments, setSelectedDocuments] = useState<BusinessDocument[]>([]);
@@ -57,6 +59,7 @@ export default function DocumentLinkingModal({
       const params = new URLSearchParams();
       if (businessArea) params.append('businessArea', businessArea);
       if (excludeProcessId) params.append('excludeProcessId', excludeProcessId.toString());
+      if (excludeDocumentId) params.append('excludeDocumentId', excludeDocumentId.toString());
       if (searchTerm) params.append('search', searchTerm);
       if (selectedDocumentType) params.append('documentType', selectedDocumentType);
 

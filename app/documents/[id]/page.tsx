@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText, FiTrash2 } from 'react-icons/fi';
 import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
+import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
+import Notification from '@/app/components/Notification';
+import { useRouter } from 'next/navigation';
+import DocumentLinkingManager from '../../components/DocumentLinkingManager';
 
 interface BusinessDocument {
   id: number;
@@ -30,9 +34,23 @@ interface BusinessDocument {
 }
 
 export default function DocumentDetail({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
   const [document, setDocument] = useState<BusinessDocument | null>(null);
+  const [linkedDocuments, setLinkedDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     const fetchDocument = async () => {
@@ -46,6 +64,8 @@ export default function DocumentDetail({ params }: { params: Promise<{ id: strin
         }
         const data = await response.json();
         setDocument(data);
+        // Set linked documents from the main API response (same as business processes)
+        setLinkedDocuments(data.linkedDocuments || []);
       } catch (error) {
         console.error('Error fetching document:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch document');
@@ -132,6 +152,48 @@ export default function DocumentDetail({ params }: { params: Promise<{ id: strin
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!document) return;
+
+    try {
+      const response = await fetch('/api/business-documents/soft-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: document.id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete document');
+      }
+
+      await response.json();
+      
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Success',
+        message: 'Document successfully deleted'
+      });
+      
+      // Redirect to the list page after successful deletion
+      setTimeout(() => {
+        router.push('/documents');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Delete failed:', error);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to delete document'
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -180,6 +242,13 @@ export default function DocumentDetail({ params }: { params: Promise<{ id: strin
           <FiEdit2 size={16} />
           Edit Document
         </Link>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          <FiTrash2 size={16} />
+          Delete Document
+        </button>
       </div>
 
       {/* Document Details */}
@@ -346,6 +415,35 @@ export default function DocumentDetail({ params }: { params: Promise<{ id: strin
           </div>
         )}
       </div>
+
+          {/* Related Documents Linking */}
+          {document && (
+            <DocumentLinkingManager
+              businessDocumentId={document.id}
+              businessArea={document.business_area}
+              linkedDocuments={linkedDocuments}
+              onLinkedDocumentsChange={setLinkedDocuments}
+              canEdit={true}
+            />
+          )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        itemName={document?.document_name || `Document ${document?.id}` || ''}
+        itemType="document"
+      />
+
+      {/* Notification */}
+      <Notification
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+      />
     </div>
   );
 } 

@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText, FiTrash2 } from 'react-icons/fi';
 import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
+import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
+import Notification from '@/app/components/Notification';
+import { useRouter } from 'next/navigation';
 
 interface RecordKeepingSystem {
   id: number;
@@ -35,9 +38,22 @@ interface RecordKeepingSystem {
 }
 
 export default function RecordKeepingSystemDetail({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
   const [system, setSystem] = useState<RecordKeepingSystem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     const fetchSystem = async () => {
@@ -137,6 +153,48 @@ export default function RecordKeepingSystemDetail({ params }: { params: Promise<
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!system) return;
+
+    try {
+      const response = await fetch('/api/record-keeping-systems/soft-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: system.id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete record keeping system');
+      }
+
+      await response.json();
+      
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Success',
+        message: 'Record keeping system successfully deleted'
+      });
+      
+      // Redirect to the list page after successful deletion
+      setTimeout(() => {
+        router.push('/record-keeping-systems');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Delete failed:', error);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to delete record keeping system'
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -185,6 +243,13 @@ export default function RecordKeepingSystemDetail({ params }: { params: Promise<
           <FiEdit2 size={16} />
           Edit System
         </Link>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          <FiTrash2 size={16} />
+          Delete System
+        </button>
       </div>
 
       {/* System Details */}
@@ -390,6 +455,24 @@ export default function RecordKeepingSystemDetail({ params }: { params: Promise<
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        itemName={system?.system_name || `System ${system?.id}` || ''}
+        itemType="record keeping system"
+      />
+
+      {/* Notification */}
+      <Notification
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+      />
     </div>
   );
 }

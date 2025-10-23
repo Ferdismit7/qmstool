@@ -2,8 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText, FiTrash2 } from 'react-icons/fi';
 import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
+import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
+import Notification from '@/app/components/Notification';
+import { useRouter } from 'next/navigation';
 
 interface PerformanceMonitoringControl {
   id: number;
@@ -32,9 +35,22 @@ export default function PerformanceMonitoringControlDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const router = useRouter();
   const [control, setControl] = useState<PerformanceMonitoringControl | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     const fetchControl = async () => {
@@ -42,10 +58,11 @@ export default function PerformanceMonitoringControlDetailPage({
         const { id } = await params;
         setLoading(true);
         setError(null);
-        const response = await fetch(`/api/performance-monitoring/${id}`);
+        const response = await fetch(`/api/performance-monitoring/${id}`, { credentials: 'include' });
         if (!response.ok) throw new Error('Failed to fetch control');
         const data = await response.json();
-        setControl(data);
+        // Support both envelope { success, data } and raw object
+        setControl(data?.data ?? data ?? null);
       } catch (err) {
         console.error('Error fetching control:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch control');
@@ -140,6 +157,48 @@ export default function PerformanceMonitoringControlDetailPage({
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!control) return;
+
+    try {
+      const response = await fetch('/api/performance-monitoring/soft-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: control.id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete control');
+      }
+
+      await response.json();
+      
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Success',
+        message: 'Performance monitoring control successfully deleted'
+      });
+      
+      // Redirect to the list page after successful deletion
+      setTimeout(() => {
+        router.push('/performance-monitoring');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Delete failed:', error);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to delete control'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -188,6 +247,13 @@ export default function PerformanceMonitoringControlDetailPage({
           <FiEdit2 size={16} />
           Edit Control
         </Link>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          <FiTrash2 size={16} />
+          Delete Control
+        </button>
       </div>
 
       {/* Control Details */}
@@ -338,6 +404,24 @@ export default function PerformanceMonitoringControlDetailPage({
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        itemName={control?.Name_reports || ''}
+        itemType="performance monitoring control"
+      />
+
+      {/* Notification */}
+      <Notification
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+      />
     </div>
   );
 } 

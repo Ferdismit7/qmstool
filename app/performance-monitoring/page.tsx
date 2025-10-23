@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
-import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
+import { FiPlus } from 'react-icons/fi';
 import Notification from '@/app/components/Notification';
 
 interface PerformanceMonitoringControl {
@@ -29,8 +28,6 @@ export default function PerformanceMonitoringPage() {
   const [controls, setControls] = useState<PerformanceMonitoringControl[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [controlToDelete, setControlToDelete] = useState<PerformanceMonitoringControl | null>(null);
   const [notification, setNotification] = useState<{
     isOpen: boolean;
     type: 'success' | 'error';
@@ -42,7 +39,6 @@ export default function PerformanceMonitoringPage() {
     title: '',
     message: ''
   });
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
   const fetchControls = async () => {
     try {
@@ -122,69 +118,7 @@ export default function PerformanceMonitoringPage() {
     }
   };
 
-  const handleDeleteClick = (control: PerformanceMonitoringControl) => {
-    setControlToDelete(control);
-    setShowDeleteModal(true);
-  };
 
-  const handleDeleteConfirm = async () => {
-    if (!controlToDelete) return;
-
-    try {
-      const response = await fetch('/api/performance-monitoring/soft-delete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: controlToDelete.id }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete control');
-      }
-
-      await response.json();
-      
-      setNotification({
-        isOpen: true,
-        type: 'success',
-        title: 'Success',
-        message: 'Performance monitoring control successfully deleted'
-      });
-      
-      fetchControls();
-      setShowDeleteModal(false);
-      setControlToDelete(null);
-      
-    } catch (error) {
-      console.error('Delete failed:', error);
-      setNotification({
-        isOpen: true,
-        type: 'error',
-        title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to delete control'
-      });
-    }
-  };
-
-  const handleDropdownToggle = (controlId: number) => {
-    setOpenDropdown(openDropdown === controlId ? null : controlId);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openDropdown !== null) {
-        const target = event.target as Element;
-        if (!target.closest('.dropdown-overlay')) {
-          setOpenDropdown(null);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdown]);
 
   const handleViewControl = (controlId: number) => {
     router.push(`/performance-monitoring/${controlId}`);
@@ -237,7 +171,7 @@ export default function PerformanceMonitoringPage() {
                   <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Priority
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider w-32">
                     Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
@@ -246,15 +180,12 @@ export default function PerformanceMonitoringPage() {
                   <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Target Date
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-gray1">
                 {controls.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-brand-gray3">
+                    <td colSpan={8} className="px-4 py-8 text-center text-brand-gray3">
                       No performance monitoring controls found. Create your first control to get started.
                     </td>
                   </tr>
@@ -292,9 +223,9 @@ export default function PerformanceMonitoringPage() {
                           {control.priority}
                         </span>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-top w-32">
                         <div>
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(control.doc_status)}`}>
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${getStatusColor(control.doc_status)}`}>
                             {control.doc_status}
                           </span>
                           <div className="text-xs text-brand-gray3 mt-1">
@@ -316,97 +247,6 @@ export default function PerformanceMonitoringPage() {
                           return adjustedDate.toLocaleDateString('en-GB');
                         })() : 'Not set'}
                       </td>
-                      <td className="px-4 py-3 align-top">
-                        {/* Desktop Actions */}
-                        <div className="hidden md:flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Link
-                            href={`/performance-monitoring/${control.id}`}
-                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                            title="View details"
-                          >
-                            <FiEye size={16} />
-                          </Link>
-                          <Link
-                            href={`/performance-monitoring/${control.id}/edit`}
-                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                            title="Edit monitoring"
-                          >
-                            <FiEdit2 size={16} />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteClick(control)}
-                            className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
-                            title="Delete monitoring"
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
-                        </div>
-
-                        {/* Mobile Actions Dropdown */}
-                        <div className="md:hidden relative">
-                          <button
-                            onClick={() => handleDropdownToggle(control.id)}
-                            className="text-brand-gray3 hover:text-brand-white transition-colors"
-                          >
-                            <FiMoreVertical size={16} />
-                          </button>
-
-                          {/* Mobile Overlay */}
-                          {openDropdown === control.id && (
-                            <div className="dropdown-overlay fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                              <div 
-                                className="bg-brand-dark border border-brand-gray2 rounded-lg p-6 w-full max-w-sm"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <div className="text-lg font-semibold text-brand-white mb-4 text-left">
-                                  Actions for &ldquo;{control.Name_reports}&rdquo;
-                                </div>
-                                <div className="space-y-3">
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleViewControl(control.id);
-                                    }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
-                                  >
-                                    <FiEye size={18} />
-                                    View Details
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleEditControl(control.id);
-                                    }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
-                                  >
-                                    <FiEdit2 size={18} />
-                                    Edit Control
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleDeleteClick(control);
-                                    }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                  >
-                                    <FiTrash2 size={18} />
-                                    Delete Control
-                                  </button>
-                                  <button
-                                    onClick={() => setOpenDropdown(null)}
-                                    className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-left"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </td>
                     </tr>
                   ))
                 )}
@@ -416,17 +256,6 @@ export default function PerformanceMonitoringPage() {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={showDeleteModal}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setControlToDelete(null);
-        }}
-        onConfirm={handleDeleteConfirm}
-        itemName={controlToDelete?.Name_reports || ''}
-        itemType="performance monitoring control"
-      />
 
       {/* Notification */}
       <Notification

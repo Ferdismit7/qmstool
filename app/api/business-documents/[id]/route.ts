@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 // GET a single business document
 export async function GET(
@@ -25,21 +26,74 @@ export async function GET(
       );
     }
 
-    // Create placeholders for IN clause
-    const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [...userBusinessAreas, parseInt(id)];
-
-    const [document] = await query(`
-      SELECT bdr.*, ba.business_area 
-      FROM businessdocumentregister bdr
-      LEFT JOIN businessareas ba ON bdr.business_area = ba.business_area
-      WHERE bdr.business_area IN (${placeholders}) AND bdr.id = ?
-    `, queryParams);
+    // Use Prisma to fetch document with linked documents (same approach as business processes)
+    const document = await prisma.businessDocumentRegister.findFirst({
+      where: {
+        id: parseInt(id),
+        business_area: {
+          in: userBusinessAreas
+        }
+      },
+      include: {
+        businessareas: true,
+        relatedDocumentsPrimary: {
+          include: {
+            relatedDocument: {
+              select: {
+                id: true,
+                document_name: true,
+                document_type: true,
+                version: true,
+                doc_status: true,
+                progress: true,
+                status_percentage: true,
+                file_url: true,
+                file_name: true,
+                file_type: true,
+                uploaded_at: true
+              }
+            },
+            createdBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          },
+          orderBy: {
+            created_at: 'desc'
+          }
+        }
+      }
+    });
 
     if (!document) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
-    return NextResponse.json(document);
+
+    // Transform the data to match the expected format (similar to business processes)
+    const transformedDocument = {
+      ...document,
+      // Convert BigInt values to numbers for JSON serialization
+      file_size: document.file_size ? Number(document.file_size) : null,
+      linkedDocuments: document.relatedDocumentsPrimary.map(link => ({
+        id: link.id,
+        business_process_id: 0, // Not applicable for document-to-document links
+        business_document_id: link.related_document_id,
+        created_at: link.created_at,
+        updated_at: link.updated_at,
+        created_by: link.created_by,
+        businessDocument: {
+          ...link.relatedDocument,
+          // Convert BigInt values in related documents too
+          file_size: link.relatedDocument.file_size ? Number(link.relatedDocument.file_size) : null
+        },
+        createdBy: link.createdBy
+      }))
+    };
+
+    return NextResponse.json(transformedDocument);
   } catch (error) {
     console.error('Error fetching document:', error);
     return NextResponse.json(

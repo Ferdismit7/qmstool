@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
+import { FiPlus } from 'react-icons/fi';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Notification from '../components/Notification';
 
@@ -166,23 +166,6 @@ export default function NonConformitiesPage() {
     }
   };
 
-  const handleDropdownToggle = (nonConformityId: number) => {
-    setOpenDropdown(openDropdown === nonConformityId ? null : nonConformityId);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openDropdown !== null) {
-        const target = event.target as Element;
-        if (!target.closest('.dropdown-overlay')) {
-          setOpenDropdown(null);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdown]);
 
   const handleViewNonConformity = (nonConformityId: number) => {
     router.push(`/non-conformities/${nonConformityId}`);
@@ -244,7 +227,7 @@ export default function NonConformitiesPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Priority
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider w-32">
                     Status
                   </th>
                   <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
@@ -253,15 +236,12 @@ export default function NonConformitiesPage() {
                   <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                     Target Date
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-gray1">
                 {nonConformities.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-brand-gray3">
+                    <td colSpan={7} className="px-4 py-8 text-center text-brand-gray3">
                       No non-conformities found. Create your first non-conformity to get started.
                     </td>
                   </tr>
@@ -299,8 +279,8 @@ export default function NonConformitiesPage() {
                           {nonConformity.priority}
                         </span>
                       </td>
-                      <td className="px-4 py-3 align-top">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(nonConformity.status)}`}>
+                      <td className="px-4 py-3 align-top w-32">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${getStatusColor(nonConformity.status)}`}>
                           {nonConformity.status}
                         </span>
                       </td>
@@ -316,90 +296,6 @@ export default function NonConformitiesPage() {
                           const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
                           return adjustedDate.toLocaleDateString('en-GB');
                         })() : 'Not set'}
-                      </td>
-                      <td className="px-4 py-3 align-top">
-                        {/* Desktop Actions */}
-                        <div className="hidden md:flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Link
-                            href={`/non-conformities/${nonConformity.id}/edit`}
-                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                            title="Edit conformity"
-                          >
-                            <FiEdit2 size={16} />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteClick(nonConformity)}
-                            className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
-                            title="Delete conformity"
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
-                        </div>
-
-                        {/* Mobile Actions Dropdown */}
-                        <div className="md:hidden relative">
-                          <button
-                            onClick={() => handleDropdownToggle(nonConformity.id)}
-                            className="text-brand-gray3 hover:text-brand-white transition-colors"
-                          >
-                            <FiMoreVertical size={16} />
-                          </button>
-
-                          {/* Mobile Overlay */}
-                          {openDropdown === nonConformity.id && (
-                            <div className="dropdown-overlay fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                              <div 
-                                className="bg-brand-dark border border-brand-gray2 rounded-lg p-6 w-full max-w-sm"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <div className="text-lg font-semibold text-brand-white mb-4 text-left">
-                                  Actions for &ldquo;{nonConformity.nc_number}&rdquo;
-                                </div>
-                                <div className="space-y-3">
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleViewNonConformity(nonConformity.id);
-                                    }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
-                                  >
-                                    <FiEye size={18} />
-                                    View Details
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleEditNonConformity(nonConformity.id);
-                                    }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-brand-white hover:bg-brand-gray1/50 rounded-lg transition-colors"
-                                  >
-                                    <FiEdit2 size={18} />
-                                    Edit Non-Conformity
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleDeleteClick(nonConformity);
-                                    }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                  >
-                                    <FiTrash2 size={18} />
-                                    Delete Non-Conformity
-                                  </button>
-                                  <button
-                                    onClick={() => setOpenDropdown(null)}
-                                    className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-left"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
                       </td>
                     </tr>
                   ))

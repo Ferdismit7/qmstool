@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText } from 'react-icons/fi';
+import { FiArrowLeft, FiEdit2, FiDownload, FiEye, FiFileText, FiTrash2 } from 'react-icons/fi';
 import MonthlyProgressTracker from '../../components/MonthlyProgressTracker';
 import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
+import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
+import Notification from '@/app/components/Notification';
+import { useRouter } from 'next/navigation';
 
 interface BusinessQualityObjective {
   id: number;
@@ -31,9 +34,22 @@ interface BusinessQualityObjective {
 }
 
 export default function BusinessQualityObjectiveDetailPage() {
+  const router = useRouter();
   const [objective, setObjective] = useState<BusinessQualityObjective | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     const fetchObjective = async () => {
@@ -115,6 +131,48 @@ export default function BusinessQualityObjectiveDetailPage() {
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!objective) return;
+
+    try {
+      const response = await fetch('/api/business-quality-objectives/soft-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: objective.id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete business quality objective');
+      }
+
+      await response.json();
+      
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Success',
+        message: 'Business quality objective successfully deleted'
+      });
+      
+      // Redirect to the list page after successful deletion
+      setTimeout(() => {
+        router.push('/business-quality-objectives');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Delete failed:', error);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to delete business quality objective'
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -157,6 +215,13 @@ export default function BusinessQualityObjectiveDetailPage() {
           <FiEdit2 size={16} />
           Edit Objective
         </Link>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          <FiTrash2 size={16} />
+          Delete Objective
+        </button>
       </div>
 
       <div>
@@ -363,6 +428,24 @@ export default function BusinessQualityObjectiveDetailPage() {
       <MonthlyProgressTracker 
         objectiveId={objective.id} 
         objectiveName={objective.qms_main_objectives || `Objective ${objective.id}`}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        itemName={objective?.qms_main_objectives || `Objective ${objective?.id}` || ''}
+        itemType="business quality objective"
+      />
+
+      {/* Notification */}
+      <Notification
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
       />
     </div>
   );

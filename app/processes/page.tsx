@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FiPlus, FiEdit2, FiTrash2, FiEye, FiMoreVertical } from 'react-icons/fi';
+import { FiPlus } from 'react-icons/fi';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 import Notification from '../components/Notification';
 
@@ -32,7 +32,6 @@ export default function ProcessesPage() {
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [processToDelete, setProcessToDelete] = useState<BusinessProcess | null>(null);
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [notification, setNotification] = useState<{
     isOpen: boolean;
     type: 'success' | 'error';
@@ -157,39 +156,6 @@ export default function ProcessesPage() {
     }
   };
 
-  const handleDropdownToggle = (processId: number) => {
-    setOpenDropdown(openDropdown === processId ? null : processId);
-  };
-
-  const handleViewProcess = (processId: number) => {
-    console.log('View process clicked:', processId);
-    setOpenDropdown(null);
-    router.push(`/processes/${processId}`);
-  };
-
-  const handleEditProcess = (processId: number) => {
-    console.log('Edit process clicked:', processId);
-    setOpenDropdown(null);
-    router.push(`/processes/${processId}/edit`);
-  };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Don't close if clicking inside the dropdown
-      const target = event.target as Element;
-      if (target.closest('.dropdown-overlay')) {
-        return;
-      }
-      
-      if (openDropdown !== null) {
-        setOpenDropdown(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdown]);
 
   if (isLoading) {
     return (
@@ -243,24 +209,21 @@ export default function ProcessesPage() {
                 <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
                   Priority
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                  Progress
-                </th>
-                <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                  Target Date
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
-                  Actions
-                </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider w-32">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    Progress
+                  </th>
+                  <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-brand-gray3 uppercase tracking-wider">
+                    Target Date
+                  </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-gray1">
               {processes.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-brand-gray3">
+                    <td colSpan={7} className="px-4 py-8 text-center text-brand-gray3">
                     No business processes found. Create your first process to get started.
                   </td>
                 </tr>
@@ -305,9 +268,9 @@ export default function ProcessesPage() {
                         {process.priority || 'Not set'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 align-top">
+                    <td className="px-4 py-3 align-top w-32">
                       <div>
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(process.docStatus || '')}`}>
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${getStatusColor(process.docStatus || '')}`}>
                           {process.docStatus || 'Not set'}
                         </span>
                         <div className="text-xs text-brand-gray3 mt-1">
@@ -328,117 +291,6 @@ export default function ProcessesPage() {
                         const adjustedDate = new Date(date.getTime() - userTimezoneOffset);
                         return adjustedDate.toLocaleDateString('en-GB');
                       })() : 'Not set'}
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      {/* Desktop view - always visible icons */}
-                      <div className="hidden md:flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Link
-                          href={`/processes/${process.id}`}
-                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                          title="View details"
-                        >
-                          <FiEye size={16} />
-                        </Link>
-                        <Link
-                          href={`/processes/${process.id}/edit`}
-                          className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                          title="Edit process"
-                        >
-                          <FiEdit2 size={16} />
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteClick(process)}
-                          className="p-1 text-brand-gray3 hover:text-red-400 transition-colors"
-                          title="Delete process"
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
-                      </div>
-
-                                              {/* Mobile view - dropdown menu */}
-                        <div className="md:hidden relative">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDropdownToggle(process.id);
-                            }}
-                            className="p-1 text-brand-gray3 hover:text-brand-white transition-colors"
-                            title="More actions"
-                          >
-                            <FiMoreVertical size={16} />
-                          </button>
-                          
-                          {openDropdown === process.id && (
-                            <>
-                              {/* Overlay backdrop */}
-                              <div 
-                                className="fixed inset-0 bg-black bg-opacity-50 z-40"
-                                onClick={() => setOpenDropdown(null)}
-                              />
-                              {/* Dropdown overlay */}
-                              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 dropdown-overlay">
-                                <div 
-                                  className="bg-brand-gray2 border border-brand-gray1 rounded-lg shadow-xl w-full max-w-sm"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <div className="p-4">
-                                    <div className="text-lg font-semibold text-brand-white mb-4 text-left">
-                                      Actions for &ldquo;{process.processName}&rdquo;
-                                    </div>
-                                    <div className="space-y-2">
-                                      <button
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          console.log('View button clicked for process:', process.id);
-                                          handleViewProcess(process.id);
-                                        }}
-                                        className="flex items-center gap-3 px-4 py-3 text-brand-white hover:bg-brand-gray1 transition-colors rounded-lg w-full text-left"
-                                      >
-                                        <FiEye size={18} />
-                                        <span className="text-base">View Details</span>
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          console.log('Edit button clicked for process:', process.id);
-                                          handleEditProcess(process.id);
-                                        }}
-                                        className="flex items-center gap-3 px-4 py-3 text-brand-white hover:bg-brand-gray1 transition-colors rounded-lg w-full text-left"
-                                      >
-                                        <FiEdit2 size={18} />
-                                        <span className="text-base">Edit Process</span>
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteClick(process);
-                                          setOpenDropdown(null);
-                                        }}
-                                        className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-brand-gray1 transition-colors rounded-lg w-full text-left"
-                                      >
-                                        <FiTrash2 size={18} />
-                                        <span className="text-base">Delete Process</span>
-                                      </button>
-                                    </div>
-                                    <div className="mt-4 pt-4 border-t border-brand-gray1">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setOpenDropdown(null);
-                                        }}
-                                        className="w-full px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors text-left"
-                                      >
-                                        Cancel
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
                     </td>
                   </tr>
                 ))

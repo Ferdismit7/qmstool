@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { FiDownload, FiTrendingUp, FiTrendingDown, FiMinus, FiAlertTriangle, FiCheckCircle, FiClock } from 'react-icons/fi';
 import { CenteredLoadingSpinner } from '../components/ui/LoadingSpinner';
 import jsPDF from 'jspdf';
@@ -60,6 +61,50 @@ interface ManagementReportData {
       recurringIssues: number;
       improvementInitiatives: number;
       completedImprovements: number;
+      nonConformityMetrics: {
+        totalNonConformities: number;
+        openNonConformities: number;
+        closedNonConformities: number;
+        averageResolutionTime: number;
+        criticalNonConformities: number;
+        highPriorityNonConformities: number;
+        overdueNonConformities: number;
+      };
+      businessImprovementMetrics: {
+        totalImprovements: number;
+        completedImprovements: number;
+        inProgressImprovements: number;
+        plannedImprovements: number;
+        averageCompletionTime: number;
+        highPriorityImprovements: number;
+      };
+      recordKeepingMetrics: {
+        totalRecordSystems: number;
+        compliantSystems: number;
+        nonCompliantSystems: number;
+        averageComplianceScore: number;
+        overdueAudits: number;
+      };
+      performanceMonitoringMetrics: {
+        totalControls: number;
+        completedControls: number;
+        overdueControls: number;
+        averagePerformanceScore: number;
+        criticalControls: number;
+      };
+      thirdPartyEvaluationMetrics: {
+        totalEvaluations: number;
+        completedEvaluations: number;
+        pendingEvaluations: number;
+        averageEvaluationScore: number;
+        overdueEvaluations: number;
+      };
+      customerFeedbackMetrics: {
+        totalFeedbackSystems: number;
+        activeSystems: number;
+        averageSatisfactionScore: number;
+        responseRate: number;
+      };
     };
     resourceManagement: {
       trainingSessionsCompleted: number;
@@ -89,6 +134,7 @@ interface ManagementReportData {
 }
 
 export default function ManagementReportPage() {
+  const searchParams = useSearchParams();
   const [reportData, setReportData] = useState<ManagementReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,8 +165,11 @@ export default function ManagementReportPage() {
           const businessAreasFormatted = userBusinessAreas.map((area: string) => ({ business_area: area }));
           setBusinessAreas(businessAreasFormatted);
           
-          // Set the first business area as default if available
-          if (userBusinessAreas.length > 0) {
+          // Set the business area from URL parameter or first available area
+          const businessAreaFromUrl = searchParams.get('businessArea');
+          if (businessAreaFromUrl && userBusinessAreas.includes(businessAreaFromUrl)) {
+            setSelectedBusinessArea(businessAreaFromUrl);
+          } else if (userBusinessAreas.length > 0) {
             setSelectedBusinessArea(userBusinessAreas[0]);
           }
         } else {
@@ -132,7 +181,7 @@ export default function ManagementReportPage() {
     };
 
     fetchUserBusinessAreas();
-  }, []);
+  }, [searchParams]);
 
   // Fetch management report when business area changes
   useEffect(() => {
@@ -207,7 +256,15 @@ export default function ManagementReportPage() {
        ['Document Registry', `${reportData.keyMetrics.compliance.complianceRate.toFixed(1)}%`],
        ['Risk Mitigation', `${reportData.keyMetrics.riskManagement.mitigationProgress.toFixed(1)}%`],
        ['Total Risks', `${reportData.keyMetrics.riskManagement.totalRisks}`],
-       ['Avg Impact Score', `${reportData.keyMetrics.riskManagement.averageImpactLevelScore.toFixed(1)}`]
+       ['Avg Impact Score', `${reportData.keyMetrics.riskManagement.averageImpactLevelScore.toFixed(1)}`],
+       ['Non-Conformities', `${reportData.keyMetrics.operationalExcellence.nonConformityMetrics.totalNonConformities}`],
+       ['Open Non-Conformities', `${reportData.keyMetrics.operationalExcellence.nonConformityMetrics.openNonConformities}`],
+       ['Business Improvements', `${reportData.keyMetrics.operationalExcellence.businessImprovementMetrics.totalImprovements}`],
+       ['Completed Improvements', `${reportData.keyMetrics.operationalExcellence.businessImprovementMetrics.completedImprovements}`],
+       ['Record Keeping Systems', `${reportData.keyMetrics.operationalExcellence.recordKeepingMetrics.totalRecordSystems}`],
+       ['Performance Controls', `${reportData.keyMetrics.operationalExcellence.performanceMonitoringMetrics.totalControls}`],
+       ['Third Party Evaluations', `${reportData.keyMetrics.operationalExcellence.thirdPartyEvaluationMetrics.totalEvaluations}`],
+       ['Customer Feedback Systems', `${reportData.keyMetrics.operationalExcellence.customerFeedbackMetrics.totalFeedbackSystems}`]
      ];
 
     autoTable(doc, {
@@ -221,6 +278,61 @@ export default function ManagementReportPage() {
     });
 
          y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+
+    // Comprehensive Operational Metrics
+    if (y > 200) {
+      doc.addPage();
+      y = 20;
+    }
+    
+    doc.setFontSize(14);
+    doc.text('Comprehensive Operational Metrics', 14, y);
+    y += 8;
+
+    const operationalData = [
+      ['Non-Conformities', 'Total', 'Open', 'Critical', 'Overdue'],
+      ['', `${reportData.keyMetrics.operationalExcellence.nonConformityMetrics.totalNonConformities}`, 
+       `${reportData.keyMetrics.operationalExcellence.nonConformityMetrics.openNonConformities}`, 
+       `${reportData.keyMetrics.operationalExcellence.nonConformityMetrics.criticalNonConformities}`, 
+       `${reportData.keyMetrics.operationalExcellence.nonConformityMetrics.overdueNonConformities}`],
+      ['Business Improvements', 'Total', 'Completed', 'In Progress', 'High Priority'],
+      ['', `${reportData.keyMetrics.operationalExcellence.businessImprovementMetrics.totalImprovements}`, 
+       `${reportData.keyMetrics.operationalExcellence.businessImprovementMetrics.completedImprovements}`, 
+       `${reportData.keyMetrics.operationalExcellence.businessImprovementMetrics.inProgressImprovements}`, 
+       `${reportData.keyMetrics.operationalExcellence.businessImprovementMetrics.highPriorityImprovements}`],
+      ['Record Keeping', 'Total', 'Compliant', 'Non-Compliant', 'Overdue Audits'],
+      ['', `${reportData.keyMetrics.operationalExcellence.recordKeepingMetrics.totalRecordSystems}`, 
+       `${reportData.keyMetrics.operationalExcellence.recordKeepingMetrics.compliantSystems}`, 
+       `${reportData.keyMetrics.operationalExcellence.recordKeepingMetrics.nonCompliantSystems}`, 
+       `${reportData.keyMetrics.operationalExcellence.recordKeepingMetrics.overdueAudits}`],
+      ['Performance Monitoring', 'Total', 'Completed', 'Overdue', 'Critical'],
+      ['', `${reportData.keyMetrics.operationalExcellence.performanceMonitoringMetrics.totalControls}`, 
+       `${reportData.keyMetrics.operationalExcellence.performanceMonitoringMetrics.completedControls}`, 
+       `${reportData.keyMetrics.operationalExcellence.performanceMonitoringMetrics.overdueControls}`, 
+       `${reportData.keyMetrics.operationalExcellence.performanceMonitoringMetrics.criticalControls}`],
+      ['Third Party Evaluations', 'Total', 'Completed', 'Pending', 'Overdue'],
+      ['', `${reportData.keyMetrics.operationalExcellence.thirdPartyEvaluationMetrics.totalEvaluations}`, 
+       `${reportData.keyMetrics.operationalExcellence.thirdPartyEvaluationMetrics.completedEvaluations}`, 
+       `${reportData.keyMetrics.operationalExcellence.thirdPartyEvaluationMetrics.pendingEvaluations}`, 
+       `${reportData.keyMetrics.operationalExcellence.thirdPartyEvaluationMetrics.overdueEvaluations}`],
+      ['Customer Feedback', 'Total', 'Active', 'Avg Satisfaction', 'Response Rate'],
+      ['', `${reportData.keyMetrics.operationalExcellence.customerFeedbackMetrics.totalFeedbackSystems}`, 
+       `${reportData.keyMetrics.operationalExcellence.customerFeedbackMetrics.activeSystems}`, 
+       `${reportData.keyMetrics.operationalExcellence.customerFeedbackMetrics.averageSatisfactionScore.toFixed(1)}%`, 
+       `${reportData.keyMetrics.operationalExcellence.customerFeedbackMetrics.responseRate.toFixed(1)}%`]
+    ];
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Category', 'Metric 1', 'Metric 2', 'Metric 3', 'Metric 4']],
+      body: operationalData,
+      styles: { fontSize: 9, cellPadding: 2 },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      margin: { left: 14, right: 14 },
+      theme: 'grid',
+    });
+
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
     // Top Achievements
     if (reportData.topAchievements.length > 0) {
@@ -618,6 +730,229 @@ export default function ManagementReportPage() {
              </div>
            </div>
          </div>
+      </div>
+
+      {/* Comprehensive Operational Metrics */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold text-white mb-6">Comprehensive Operational Metrics</h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {/* Non-Conformities */}
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Non-Conformities</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Total Non-Conformities</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.nonConformityMetrics.totalNonConformities}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Open Issues</span>
+                <span className="text-red-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.nonConformityMetrics.openNonConformities}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Critical Issues</span>
+                <span className="text-red-500 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.nonConformityMetrics.criticalNonConformities}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Overdue Issues</span>
+                <span className="text-orange-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.nonConformityMetrics.overdueNonConformities}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Avg Resolution Time</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.nonConformityMetrics.averageResolutionTime.toFixed(1)} days
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Business Improvements */}
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Business Improvements</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Total Improvements</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.businessImprovementMetrics.totalImprovements}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Completed</span>
+                <span className="text-green-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.businessImprovementMetrics.completedImprovements}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">In Progress</span>
+                <span className="text-blue-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.businessImprovementMetrics.inProgressImprovements}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">High Priority</span>
+                <span className="text-yellow-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.businessImprovementMetrics.highPriorityImprovements}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Avg Completion Time</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.businessImprovementMetrics.averageCompletionTime.toFixed(1)} days
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Record Keeping Systems */}
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Record Keeping Systems</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Total Systems</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.recordKeepingMetrics.totalRecordSystems}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Compliant Systems</span>
+                <span className="text-green-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.recordKeepingMetrics.compliantSystems}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Non-Compliant</span>
+                <span className="text-red-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.recordKeepingMetrics.nonCompliantSystems}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Overdue Audits</span>
+                <span className="text-orange-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.recordKeepingMetrics.overdueAudits}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Avg Compliance Score</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.recordKeepingMetrics.averageComplianceScore.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance Monitoring */}
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Performance Monitoring</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Total Controls</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.performanceMonitoringMetrics.totalControls}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Completed Controls</span>
+                <span className="text-green-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.performanceMonitoringMetrics.completedControls}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Overdue Controls</span>
+                <span className="text-red-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.performanceMonitoringMetrics.overdueControls}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Critical Controls</span>
+                <span className="text-yellow-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.performanceMonitoringMetrics.criticalControls}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Avg Performance Score</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.performanceMonitoringMetrics.averagePerformanceScore.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Third Party Evaluations */}
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Third Party Evaluations</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Total Evaluations</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.thirdPartyEvaluationMetrics.totalEvaluations}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Completed</span>
+                <span className="text-green-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.thirdPartyEvaluationMetrics.completedEvaluations}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Pending</span>
+                <span className="text-blue-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.thirdPartyEvaluationMetrics.pendingEvaluations}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Overdue</span>
+                <span className="text-red-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.thirdPartyEvaluationMetrics.overdueEvaluations}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Avg Evaluation Score</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.thirdPartyEvaluationMetrics.averageEvaluationScore.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Customer Feedback Systems */}
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Customer Feedback Systems</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Total Systems</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.customerFeedbackMetrics.totalFeedbackSystems}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Active Systems</span>
+                <span className="text-green-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.customerFeedbackMetrics.activeSystems}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Avg Satisfaction Score</span>
+                <span className="text-blue-400 font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.customerFeedbackMetrics.averageSatisfactionScore.toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-300">Response Rate</span>
+                <span className="text-white font-semibold">
+                  {reportData.keyMetrics.operationalExcellence.customerFeedbackMetrics.responseRate.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Critical Actions */}
