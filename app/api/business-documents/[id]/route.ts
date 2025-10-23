@@ -49,6 +49,7 @@ export async function GET(
                 status_percentage: true,
                 file_url: true,
                 file_name: true,
+                file_size: true,
                 file_type: true,
                 uploaded_at: true
               }

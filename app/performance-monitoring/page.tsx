@@ -120,13 +120,7 @@ export default function PerformanceMonitoringPage() {
 
 
 
-  const handleViewControl = (controlId: number) => {
-    router.push(`/performance-monitoring/${controlId}`);
-  };
 
-  const handleEditControl = (controlId: number) => {
-    router.push(`/performance-monitoring/${controlId}/edit`);
-  };
 
   if (error) return <div className="text-red-500 text-center py-4">{error}</div>;
 

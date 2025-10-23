@@ -21,11 +21,14 @@ interface BusinessDocument {
 interface LinkedDocument {
   id: number;
   business_process_id: number;
-  business_document_id: number;
+  business_document_id?: number;
   created_at: string;
   updated_at: string;
   created_by: number | null;
-  businessDocument: BusinessDocument;
+  // For document-to-document linking
+  related_document_id?: number;
+  relatedDocument?: BusinessDocument;
+  businessDocument?: BusinessDocument;
   createdBy: {
     id: number;
     username: string;
@@ -56,7 +59,7 @@ export default function CategorizedDocumentsDisplay({
       console.warn('Linked document missing businessDocument:', link);
       return acc;
     }
-    const type = link.businessDocument.document_type || 'Other';
+    const type = link.businessDocument!.document_type || 'Other';
     if (!acc[type]) {
       acc[type] = [];
     }
@@ -232,7 +235,7 @@ export default function CategorizedDocumentsDisplay({
                         onClick={() => {
                           const currentUrl = window.location.pathname;
                           const referrer = encodeURIComponent(currentUrl);
-                          window.location.href = `/business-document-registry/${link.businessDocument.id}?from=${referrer}`;
+                          window.location.href = `/business-document-registry/${link.businessDocument!.id}?from=${referrer}`;
                         }}
                       >
                         <div className="flex items-start justify-between">
@@ -242,34 +245,34 @@ export default function CategorizedDocumentsDisplay({
                               <FiFileText size={16} className="text-brand-primary flex-shrink-0" />
                               <div className="min-w-0 flex-1">
                                 <h5 className="text-sm font-semibold text-brand-white truncate">
-                                  {link.businessDocument.document_name}
+                                  {link.businessDocument!.document_name}
                                 </h5>
                                 <div className="flex items-center gap-2 text-xs text-brand-gray3">
-                                  <span>v{link.businessDocument.version}</span>
+                                  <span>v{link.businessDocument!.version}</span>
                                 </div>
                               </div>
                             </div>
 
                             {/* Status and Progress */}
                             <div className="flex items-center gap-2 mb-3">
-                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(link.businessDocument.doc_status)}`}>
-                                {link.businessDocument.doc_status}
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(link.businessDocument!.doc_status)}`}>
+                                {link.businessDocument!.doc_status}
                               </span>
-                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(link.businessDocument.progress)}`}>
-                                {link.businessDocument.progress}
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getProgressColor(link.businessDocument!.progress)}`}>
+                                {link.businessDocument!.progress}
                               </span>
                               <span className="text-xs text-brand-gray3">
-                                {link.businessDocument.status_percentage}% complete
+                                {link.businessDocument!.status_percentage}% complete
                               </span>
                             </div>
 
                             {/* File Information */}
-                            {link.businessDocument.file_url && (
+                            {link.businessDocument!.file_url && (
                               <div className="flex items-center gap-2 text-sm text-brand-gray3 mb-3">
-                                <span>File: {link.businessDocument.file_name || 'Download'}</span>
-                                {link.businessDocument.file_type && (
+                                <span>File: {link.businessDocument!.file_name || 'Download'}</span>
+                                {link.businessDocument!.file_type && (
                                   <span className="px-2 py-1 bg-brand-gray2 rounded text-xs">
-                                    {link.businessDocument.file_type}
+                                    {link.businessDocument!.file_type}
                                   </span>
                                 )}
                               </div>
@@ -297,7 +300,7 @@ export default function CategorizedDocumentsDisplay({
                               onClick={() => {
                                 const currentUrl = window.location.pathname;
                                 const referrer = encodeURIComponent(currentUrl);
-                                window.location.href = `/business-document-registry/${link.businessDocument.id}?from=${referrer}`;
+                                window.location.href = `/business-document-registry/${link.businessDocument!.id}?from=${referrer}`;
                               }}
                               className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
                               title="View document details"
@@ -306,9 +309,9 @@ export default function CategorizedDocumentsDisplay({
                             </button>
 
                             {/* Download File */}
-                            {link.businessDocument.file_url && (
+                            {link.businessDocument!.file_url && (
                               <button
-                                onClick={() => handleDownload(link.businessDocument.file_url!, link.businessDocument.file_name || 'document')}
+                                onClick={() => handleDownload(link.businessDocument!.file_url!, link.businessDocument!.file_name || 'document')}
                                 className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
                                 title="Download file"
                               >
@@ -319,12 +322,12 @@ export default function CategorizedDocumentsDisplay({
                             {/* Unlink Document */}
                             {canEdit && (
                               <button
-                                onClick={() => handleUnlinkDocument(link.businessDocument.id)}
-                                disabled={unlinkingDocument === link.businessDocument.id}
+                                onClick={() => handleUnlinkDocument(link.businessDocument!.id)}
+                                disabled={unlinkingDocument === link.businessDocument!.id}
                                 className="p-2 text-brand-gray3 hover:text-red-400 transition-colors disabled:opacity-50"
                                 title="Unlink document"
                               >
-                                {unlinkingDocument === link.businessDocument.id ? (
+                                {unlinkingDocument === link.businessDocument!.id ? (
                                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
                                 ) : (
                                   <FiTrash2 size={16} />

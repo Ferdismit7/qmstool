@@ -34,10 +34,52 @@ interface BusinessDocument {
   uploaded_at?: string;
 }
 
+interface LinkedDocument {
+  id: number;
+  business_process_id: number;
+  business_document_id?: number;
+  created_at: string;
+  updated_at: string;
+  created_by: number | null;
+  // For document-to-document linking
+  related_document_id?: number;
+  relatedDocument?: {
+    id: number;
+    document_name: string;
+    document_type: string;
+    version: string;
+    doc_status: string;
+    progress: string;
+    status_percentage: number;
+    file_url?: string;
+    file_name?: string;
+    file_type?: string;
+    uploaded_at?: string;
+  };
+  businessDocument?: {
+    id: number;
+    document_name: string;
+    document_type: string;
+    version: string;
+    doc_status: string;
+    progress: string;
+    status_percentage: number;
+    file_url?: string;
+    file_name?: string;
+    file_type?: string;
+    uploaded_at?: string;
+  };
+  createdBy: {
+    id: number;
+    username: string;
+    email: string;
+  } | null;
+}
+
 export default function BusinessDocumentDetail({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [document, setDocument] = useState<BusinessDocument | null>(null);
-  const [linkedDocuments, setLinkedDocuments] = useState<any[]>([]);
+  const [linkedDocuments, setLinkedDocuments] = useState<LinkedDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);

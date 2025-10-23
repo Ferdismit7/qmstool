@@ -9,7 +9,7 @@ export async function GET() {
     // For each business area, get stats
     const results = [];
     for (const ba of businessAreas) {
-      const area = ba.business_area;
+      const area = ba.business_area as string;
       // Get all status_percentage values from all relevant tables
       const processes = await query(
         'SELECT status_percentage, progress FROM businessprocessregister WHERE business_area = ?',

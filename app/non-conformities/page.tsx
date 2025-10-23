@@ -52,7 +52,6 @@ export default function NonConformitiesPage() {
     title: '',
     message: ''
   });
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
 
 
@@ -127,10 +126,6 @@ export default function NonConformitiesPage() {
     }
   };
 
-  const handleDeleteClick = (nonConformity: NonConformity) => {
-    setNonConformityToDelete(nonConformity);
-    setShowDeleteModal(true);
-  };
 
   const handleDeleteConfirm = async () => {
     if (!nonConformityToDelete) return;
@@ -167,13 +162,7 @@ export default function NonConformitiesPage() {
   };
 
 
-  const handleViewNonConformity = (nonConformityId: number) => {
-    router.push(`/non-conformities/${nonConformityId}`);
-  };
 
-  const handleEditNonConformity = (nonConformityId: number) => {
-    router.push(`/non-conformities/${nonConformityId}/edit`);
-  };
 
   if (isLoading) {
     return (

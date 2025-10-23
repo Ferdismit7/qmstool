@@ -118,10 +118,6 @@ export default function RecordKeepingSystemsPage() {
     }
   };
 
-  const handleDeleteClick = (recordKeepingSystem: RecordKeepingSystem) => {
-    setRecordKeepingSystemToDelete(recordKeepingSystem);
-    setShowDeleteModal(true);
-  };
 
   const handleDeleteConfirm = async () => {
     if (!recordKeepingSystemToDelete) return;
@@ -158,13 +154,7 @@ export default function RecordKeepingSystemsPage() {
   };
 
 
-  const handleViewRecordKeepingSystem = (recordKeepingSystemId: number) => {
-    router.push(`/record-keeping-systems/${recordKeepingSystemId}`);
-  };
 
-  const handleEditRecordKeepingSystem = (recordKeepingSystemId: number) => {
-    router.push(`/record-keeping-systems/${recordKeepingSystemId}/edit`);
-  };
 
   if (isLoading) {
     return (

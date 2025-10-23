@@ -106,10 +106,6 @@ export default function ThirdPartyEvaluationsPage() {
     }
   };
 
-  const handleDeleteClick = (evaluation: ThirdPartyEvaluation) => {
-    setEvaluationToDelete(evaluation);
-    setShowDeleteModal(true);
-  };
 
   const handleDeleteConfirm = async () => {
     if (!evaluationToDelete) return;
@@ -150,13 +146,7 @@ export default function ThirdPartyEvaluationsPage() {
   };
 
 
-  const handleViewEvaluation = (evaluationId: number) => {
-    router.push(`/third-party-evaluations/${evaluationId}`);
-  };
 
-  const handleEditEvaluation = (evaluationId: number) => {
-    router.push(`/third-party-evaluations/${evaluationId}/edit`);
-  };
 
   if (isLoading) {
     return (

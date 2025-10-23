@@ -120,10 +120,6 @@ export default function DocumentsPage() {
     }
   };
 
-  const handleDeleteClick = (document: BusinessDocument) => {
-    setDocumentToDelete(document);
-    setShowDeleteModal(true);
-  };
 
   const handleDeleteConfirm = async () => {
     if (!documentToDelete) return;
@@ -159,13 +155,7 @@ export default function DocumentsPage() {
   };
 
 
-  const handleViewDocument = (documentId: number) => {
-    router.push(`/documents/${documentId}`);
-  };
 
-  const handleEditDocument = (documentId: number) => {
-    router.push(`/documents/${documentId}/edit`);
-  };
 
   if (isLoading) {
     return (

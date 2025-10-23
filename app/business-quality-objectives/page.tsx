@@ -103,10 +103,6 @@ export default function BusinessQualityObjectivesPage() {
     }
   };
 
-  const handleDeleteClick = (objective: BusinessQualityObjective) => {
-    setObjectiveToDelete(objective);
-    setShowDeleteModal(true);
-  };
 
   const handleDeleteConfirm = async () => {
     if (!objectiveToDelete) return;

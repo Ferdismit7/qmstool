@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { FiDownload, FiTrendingUp, FiTrendingDown, FiMinus, FiAlertTriangle, FiCheckCircle, FiClock } from 'react-icons/fi';
 import { CenteredLoadingSpinner } from '../components/ui/LoadingSpinner';
@@ -133,7 +133,7 @@ interface ManagementReportData {
   }>;
 }
 
-export default function ManagementReportPage() {
+function ManagementReportContent() {
   const searchParams = useSearchParams();
   const [reportData, setReportData] = useState<ManagementReportData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -984,5 +984,13 @@ export default function ManagementReportPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ManagementReportPage() {
+  return (
+    <Suspense fallback={<CenteredLoadingSpinner />}>
+      <ManagementReportContent />
+    </Suspense>
   );
 }

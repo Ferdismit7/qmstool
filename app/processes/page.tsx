@@ -109,10 +109,6 @@ export default function ProcessesPage() {
     }
   };
 
-  const handleDeleteClick = (process: BusinessProcess) => {
-    setProcessToDelete(process);
-    setShowDeleteModal(true);
-  };
 
   const handleDeleteConfirm = async () => {
     if (!processToDelete) return;

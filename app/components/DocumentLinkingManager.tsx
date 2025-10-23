@@ -9,11 +9,26 @@ import CategorizedDocumentsDisplay from './CategorizedDocumentsDisplay';
 interface LinkedDocument {
   id: number;
   business_process_id: number;
-  business_document_id: number;
+  business_document_id?: number;
   created_at: string;
   updated_at: string;
   created_by: number | null;
-  businessDocument: {
+  // For document-to-document linking
+  related_document_id?: number;
+  relatedDocument?: {
+    id: number;
+    document_name: string;
+    document_type: string;
+    version: string;
+    doc_status: string;
+    progress: string;
+    status_percentage: number;
+    file_url?: string;
+    file_name?: string;
+    file_type?: string;
+    uploaded_at?: string;
+  };
+  businessDocument?: {
     id: number;
     document_name: string;
     document_type: string;
@@ -134,10 +149,10 @@ export default function DocumentLinkingManager({
       if (result.success) {
         if (businessDocumentId) {
           // For document-to-document linking, normalize the data to match the expected structure
-          const normalized = (result.data as any[]).map((link) => ({
+          const normalized = (result.data as LinkedDocument[]).map((link) => ({
             id: link.id,
             business_process_id: 0, // Not applicable for document-to-document links
-            business_document_id: link.related_document_id,
+            business_document_id: link.related_document_id ?? 0,
             created_at: link.created_at,
             updated_at: link.updated_at,
             created_by: link.created_by ?? null,

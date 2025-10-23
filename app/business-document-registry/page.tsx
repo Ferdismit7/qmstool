@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiPlus } from 'react-icons/fi';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
@@ -32,7 +31,6 @@ interface BusinessDocument {
 }
 
 export default function BusinessDocumentRegistry() {
-  const router = useRouter();
   const [documents, setDocuments] = useState<BusinessDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,10 +118,6 @@ export default function BusinessDocumentRegistry() {
     }
   };
 
-  const handleDeleteClick = (document: BusinessDocument) => {
-    setDocumentToDelete(document);
-    setShowDeleteModal(true);
-  };
 
   const handleDeleteConfirm = async () => {
     if (!documentToDelete) return;
@@ -159,13 +153,7 @@ export default function BusinessDocumentRegistry() {
   };
 
 
-  const handleViewDocument = (documentId: number) => {
-    router.push(`/business-document-registry/${documentId}`);
-  };
 
-  const handleEditDocument = (documentId: number) => {
-    router.push(`/business-document-registry/${documentId}/edit`);
-  };
 
   if (isLoading) {
     return (

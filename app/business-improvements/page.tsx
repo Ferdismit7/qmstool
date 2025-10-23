@@ -141,10 +141,6 @@ export default function BusinessImprovementsPage() {
     }
   };
 
-  const handleDeleteClick = (businessImprovement: BusinessImprovement) => {
-    setBusinessImprovementToDelete(businessImprovement);
-    setShowDeleteModal(true);
-  };
 
   const handleDeleteConfirm = async () => {
     if (!businessImprovementToDelete) return;
@@ -181,13 +177,7 @@ export default function BusinessImprovementsPage() {
   };
 
 
-  const handleViewBusinessImprovement = (businessImprovementId: number) => {
-    router.push(`/business-improvements/${businessImprovementId}`);
-  };
 
-  const handleEditBusinessImprovement = (businessImprovementId: number) => {
-    router.push(`/business-improvements/${businessImprovementId}/edit`);
-  };
 
   if (isLoading) {
     return (

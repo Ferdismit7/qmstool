@@ -105,10 +105,6 @@ export default function CustomerFeedbackSystemsPage() {
     }
   };
 
-  const handleDeleteClick = (feedbackSystem: CustomerFeedbackSystem) => {
-    setFeedbackSystemToDelete(feedbackSystem);
-    setShowDeleteModal(true);
-  };
 
   const handleDeleteConfirm = async () => {
     if (!feedbackSystemToDelete) return;
@@ -149,13 +145,7 @@ export default function CustomerFeedbackSystemsPage() {
   };
 
 
-  const handleViewFeedbackSystem = (feedbackSystemId: number) => {
-    router.push(`/customer-feedback-systems/${feedbackSystemId}`);
-  };
 
-  const handleEditFeedbackSystem = (feedbackSystemId: number) => {
-    router.push(`/customer-feedback-systems/${feedbackSystemId}/edit`);
-  };
 
   if (isLoading) {
     return (

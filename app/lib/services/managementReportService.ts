@@ -465,13 +465,13 @@ export class ManagementReportService {
     }).length;
 
     // Calculate average resolution time (in days)
-    const resolvedNonConformities = nonConformities.filter(nc => 
-      nc.status === 'Closed' && nc.created_at && nc.actual_resolution_date
+    const resolvedNonConformities = nonConformities.filter(nc =>
+      nc.status === 'Closed' && nc.created_at && nc.completion_date
     );
     const averageResolutionTime = resolvedNonConformities.length > 0
       ? resolvedNonConformities.reduce((sum, nc) => {
           const created = new Date(nc.created_at!);
-          const resolved = new Date(nc.actual_resolution_date!);
+          const resolved = new Date(nc.completion_date!);
           return sum + Math.ceil((resolved.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
         }, 0) / resolvedNonConformities.length
       : 0;
@@ -533,36 +533,36 @@ export class ManagementReportService {
 
     // Calculate Third Party Evaluation Metrics
     const totalEvaluations = thirdPartyEvaluations.length;
-    const completedEvaluations = thirdPartyEvaluations.filter(tpe => 
-      tpe.evaluation_status === 'Completed'
+    const completedEvaluations = thirdPartyEvaluations.filter(tpe =>
+      tpe.progress === 'Completed' || tpe.doc_status === 'Completed'
     ).length;
-    const pendingEvaluations = thirdPartyEvaluations.filter(tpe => 
-      tpe.evaluation_status === 'Pending'
+    const pendingEvaluations = thirdPartyEvaluations.filter(tpe =>
+      tpe.progress === 'Pending' || tpe.doc_status === 'Pending'
     ).length;
     const overdueEvaluations = thirdPartyEvaluations.filter(tpe => {
-      if (!tpe.next_evaluation_date) return false;
-      return new Date(tpe.next_evaluation_date) < today;
+      if (!tpe.last_evaluation_date) return false;
+      return new Date(tpe.last_evaluation_date) < today;
     }).length;
     
     // Calculate average evaluation score
     const averageEvaluationScore = totalEvaluations > 0
-      ? thirdPartyEvaluations.reduce((sum, tpe) => sum + (Number(tpe.evaluation_score) || 0), 0) / totalEvaluations
+      ? thirdPartyEvaluations.reduce((sum, tpe) => sum + (Number(tpe.status_percentage) || 0), 0) / totalEvaluations
       : 0;
 
     // Calculate Customer Feedback Metrics
     const totalFeedbackSystems = customerFeedbackSystems.length;
     const activeSystems = customerFeedbackSystems.filter(cfs => 
-      cfs.status === 'Active'
+      cfs.has_feedback_system === 'Yes' || cfs.progress === 'Active'
     ).length;
     
     // Calculate average satisfaction score
     const averageSatisfactionScore = totalFeedbackSystems > 0
-      ? customerFeedbackSystems.reduce((sum, cfs) => sum + (Number(cfs.satisfaction_score) || 0), 0) / totalFeedbackSystems
+      ? customerFeedbackSystems.reduce((sum, cfs) => sum + (Number(cfs.status_percentage) || 0), 0) / totalFeedbackSystems
       : 0;
 
-    // Calculate response rate
+    // Calculate response rate (using status_percentage as proxy)
     const responseRate = totalFeedbackSystems > 0
-      ? customerFeedbackSystems.reduce((sum, cfs) => sum + (Number(cfs.response_rate) || 0), 0) / totalFeedbackSystems
+      ? customerFeedbackSystems.reduce((sum, cfs) => sum + (Number(cfs.status_percentage) || 0), 0) / totalFeedbackSystems
       : 0;
 
     return {
