@@ -59,7 +59,9 @@ export async function PUT(
     }
 
     const data = await request.json();
-    const { business_area, ...updateData } = data;
+    const { review_date } = data as { review_date?: string | number | Date };
+    const updateData = { ...data } as Record<string, unknown>;
+    delete updateData.business_area;
 
     // Ensure user can't change business area
     if (data.business_area && data.business_area !== userBusinessArea) {
@@ -74,12 +76,14 @@ export async function PUT(
 
     const fileData = fileUploadResult.data ? prepareFileDataForPrisma(fileUploadResult.data) : {};
 
+    const parsedReviewDate = review_date ? new Date(review_date) : null;
+
     const objective = await prisma.businessQualityObjective.update({
       where: { id: parseInt(id) },
       data: {
         ...updateData,
         ...fileData,
-        review_date: updateData.review_date ? new Date(updateData.review_date) : null
+        review_date: parsedReviewDate
       }
     });
     
