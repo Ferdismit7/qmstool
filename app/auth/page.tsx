@@ -1,12 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import LoginForm from '../components/LoginForm';
 import SignupForm from '../components/SignupForm';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const { status: sessionStatus } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (sessionStatus === 'authenticated') {
+      router.replace('/dashboard');
+    }
+  }, [sessionStatus, router]);
 
   const handleOktaSignIn = () => {
     signIn('okta', { callbackUrl: '/dashboard' });

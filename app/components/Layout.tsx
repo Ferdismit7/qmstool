@@ -245,7 +245,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [fetchUserData]);
 
   useEffect(() => {
-    if (!isLoading && !user && pathname !== '/auth' && sessionStatus !== 'authenticated') {
+    if (!isLoading && !user && pathname !== '/auth' && sessionStatus === 'unauthenticated') {
       // Add a longer delay to prevent race conditions during token refresh
       const timer = setTimeout(() => {
         const token = clientTokenUtils.getToken();
