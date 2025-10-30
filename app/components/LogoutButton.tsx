@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { signOut } from 'next-auth/react';
 import { clientTokenUtils } from '@/lib/auth';
 
 const LogoutButton = () => {
@@ -26,14 +27,21 @@ const LogoutButton = () => {
       // Dispatch event to notify other components
       window.dispatchEvent(new Event('tokenChange'));
       
+      // Sign out from NextAuth (clears Okta session)
+      await signOut({ redirect: false });
+      
       console.log('Logout successful, redirecting to auth');
       router.push('/auth');
+      router.refresh(); // Force a refresh to clear any cached state
     } catch (error) {
       console.error('Logout error:', error);
       // Even if API call fails, clear client-side tokens and redirect
       clientTokenUtils.clearTokens();
       window.dispatchEvent(new Event('tokenChange'));
+      // Still try to sign out from NextAuth
+      await signOut({ redirect: false });
       router.push('/auth');
+      router.refresh();
     } finally {
       setIsLoading(false);
     }
