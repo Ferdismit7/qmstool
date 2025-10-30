@@ -1,27 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { signIn, useSession } from 'next-auth/react';
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
 import LoginForm from '../components/LoginForm';
 import SignupForm from '../components/SignupForm';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const router = useRouter();
-  const { data: session, status } = useSession();
 
   const handleOktaSignIn = () => {
     signIn('okta', { callbackUrl: '/dashboard' });
   };
-
-  // Redirect to dashboard if already authenticated
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user) {
-      console.log('User already authenticated, redirecting to dashboard');
-      router.push('/dashboard');
-    }
-  }, [status, session, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

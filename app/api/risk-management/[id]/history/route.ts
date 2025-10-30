@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { getCurrentUserBusinessArea } from '@/lib/auth';
 
 // Type definitions for timeline data
 interface TimelineData {
@@ -20,19 +20,16 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
-    if (userBusinessAreas.length === 0) {
+    const userBusinessArea = await getCurrentUserBusinessArea(request);
+    if (!userBusinessArea) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // Create placeholders for IN clause
-    const placeholders = userBusinessAreas.map(() => '?').join(',');
     
     // First verify the risk management control exists and user has access
     const [control] = await query(`
       SELECT id, created_at, inherent_risk_score FROM racm_matrix 
-      WHERE id = ? AND business_area IN (${placeholders}) AND deleted_at IS NULL
-    `, [id, ...userBusinessAreas]) as Array<{
+      WHERE id = ? AND business_area = ? AND deleted_at IS NULL
+    `, [id, userBusinessArea]) as Array<{
       id: number;
       created_at: string;
       inherent_risk_score: number | null;
@@ -87,4 +84,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}
