@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getCurrentUserBusinessArea } from '@/lib/auth';
+import { getCurrentUserBusinessAreas } from '@/lib/auth';
 
 // GET single risk management control
 export async function GET(
@@ -9,13 +9,16 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const userBusinessArea = await getCurrentUserBusinessArea(request);
-    if (!userBusinessArea) {
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    if (userBusinessAreas.length === 0) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    // Create placeholders for IN clause
+    const placeholders = userBusinessAreas.map(() => '?').join(',');
     const [result] = await query(`
-      SELECT * FROM racm_matrix WHERE id = ? AND business_area = ? AND deleted_at IS NULL
-    `, [id, userBusinessArea]);
+      SELECT * FROM racm_matrix WHERE id = ? AND business_area IN (${placeholders}) AND deleted_at IS NULL
+    `, [id, ...userBusinessAreas]);
     
     if (!result) {
       return NextResponse.json({ error: 'Risk management control not found' }, { status: 404 });
@@ -37,8 +40,8 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const userBusinessArea = await getCurrentUserBusinessArea(request);
-    if (!userBusinessArea) {
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    if (userBusinessAreas.length === 0) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -68,6 +71,9 @@ export async function PUT(
       file_type
     } = data;
 
+    // Create placeholders for IN clause
+    const placeholders = userBusinessAreas.map(() => '?').join(',');
+    
     const result = await query(`
       UPDATE racm_matrix SET
         process_name = ?, activity_description = ?, issue_description = ?,
@@ -77,14 +83,14 @@ export async function PUT(
         status = ?, doc_status = ?, control_progress = ?, control_target_date = ?,
         residual_risk_impact = ?, residual_risk_overall_score = ?, file_url = ?,
         file_name = ?, file_size = ?, file_type = ?, updated_at = NOW()
-      WHERE id = ? AND business_area = ? AND deleted_at IS NULL
+      WHERE id = ? AND business_area IN (${placeholders}) AND deleted_at IS NULL
     `, [
       process_name, activity_description, issue_description, issue_type,
       inherent_risk_likeliness, inherent_risk_impact, inherent_risk_score,
       control_description, control_type, control_owner, control_effectiveness,
       residual_risk_likeliness, status, doc_status, control_progress,
       control_target_date, residual_risk_impact, residual_risk_overall_score,
-      file_url, file_name, file_size, file_type, id, userBusinessArea
+      file_url, file_name, file_size, file_type, id, ...userBusinessAreas
     ]);
 
     if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
@@ -92,8 +98,8 @@ export async function PUT(
     }
 
     const [updatedControl] = await query(`
-      SELECT * FROM racm_matrix WHERE id = ? AND business_area = ? AND deleted_at IS NULL
-    `, [id, userBusinessArea]);
+      SELECT * FROM racm_matrix WHERE id = ? AND business_area IN (${placeholders}) AND deleted_at IS NULL
+    `, [id, ...userBusinessAreas]);
 
     // Create history record for the update
     await query(`
@@ -127,14 +133,17 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const userBusinessArea = await getCurrentUserBusinessArea(request);
-    if (!userBusinessArea) {
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    if (userBusinessAreas.length === 0) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Create placeholders for IN clause
+    const placeholders = userBusinessAreas.map(() => '?').join(',');
+
     const result = await query(`
-      DELETE FROM racm_matrix WHERE id = ? AND business_area = ?
-    `, [id, userBusinessArea]);
+      DELETE FROM racm_matrix WHERE id = ? AND business_area IN (${placeholders})
+    `, [id, ...userBusinessAreas]);
 
     if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
       return NextResponse.json({ error: 'Risk management control not found' }, { status: 404 });

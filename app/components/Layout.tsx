@@ -16,6 +16,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [tokenGenerationInProgress, setTokenGenerationInProgress] = useState(false);
 
   // Check if we should show the sidebar (exclude dashboard and auth pages)
   const shouldShowSidebar = pathname !== '/dashboard' && pathname !== '/auth';
@@ -99,14 +100,77 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       setIsLoading(true);
       
-      // If NextAuth session is authenticated, trust it and set user
+      // If NextAuth session is authenticated (Okta login)
       if (sessionStatus === 'authenticated' && session?.user) {
-        const derivedName = session.user.name || session.user.email || 'User';
-        setUser({ username: derivedName });
+        console.log('NextAuth session authenticated, fetching JWT token');
+        
+        try {
+          // Check if we already have a valid token
+          const existingToken = clientTokenUtils.getToken();
+          if (existingToken && !clientTokenUtils.isTokenExpired(existingToken)) {
+            console.log('Valid existing token found, using it');
+            const tokenData = clientTokenUtils.decodeToken(existingToken);
+            if (tokenData && tokenData.username) {
+              setUser({ username: tokenData.username });
+            }
+            const success = await fetchUserData(existingToken);
+            if (!success && tokenData && tokenData.username) {
+              console.log('Fetch failed but keeping token data');
+            }
+            setIsLoading(false);
+            return;
+          }
+          
+          // Prevent duplicate token generation requests
+          if (tokenGenerationInProgress) {
+            console.log('Token generation already in progress, skipping');
+            setIsLoading(false);
+            return;
+          }
+          
+          setTokenGenerationInProgress(true);
+          
+          // Fetch a new JWT token from the API
+          console.log('Fetching JWT token for Okta user');
+          const response = await fetch('/api/auth/generate-token', {
+            method: 'POST',
+            credentials: 'include',
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Token generated successfully for Okta user');
+            
+            // Store the token
+            clientTokenUtils.storeToken(data.token, false);
+            
+            // Set user state
+            const derivedName = session.user.name || session.user.email || 'User';
+            setUser({ username: derivedName });
+            
+            // Fetch full user data
+            await fetchUserData(data.token);
+            
+            // Dispatch token change event
+            window.dispatchEvent(new Event('tokenChange'));
+          } else {
+            console.error('Failed to generate token for Okta user');
+            const derivedName = session.user.name || session.user.email || 'User';
+            setUser({ username: derivedName });
+          }
+        } catch (error) {
+          console.error('Error generating token for Okta user:', error);
+          const derivedName = session.user.name || session.user.email || 'User';
+          setUser({ username: derivedName });
+        } finally {
+          setTokenGenerationInProgress(false);
+        }
+        
         setIsLoading(false);
         return;
       }
 
+      // For email/password login, check for existing token
       const token = clientTokenUtils.getToken();
       console.log('Initial token check:', token ? 'Token found' : 'No token');
       
@@ -144,7 +208,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     const timer = setTimeout(initializeAuth, 200); // Increased delay to 200ms
     
     return () => clearTimeout(timer);
-  }, [fetchUserData, session, sessionStatus]);
+  }, [fetchUserData, session, sessionStatus, tokenGenerationInProgress]);
 
   // Listen for storage changes (when authToken is updated)
   useEffect(() => {

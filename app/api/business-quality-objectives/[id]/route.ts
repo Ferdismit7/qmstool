@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {prisma } from '@/lib/prisma';
-import { getCurrentUserBusinessArea } from '@/lib/auth';
+import { getCurrentUserBusinessAreas } from '@/lib/auth';
 import { handleFileUploadFromJson, prepareFileDataForPrisma } from '@/lib/fileUpload';
 
 // GET a single business quality objective
@@ -11,14 +11,17 @@ export async function GET(
   try {
     const { id } = await params;
     
-    const userBusinessArea = await getCurrentUserBusinessArea(request);
-    if (!userBusinessArea) {
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    if (userBusinessAreas.length === 0) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const objective = await prisma.businessQualityObjective.findUnique({
-      where: { id: parseInt(id) }
+    const objective = await prisma.businessQualityObjective.findFirst({
+      where: {
+        id: parseInt(id),
+        business_area: { in: userBusinessAreas }
+      }
     });
-    if (!objective || objective.business_area !== userBusinessArea) {
+    if (!objective) {
       return NextResponse.json({ error: 'Business quality objective not found' }, { status: 404 });
     }
     
@@ -46,25 +49,28 @@ export async function PUT(
   try {
     const { id } = await params;
     
-    const userBusinessArea = await getCurrentUserBusinessArea(request);
-    if (!userBusinessArea) {
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    if (userBusinessAreas.length === 0) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if objective exists and user has access
-    const existingObjective = await prisma.businessQualityObjective.findUnique({
-      where: { id: parseInt(id) }
+    const existingObjective = await prisma.businessQualityObjective.findFirst({
+      where: {
+        id: parseInt(id),
+        business_area: { in: userBusinessAreas }
+      }
     });
 
-    if (!existingObjective || existingObjective.business_area !== userBusinessArea) {
+    if (!existingObjective) {
       return NextResponse.json({ error: 'Business quality objective not found' }, { status: 404 });
     }
 
     const data = await request.json();
     const { business_area, ...updateData } = data;
 
-    // Ensure user can't change business area
-    if (business_area && business_area !== userBusinessArea) {
+    // Ensure user can't change business area to one they don't have access to
+    if (business_area && !userBusinessAreas.includes(business_area)) {
       return NextResponse.json({ error: 'Unauthorized to modify business area' }, { status: 403 });
     }
 
@@ -81,7 +87,7 @@ export async function PUT(
       data: {
         ...updateData,
         ...fileData,
-        business_area: userBusinessArea, // Force business area to user's area
+        business_area: business_area || existingObjective.business_area, // Keep existing or use provided area
         review_date: updateData.review_date ? new Date(updateData.review_date) : null
       }
     });
@@ -110,17 +116,20 @@ export async function DELETE(
   try {
     const { id } = await params;
     
-    const userBusinessArea = await getCurrentUserBusinessArea(request);
-    if (!userBusinessArea) {
+    const userBusinessAreas = await getCurrentUserBusinessAreas(request);
+    if (userBusinessAreas.length === 0) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if objective exists and user has access
-    const existingObjective = await prisma.businessQualityObjective.findUnique({
-      where: { id: parseInt(id) }
+    const existingObjective = await prisma.businessQualityObjective.findFirst({
+      where: {
+        id: parseInt(id),
+        business_area: { in: userBusinessAreas }
+      }
     });
 
-    if (!existingObjective || existingObjective.business_area !== userBusinessArea) {
+    if (!existingObjective) {
       return NextResponse.json({ error: 'Business quality objective not found' }, { status: 404 });
     }
 
