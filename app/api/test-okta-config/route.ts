@@ -5,8 +5,28 @@ import OktaProvider from 'next-auth/providers/okta';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+interface TestResult {
+  timestamp: string;
+  checks: {
+    secretsInitialized?: boolean;
+    environmentVariables?: Record<string, unknown>;
+    providerConstruction?: { success: boolean; error?: string };
+    discoveryEndpoint?: { success: boolean; status?: string; data?: Record<string, unknown>; error?: string };
+    callbackUrl?: { expected: string; note: string };
+    getAuthOptions?: { success: boolean; error: string | null };
+  };
+  errors: string[];
+  recommendations: string[];
+  summary?: {
+    allChecksPassed: boolean;
+    totalChecks: number;
+    passedChecks: number;
+    totalErrors: number;
+  };
+}
+
 export async function GET() {
-  const results: Record<string, unknown> = {
+  const results: TestResult = {
     timestamp: new Date().toISOString(),
     checks: {},
     errors: [],
@@ -64,7 +84,7 @@ export async function GET() {
 
     // Check for missing variables
     const missing = Object.entries(envVars)
-      .filter(([key, value]) => !value)
+      .filter(([, value]) => !value)
       .map(([key]) => key);
 
     if (missing.length > 0) {
@@ -155,17 +175,19 @@ export async function GET() {
 
     // Step 6: Test getAuthOptions function
     console.log('[Okta Config Test] Step 6: Testing getAuthOptions function...');
-    let authOptionsTest = { success: false, error: null as string | null };
+    let authOptionsTest: { success: boolean; error: string | null } = { success: false, error: null };
     try {
       const { getAuthOptions } = await import('@/lib/auth-config');
-      const authOptions = await getAuthOptions();
-      authOptionsTest.success = true;
-      authOptionsTest.error = null;
+      // Test that getAuthOptions can be called and returns valid config
+      await getAuthOptions();
+      authOptionsTest = { success: true, error: null };
       results.checks.getAuthOptions = authOptionsTest;
       console.log('[Okta Config Test] ✅ getAuthOptions works');
     } catch (error) {
-      authOptionsTest.error = error instanceof Error ? error.message : 'Unknown error';
-      authOptionsTest.success = false;
+      authOptionsTest = {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
       results.checks.getAuthOptions = authOptionsTest;
       results.errors.push(`getAuthOptions failed: ${authOptionsTest.error}`);
       console.log('[Okta Config Test] ❌ getAuthOptions failed:', authOptionsTest.error);
@@ -182,7 +204,13 @@ export async function GET() {
     results.summary = {
       allChecksPassed,
       totalChecks: 6,
-      passedChecks: Object.values(results.checks).filter((check: any) => check?.success !== false).length,
+      passedChecks: Object.values(results.checks).filter((check: unknown) => {
+        if (typeof check === 'object' && check !== null) {
+          const checkObj = check as Record<string, unknown>;
+          return checkObj?.success !== false;
+        }
+        return check !== false;
+      }).length,
       totalErrors: results.errors.length,
     };
 

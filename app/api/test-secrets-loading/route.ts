@@ -4,8 +4,34 @@ import { initializeSecrets, getSecrets } from '@/lib/awsSecretsManager';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+interface SecretsTestResult {
+  timestamp: string;
+  tests: {
+    lambdaUrlConfigured?: {
+      hasLambdaUrl: boolean;
+      hasNextPublicLambdaUrl: boolean;
+      finalUrl: string;
+    };
+    secretsLoaded?: {
+      success: boolean;
+      secretsFound?: Record<string, boolean>;
+      preview?: Record<string, string>;
+      error?: string;
+    };
+    environmentVariablesAfterInit?: {
+      NEXTAUTH_SECRET?: { exists: boolean; length: number };
+      NEXTAUTH_URL?: { exists: boolean; value: string };
+      OKTA_CLIENT_ID?: { exists: boolean; length: number };
+      OKTA_CLIENT_SECRET?: { exists: boolean; length: number };
+      OKTA_ISSUER?: { exists: boolean; value: string };
+      error?: string;
+    };
+  };
+  errors: string[];
+}
+
 export async function GET() {
-  const results: Record<string, unknown> = {
+  const results: SecretsTestResult = {
     timestamp: new Date().toISOString(),
     tests: {},
     errors: [],
