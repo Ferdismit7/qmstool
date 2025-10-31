@@ -8,6 +8,15 @@ const errorMessages: Record<string, string> = {
   Configuration: 'There is a problem with the server configuration. Please contact your administrator.',
   AccessDenied: 'You do not have permission to sign in.',
   Verification: 'The verification token has expired or has already been used.',
+  OAuthSignin: 'Failed to initiate Okta authentication. Please check that Okta is configured correctly and the redirect URI matches your application URL.',
+  OAuthCallback: 'Failed to process the Okta authentication callback.',
+  OAuthCreateAccount: 'Could not create OAuth account in Okta.',
+  EmailCreateAccount: 'Could not create account with email.',
+  Callback: 'There was an error processing the authentication callback.',
+  OAuthAccountNotLinked: 'An account with this email already exists. Please sign in with your existing account.',
+  EmailSignin: 'Failed to send authentication email.',
+  CredentialsSignin: 'The credentials you provided are incorrect.',
+  SessionRequired: 'Please sign in to access this page.',
   Default: 'An error occurred during authentication.',
 };
 

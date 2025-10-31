@@ -11,7 +11,8 @@ async function getHandler() {
   // Ensure secrets are loaded before importing auth config
   await initializeSecrets();
   const NextAuth = (await import('next-auth')).default;
-  const { authOptions } = await import('@/lib/auth-config');
+  const { getAuthOptions } = await import('@/lib/auth-config');
+  const authOptions = await getAuthOptions();
   return NextAuth(authOptions);
 }
 

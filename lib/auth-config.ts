@@ -10,86 +10,124 @@ function usernameFromEmail(email?: string | null, fallback?: string | null) {
   return base || 'user';
 }
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    OktaProvider({
-      clientId: process.env.OKTA_CLIENT_ID!,
-      clientSecret: process.env.OKTA_CLIENT_SECRET!,
-      issuer: process.env.OKTA_ISSUER!,
-    }),
-  ],
-  secret: process.env.NEXTAUTH_SECRET,
-  session: {
-    strategy: "jwt",
-  },
-  callbacks: {
-    async jwt({ token, user, account }) {
-      if (account) {
-        token.accessToken = account.access_token;
-        token.provider = account.provider;
-      }
-      if (user || token?.email) {
-        // Ensure DB user exists and attach dbUserId
-        try {
-          await initializeSecrets();
-          const email = (user?.email || token.email) as string | undefined;
-          const name = (user?.name || token.name) as string | undefined;
-          if (email) {
-            const baseUsername = usernameFromEmail(email, name || null);
-            // Make username unique if needed
-            const candidate = baseUsername;
-            // Attempt up to 5 variations to avoid conflicts on the 20-char limit
-            // Prefer stable username if available
-            const existing = await prisma.user.findUnique({ where: { email } });
-            const dbUser = existing ?? await prisma.user.upsert({
-              where: { email },
-              update: {},
-              create: {
-                email,
-                username: candidate,
-              },
-            });
-            token.dbUserId = dbUser.id;
-          }
-        } catch (e) {
-          // Don't block auth on provisioning failure
-          // eslint-disable-next-line no-console
-          console.log('[NextAuth][jwt] provisioning skipped:', e);
+// Create auth options function that ensures secrets are loaded
+export const getAuthOptions = async (): Promise<NextAuthOptions> => {
+  // Ensure secrets are initialized (this should already be done, but be safe)
+  await initializeSecrets();
+  
+  // Verify required environment variables are set
+  if (!process.env.OKTA_CLIENT_ID || !process.env.OKTA_CLIENT_SECRET || !process.env.OKTA_ISSUER) {
+    console.error('[NextAuth] Missing Okta configuration:', {
+      OKTA_CLIENT_ID: !!process.env.OKTA_CLIENT_ID,
+      OKTA_CLIENT_SECRET: !!process.env.OKTA_CLIENT_SECRET,
+      OKTA_ISSUER: !!process.env.OKTA_ISSUER,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    });
+    throw new Error('Okta configuration is missing. Please check environment variables.');
+  }
+
+  if (!process.env.NEXTAUTH_SECRET || !process.env.NEXTAUTH_URL) {
+    console.error('[NextAuth] Missing NextAuth configuration:', {
+      NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    });
+    throw new Error('NextAuth configuration is missing. Please check environment variables.');
+  }
+
+  console.log('[NextAuth] Initializing Okta provider with:', {
+    issuer: process.env.OKTA_ISSUER,
+    clientId: process.env.OKTA_CLIENT_ID?.substring(0, 8) + '...',
+    nextAuthUrl: process.env.NEXTAUTH_URL,
+    callbackUrl: `${process.env.NEXTAUTH_URL}/api/auth/callback/okta`,
+  });
+
+  return {
+    providers: [
+      OktaProvider({
+        clientId: process.env.OKTA_CLIENT_ID,
+        clientSecret: process.env.OKTA_CLIENT_SECRET,
+        issuer: process.env.OKTA_ISSUER,
+        authorization: {
+          params: {
+            scope: "openid email profile",
+          },
+        },
+        checks: ["pkce", "state"],
+      }),
+    ],
+    secret: process.env.NEXTAUTH_SECRET,
+    session: {
+      strategy: "jwt",
+    },
+    callbacks: {
+      async jwt({ token, user, account }) {
+        if (account) {
+          token.accessToken = account.access_token;
+          token.provider = account.provider;
         }
-        token.id = (token.id || user?.id) as string | undefined;
-        token.email = (token.email || user?.email) as string | undefined;
-        token.name = (token.name || user?.name) as string | undefined;
-      }
-      return token;
+        if (user || token?.email) {
+          // Ensure DB user exists and attach dbUserId
+          try {
+            await initializeSecrets();
+            const email = (user?.email || token.email) as string | undefined;
+            const name = (user?.name || token.name) as string | undefined;
+            if (email) {
+              const baseUsername = usernameFromEmail(email, name || null);
+              // Make username unique if needed
+              const candidate = baseUsername;
+              // Attempt up to 5 variations to avoid conflicts on the 20-char limit
+              // Prefer stable username if available
+              const existing = await prisma.user.findUnique({ where: { email } });
+              const dbUser = existing ?? await prisma.user.upsert({
+                where: { email },
+                update: {},
+                create: {
+                  email,
+                  username: candidate,
+                },
+              });
+              token.dbUserId = dbUser.id;
+            }
+          } catch (e) {
+            // Don't block auth on provisioning failure
+            // eslint-disable-next-line no-console
+            console.log('[NextAuth][jwt] provisioning skipped:', e);
+          }
+          token.id = (token.id || user?.id) as string | undefined;
+          token.email = (token.email || user?.email) as string | undefined;
+          token.name = (token.name || user?.name) as string | undefined;
+        }
+        return token;
+      },
+      async session({ session, token }) {
+        if (token && session.user) {
+          session.user.id = token.id as string;
+          session.user.email = token.email as string;
+          session.user.name = token.name as string;
+          session.accessToken = token.accessToken as string;
+          session.provider = token.provider as string;
+          // Expose db user id for server-side lookups if needed
+          // @ts-expect-error augmenting session
+          session.user.dbUserId = token.dbUserId as number | undefined;
+        }
+        return session;
+      },
+      async signIn() {
+        return true;
+      },
+      async redirect({ url, baseUrl }) {
+        // Allows relative callback URLs
+        if (url.startsWith("/")) return `${baseUrl}${url}`;
+        // Allows callback URLs on the same origin
+        if (new URL(url).origin === baseUrl) return url;
+        // Default redirect to dashboard
+        return `${baseUrl}/dashboard`;
+      },
     },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.email = token.email as string;
-        session.user.name = token.name as string;
-        session.accessToken = token.accessToken as string;
-        session.provider = token.provider as string;
-        // Expose db user id for server-side lookups if needed
-        // @ts-expect-error augmenting session
-        session.user.dbUserId = token.dbUserId as number | undefined;
-      }
-      return session;
+    pages: {
+      signIn: "/auth",
+      error: "/auth/error",
     },
-    async signIn() {
-      return true;
-    },
-    async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      // Allows callback URLs on the same origin
-      if (new URL(url).origin === baseUrl) return url;
-      // Default redirect to dashboard
-      return `${baseUrl}/dashboard`;
-    },
-  },
-  pages: {
-    signIn: "/auth",
-    error: "/auth/error",
-  },
-  debug: true,
+    debug: true,
+  };
 };
