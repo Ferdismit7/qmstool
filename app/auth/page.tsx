@@ -24,14 +24,11 @@ export default function AuthPage() {
     try {
       console.log('Initiating Okta sign-in...');
       // Use redirect: true to ensure proper OAuth flow
-      const result = await signIn('okta', { 
+      // When redirect: true, signIn returns undefined and handles redirect automatically
+      await signIn('okta', { 
         callbackUrl: '/dashboard',
         redirect: true 
       });
-      // If signIn returns false, there was an error
-      if (result === false) {
-        console.error('Okta sign-in failed');
-      }
     } catch (error) {
       console.error('Error initiating Okta sign-in:', error);
     }
