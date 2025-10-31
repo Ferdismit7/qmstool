@@ -78,6 +78,14 @@ export const authOptions: NextAuthOptions = {
     async signIn() {
       return true;
     },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      if (new URL(url).origin === baseUrl) return url;
+      // Default redirect to dashboard
+      return `${baseUrl}/dashboard`;
+    },
   },
   pages: {
     signIn: "/auth",

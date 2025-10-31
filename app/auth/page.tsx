@@ -12,13 +12,29 @@ export default function AuthPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Only redirect if authenticated and not loading
+    // This prevents redirect loops during Okta OAuth flow
     if (sessionStatus === 'authenticated') {
+      console.log('Session authenticated, redirecting to dashboard');
       router.replace('/dashboard');
     }
   }, [sessionStatus, router]);
 
-  const handleOktaSignIn = () => {
-    signIn('okta', { callbackUrl: '/dashboard' });
+  const handleOktaSignIn = async () => {
+    try {
+      console.log('Initiating Okta sign-in...');
+      // Use redirect: true to ensure proper OAuth flow
+      const result = await signIn('okta', { 
+        callbackUrl: '/dashboard',
+        redirect: true 
+      });
+      // If signIn returns false, there was an error
+      if (result === false) {
+        console.error('Okta sign-in failed');
+      }
+    } catch (error) {
+      console.error('Error initiating Okta sign-in:', error);
+    }
   };
 
   return (

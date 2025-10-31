@@ -13,6 +13,12 @@ export default withAuth(
       return NextResponse.next();
     }
 
+    // Skip auth check for NextAuth API routes
+    if (request.nextUrl.pathname.startsWith('/api/auth')) {
+      console.log('Skipping auth check for NextAuth API route');
+      return NextResponse.next();
+    }
+
     // Skip auth check for static files and images
     if (request.nextUrl.pathname.startsWith('/_next') || 
         request.nextUrl.pathname.startsWith('/favicon.ico') ||
@@ -21,7 +27,7 @@ export default withAuth(
       return NextResponse.next();
     }
 
-    // For API routes, let them handle their own authentication
+    // For other API routes, let them handle their own authentication
     if (request.nextUrl.pathname.startsWith('/api')) {
       console.log('Skipping auth check for API route');
       return NextResponse.next();
@@ -38,6 +44,11 @@ export default withAuth(
           return true;
         }
         
+        // Allow access to NextAuth API routes (critical for OAuth callbacks)
+        if (req.nextUrl.pathname.startsWith('/api/auth')) {
+          return true;
+        }
+        
         // Allow access to static files
         if (req.nextUrl.pathname.startsWith('/_next') || 
             req.nextUrl.pathname.startsWith('/favicon.ico') ||
@@ -45,7 +56,7 @@ export default withAuth(
           return true;
         }
         
-        // Allow access to API routes (they handle their own auth)
+        // Allow access to other API routes (they handle their own auth)
         if (req.nextUrl.pathname.startsWith('/api')) {
           return true;
         }
@@ -63,8 +74,12 @@ export default withAuth(
 export const config = {
   matcher: [
     /*
-     * Temporarily disable middleware to test NextAuth
-     * '/((?!auth|_next|favicon.ico|images|api).*)'
+     * Match all request paths except:
+     * - /api/auth (NextAuth routes)
+     * - /auth (auth pages)
+     * - /_next (Next.js internals)
+     * - /favicon.ico, /images (static files)
      */
+    '/((?!api/auth|auth|_next|favicon.ico|images).*)'
   ]
 }; 
