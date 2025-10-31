@@ -22,8 +22,12 @@ export async function GET() {
     
     // Test NextAuth configuration
     try {
-      const { authOptions } = await import('@/lib/auth-config');
+      const { getAuthOptions } = await import('@/lib/auth-config');
       console.log('✅ [Debug] Auth config imported successfully');
+      
+      // Get auth options (this will initialize secrets if needed)
+      const authOptions = await getAuthOptions();
+      console.log('✅ [Debug] Auth options retrieved successfully');
       
       // Check if we can create a NextAuth instance
       const NextAuth = (await import('next-auth')).default;

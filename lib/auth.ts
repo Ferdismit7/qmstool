@@ -187,7 +187,8 @@ export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload
       console.log('Trying NextAuth session fallback');
       try {
         const { getServerSession } = await import('next-auth');
-        const { authOptions } = await import('@/lib/auth-config');
+        const { getAuthOptions } = await import('@/lib/auth-config');
+        const authOptions = await getAuthOptions();
         const session = await getServerSession(authOptions);
         if (session?.user?.email) {
           // Map minimal payload from session; downstream can resolve business areas by email
@@ -239,7 +240,8 @@ export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload
     } catch {}
     try {
       const { getServerSession } = await import('next-auth');
-      const { authOptions } = await import('@/lib/auth-config');
+      const { getAuthOptions } = await import('@/lib/auth-config');
+      const authOptions = await getAuthOptions();
       const session = await getServerSession(authOptions);
       if (session?.user?.email) {
         const username = (session.user.name || session.user.email || '').toString();

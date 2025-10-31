@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { initializeSecrets } from '@/lib/awsSecretsManager';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-config';
+import { getAuthOptions } from '@/lib/auth-config';
 
 /**
  * Generate JWT token for Okta-authenticated users
@@ -14,8 +14,9 @@ export async function POST() {
   try {
     console.log('Generate token request started');
     
-    // Initialize secrets
+    // Initialize secrets and get auth options
     await initializeSecrets();
+    const authOptions = await getAuthOptions();
     
     // Get NextAuth session
     const session = await getServerSession(authOptions);
