@@ -37,6 +37,7 @@ let cachedSecrets: Secrets | null = null;
 /**
  * Retrieve secrets from Lambda function URL
  * Uses caching to avoid multiple API calls
+ * PRIORITIZES environment variables if they're already set (build-time config)
  */
 export const getSecrets = async (): Promise<Secrets> => {
   // Return cached secrets if available
@@ -44,8 +45,49 @@ export const getSecrets = async (): Promise<Secrets> => {
     return cachedSecrets;
   }
 
+  // PRIORITY 1: Check if critical environment variables are already set (build-time in Amplify)
+  // If they are, use them directly without calling Lambda
+  const hasCriticalEnvVars = !!(
+    process.env.NEXTAUTH_SECRET &&
+    process.env.NEXTAUTH_URL &&
+    process.env.OKTA_CLIENT_ID &&
+    process.env.OKTA_CLIENT_SECRET &&
+    process.env.OKTA_ISSUER
+  );
+
+  if (hasCriticalEnvVars) {
+    console.log("✅ [Secrets] Critical environment variables are already set, using them directly");
+    console.log("🔑 [Secrets] Environment variables check:");
+    console.log(`  - JWT_SECRET: ${process.env.JWT_SECRET ? '✅ SET' : '⚠️ OPTIONAL'}`);
+    console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? '✅ SET' : '⚠️ OPTIONAL'}`);
+    console.log(`  - NEXTAUTH_SECRET: ✅ SET`);
+    console.log(`  - NEXTAUTH_URL: ✅ SET`);
+    console.log(`  - OKTA_CLIENT_ID: ✅ SET`);
+    console.log(`  - OKTA_CLIENT_SECRET: ✅ SET`);
+    console.log(`  - OKTA_ISSUER: ✅ SET`);
+    
+    const envSecrets: Secrets = {
+      DATABASE_URL: process.env.DATABASE_URL || '',
+      JWT_SECRET: process.env.JWT_SECRET || '',
+      S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
+      REGION: process.env.REGION || 'eu-north-1',
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL || '',
+      OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID || '',
+      OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET || '',
+      OKTA_ISSUER: process.env.OKTA_ISSUER || '',
+      ACCESS_KEY_ID: process.env.ACCESS_KEY_ID || '',
+      SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY || '',
+    };
+    
+    cachedSecrets = envSecrets;
+    console.log("✅ [Secrets] Using environment variables directly (skip Lambda call)");
+    return envSecrets;
+  }
+
+  // PRIORITY 2: Try Lambda function if environment variables are not available
   try {
-    console.log("🔑 [Secrets] Calling Lambda function URL for secrets...");
+    console.log("🔑 [Secrets] Critical env vars not found, calling Lambda function URL for secrets...");
     
     // Get Lambda function URL from environment variable
     const lambdaUrl = process.env.LAMBDA_FUNCTION_URL || process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL;
@@ -201,26 +243,80 @@ export const getSecrets = async (): Promise<Secrets> => {
 /**
  * Initialize secrets at application startup
  * Call this function at the beginning of your API routes
+ * This function now prioritizes environment variables (build-time in Amplify) over Lambda
  */
 export const initializeSecrets = async (): Promise<void> => {
   try {
+    // First check if environment variables are already set (they should be in Amplify)
+    const hasEnvVars = !!(
+      process.env.NEXTAUTH_SECRET && 
+      process.env.NEXTAUTH_URL &&
+      process.env.OKTA_CLIENT_ID &&
+      process.env.OKTA_CLIENT_SECRET &&
+      process.env.OKTA_ISSUER
+    );
+
+    if (hasEnvVars) {
+      console.log("✅ [Secrets] Environment variables already available (build-time config), skipping Lambda call");
+      console.log("🔑 [Secrets] Verified environment variables:", {
+        NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
+        NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'MISSING',
+        OKTA_CLIENT_ID: !!process.env.OKTA_CLIENT_ID,
+        OKTA_CLIENT_SECRET: !!process.env.OKTA_CLIENT_SECRET,
+        OKTA_ISSUER: process.env.OKTA_ISSUER || 'MISSING',
+      });
+      // Still call getSecrets to populate cache, but it will use env vars
+      await getSecrets();
+      console.log("✅ [Secrets] All critical secrets verified and available from environment variables");
+      return;
+    }
+
+    // If env vars not available, try to get from Lambda/cache
     const secrets = await getSecrets();
-    console.log("✅ Secrets initialized successfully");
+    console.log("✅ Secrets retrieved from cache or Lambda");
     
     // Verify critical secrets are available
     if (!secrets.NEXTAUTH_SECRET || !secrets.NEXTAUTH_URL) {
-      console.warn("⚠️ [Secrets] Critical NextAuth secrets missing!");
-      throw new Error("Critical secrets (NEXTAUTH_SECRET, NEXTAUTH_URL) are not available");
+      console.warn("⚠️ [Secrets] Critical NextAuth secrets missing from retrieved secrets!");
+      // Check if they're in environment variables (might have been set directly)
+      if (!process.env.NEXTAUTH_SECRET || !process.env.NEXTAUTH_URL) {
+        throw new Error("Critical secrets (NEXTAUTH_SECRET, NEXTAUTH_URL) are not available");
+      }
+      console.log("✅ [Secrets] Using environment variables as fallback");
     }
     
-    console.log("✅ [Secrets] All critical secrets verified");
+    // Double-check environment variables are set after getSecrets
+    console.log("🔑 [Secrets] Verifying environment variables after initialization:", {
+      NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'MISSING',
+      OKTA_CLIENT_ID: !!process.env.OKTA_CLIENT_ID,
+      OKTA_CLIENT_SECRET: !!process.env.OKTA_CLIENT_SECRET,
+      OKTA_ISSUER: process.env.OKTA_ISSUER || 'MISSING',
+    });
+    
+    if (!process.env.NEXTAUTH_SECRET || !process.env.NEXTAUTH_URL || 
+        !process.env.OKTA_CLIENT_ID || !process.env.OKTA_CLIENT_SECRET || !process.env.OKTA_ISSUER) {
+      console.error("❌ [Secrets] CRITICAL: Required environment variables are missing after initialization!");
+      throw new Error("Required NextAuth and Okta environment variables are not set");
+    }
+    
+    console.log("✅ [Secrets] All critical secrets verified and available");
   } catch (error) {
     console.error("❌ Failed to initialize secrets:", error);
-    // Don't throw if we're using fallback environment variables successfully
-    if (process.env.NEXTAUTH_SECRET && process.env.NEXTAUTH_URL) {
-      console.log("✅ [Secrets] Fallback environment variables are available, continuing...");
+    // Check if we have the minimum required vars for NextAuth to work
+    const hasMinimum = !!(
+      process.env.NEXTAUTH_SECRET && 
+      process.env.NEXTAUTH_URL &&
+      process.env.OKTA_CLIENT_ID &&
+      process.env.OKTA_CLIENT_SECRET &&
+      process.env.OKTA_ISSUER
+    );
+    
+    if (hasMinimum) {
+      console.log("✅ [Secrets] Fallback: All required environment variables are available");
       return;
     }
+    
     throw error;
   }
 };
