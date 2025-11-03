@@ -15,35 +15,62 @@ let handlerInitializing = false;
 async function getHandler(): Promise<(req: Request, ctx?: unknown) => Response | Promise<Response>> {
   // Always ensure secrets are loaded first (critical for serverless environments)
   console.log('[NextAuth] Ensuring secrets are loaded...');
-  await initializeSecrets();
+  try {
+    await initializeSecrets();
+  } catch (error) {
+    console.error('[NextAuth] Failed to initialize secrets, clearing cache:', error);
+    cachedHandler = null; // Clear cache on initialization failure
+    throw error;
+  }
   
   // Verify critical environment variables are set BEFORE using cache
   // This prevents using a cached handler from another instance with missing secrets
+  // Check both existence and non-empty values
+  const nextAuthSecret = process.env.NEXTAUTH_SECRET?.trim();
+  const nextAuthUrl = process.env.NEXTAUTH_URL?.trim();
+  const oktaClientId = process.env.OKTA_CLIENT_ID?.trim();
+  const oktaClientSecret = process.env.OKTA_CLIENT_SECRET?.trim();
+  const oktaIssuer = process.env.OKTA_ISSUER?.trim();
+  
   const hasRequiredSecrets = !!(
-    process.env.NEXTAUTH_SECRET &&
-    process.env.NEXTAUTH_URL &&
-    process.env.OKTA_CLIENT_ID &&
-    process.env.OKTA_CLIENT_SECRET &&
-    process.env.OKTA_ISSUER
+    nextAuthSecret &&
+    nextAuthSecret.length > 0 &&
+    nextAuthUrl &&
+    nextAuthUrl.length > 0 &&
+    oktaClientId &&
+    oktaClientId.length > 0 &&
+    oktaClientSecret &&
+    oktaClientSecret.length > 0 &&
+    oktaIssuer &&
+    oktaIssuer.length > 0
   );
+  
+  // Also validate NEXTAUTH_SECRET meets NextAuth requirements (at least 32 chars recommended)
+  if (nextAuthSecret && nextAuthSecret.length < 32) {
+    console.warn('[NextAuth] WARNING: NEXTAUTH_SECRET is less than 32 characters, which may cause issues');
+  }
 
   if (!hasRequiredSecrets) {
     // Clear cache if secrets are missing - don't use a stale handler
     console.error('[NextAuth] CRITICAL: Required secrets missing! Clearing cache.');
     console.error('[NextAuth] Missing secrets:', {
       NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
-      NEXTAUTH_URL: !!process.env.NEXTAUTH_URL,
+      NEXTAUTH_SECRET_LENGTH: process.env.NEXTAUTH_SECRET?.length || 0,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'MISSING',
       OKTA_CLIENT_ID: !!process.env.OKTA_CLIENT_ID,
+      OKTA_CLIENT_ID_VALUE: process.env.OKTA_CLIENT_ID ? `${process.env.OKTA_CLIENT_ID.substring(0, 8)}...` : 'MISSING',
       OKTA_CLIENT_SECRET: !!process.env.OKTA_CLIENT_SECRET,
-      OKTA_ISSUER: !!process.env.OKTA_ISSUER,
+      OKTA_CLIENT_SECRET_LENGTH: process.env.OKTA_CLIENT_SECRET?.length || 0,
+      OKTA_ISSUER: process.env.OKTA_ISSUER || 'MISSING',
     });
     cachedHandler = null;
     throw new Error('NEXTAUTH_SECRET, NEXTAUTH_URL, or Okta configuration not available after secrets initialization');
   }
 
-  // Return cached handler if available AND secrets are valid
+  // Return cached handler if available AND secrets are valid (secrets were just verified above)
+  // We only use cache if secrets are valid to avoid stale handlers
   if (cachedHandler) {
-    console.log('[NextAuth] Using cached handler');
+    console.log('[NextAuth] Using cached handler (secrets verified)');
     return cachedHandler;
   }
 
@@ -65,22 +92,39 @@ async function getHandler(): Promise<(req: Request, ctx?: unknown) => Response |
   try {
     handlerInitializing = true;
     console.log('[NextAuth] Initializing handler...');
+    console.log('[NextAuth] Environment variables at handler creation:', {
+      NEXTAUTH_SECRET: !!nextAuthSecret,
+      NEXTAUTH_SECRET_LENGTH: nextAuthSecret?.length || 0,
+      NEXTAUTH_URL: nextAuthUrl || 'MISSING',
+      OKTA_CLIENT_ID: oktaClientId ? `${oktaClientId.substring(0, 8)}...` : 'MISSING',
+      OKTA_CLIENT_SECRET: !!oktaClientSecret,
+      OKTA_ISSUER: oktaIssuer || 'MISSING',
+    });
 
     const NextAuth = (await import('next-auth')).default;
     const { getAuthOptions } = await import('@/lib/auth-config');
-    const authOptions = await getAuthOptions();
     
+    console.log('[NextAuth] Calling getAuthOptions...');
+    const authOptions = await getAuthOptions();
+    console.log('[NextAuth] getAuthOptions completed successfully');
+    
+    console.log('[NextAuth] Creating NextAuth handler...');
     const handler = NextAuth(authOptions);
-    console.log('[NextAuth] Handler initialized and cached successfully');
     
     if (!handler) {
-      throw new Error('Failed to create NextAuth handler');
+      throw new Error('Failed to create NextAuth handler - handler is null/undefined');
     }
     
+    console.log('[NextAuth] Handler initialized successfully');
     cachedHandler = handler;
     return handler;
   } catch (error) {
     console.error('[NextAuth] Failed to initialize handler:', error);
+    console.error('[NextAuth] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack',
+      name: error instanceof Error ? error.name : 'Unknown',
+    });
     // Clear cache on error to allow retry
     cachedHandler = null;
     throw error;
