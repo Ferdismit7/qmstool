@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 // Cache the handler to avoid recreating it on every request
-let cachedHandler: ReturnType<typeof NextAuth> | null = null;
+// The handler is a function that takes Request and returns Response | Promise<Response>
+let cachedHandler: ((req: Request, ctx?: unknown) => Response | Promise<Response>) | null = null;
 let handlerInitializing = false;
 
 // Initialize secrets before creating the NextAuth handler
