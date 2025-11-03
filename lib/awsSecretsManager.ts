@@ -243,11 +243,11 @@ export const getSecrets = async (): Promise<Secrets> => {
 /**
  * Initialize secrets at application startup
  * Call this function at the beginning of your API routes
- * This function now prioritizes environment variables (build-time in Amplify) over Lambda
+ * This function prioritizes environment variables but always tries Lambda as fallback
  */
 export const initializeSecrets = async (): Promise<void> => {
   try {
-    // First check if environment variables are already set (they should be in Amplify)
+    // First check if environment variables are already set (from Amplify Console)
     const hasEnvVars = !!(
       process.env.NEXTAUTH_SECRET && 
       process.env.NEXTAUTH_URL &&
@@ -257,53 +257,91 @@ export const initializeSecrets = async (): Promise<void> => {
     );
 
     if (hasEnvVars) {
-      console.log("✅ [Secrets] Environment variables already available (build-time config), skipping Lambda call");
-      console.log("🔑 [Secrets] Verified environment variables:", {
+      console.log("✅ [Secrets] Environment variables detected, verifying they're available...");
+      console.log("🔑 [Secrets] Environment variables check:", {
         NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
         NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'MISSING',
         OKTA_CLIENT_ID: !!process.env.OKTA_CLIENT_ID,
         OKTA_CLIENT_SECRET: !!process.env.OKTA_CLIENT_SECRET,
         OKTA_ISSUER: process.env.OKTA_ISSUER || 'MISSING',
       });
-      // Still call getSecrets to populate cache, but it will use env vars
-      await getSecrets();
-      console.log("✅ [Secrets] All critical secrets verified and available from environment variables");
-      return;
+      
+      // Verify the values are not empty strings
+      if (process.env.NEXTAUTH_SECRET && process.env.NEXTAUTH_URL && 
+          process.env.OKTA_CLIENT_ID && process.env.OKTA_CLIENT_SECRET && 
+          process.env.OKTA_ISSUER) {
+        console.log("✅ [Secrets] All critical environment variables verified and available");
+        // Still call getSecrets to populate cache
+        await getSecrets();
+        return;
+      } else {
+        console.warn("⚠️ [Secrets] Environment variables detected but some are empty, will try Lambda as fallback");
+      }
+    } else {
+      console.log("⚠️ [Secrets] Environment variables not immediately available, will try Lambda");
     }
 
-    // If env vars not available, try to get from Lambda/cache
-    const secrets = await getSecrets();
-    console.log("✅ Secrets retrieved from cache or Lambda");
-    
-    // Verify critical secrets are available
-    if (!secrets.NEXTAUTH_SECRET || !secrets.NEXTAUTH_URL) {
-      console.warn("⚠️ [Secrets] Critical NextAuth secrets missing from retrieved secrets!");
-      // Check if they're in environment variables (might have been set directly)
-      if (!process.env.NEXTAUTH_SECRET || !process.env.NEXTAUTH_URL) {
-        throw new Error("Critical secrets (NEXTAUTH_SECRET, NEXTAUTH_URL) are not available");
+    // If env vars not available or incomplete, try to get from Lambda/cache
+    try {
+      await getSecrets();
+      console.log("✅ [Secrets] Secrets retrieved from cache or Lambda");
+      
+      // getSecrets should have set process.env from either Lambda or env vars
+      // Now verify they're actually set
+      const finalCheck = !!(
+        process.env.NEXTAUTH_SECRET && 
+        process.env.NEXTAUTH_URL &&
+        process.env.OKTA_CLIENT_ID &&
+        process.env.OKTA_CLIENT_SECRET &&
+        process.env.OKTA_ISSUER
+      );
+      
+      if (!finalCheck) {
+        console.error("❌ [Secrets] CRITICAL: Required environment variables are missing after getSecrets!");
+        console.error("❌ [Secrets] Missing variables:", {
+          NEXTAUTH_SECRET: !process.env.NEXTAUTH_SECRET,
+          NEXTAUTH_URL: !process.env.NEXTAUTH_URL,
+          OKTA_CLIENT_ID: !process.env.OKTA_CLIENT_ID,
+          OKTA_CLIENT_SECRET: !process.env.OKTA_CLIENT_SECRET,
+          OKTA_ISSUER: !process.env.OKTA_ISSUER,
+        });
+        throw new Error("Required NextAuth and Okta environment variables are not available from either environment variables or Lambda");
       }
-      console.log("✅ [Secrets] Using environment variables as fallback");
+      
+      console.log("✅ [Secrets] All critical secrets verified and available after getSecrets");
+    } catch (lambdaError) {
+      console.error("❌ [Secrets] Error getting secrets from Lambda:", lambdaError);
+      
+      // Final fallback: check if env vars are now available (might have been set by Amplify)
+      const finalEnvCheck = !!(
+        process.env.NEXTAUTH_SECRET && 
+        process.env.NEXTAUTH_URL &&
+        process.env.OKTA_CLIENT_ID &&
+        process.env.OKTA_CLIENT_SECRET &&
+        process.env.OKTA_ISSUER
+      );
+      
+      if (finalEnvCheck) {
+        console.log("✅ [Secrets] Environment variables available after Lambda error (Amplify runtime injection)");
+        return;
+      }
+      
+      // If we get here, neither source worked
+      throw lambdaError;
     }
-    
-    // Double-check environment variables are set after getSecrets
-    console.log("🔑 [Secrets] Verifying environment variables after initialization:", {
+  } catch (error) {
+    console.error("❌ [Secrets] Failed to initialize secrets:", error);
+    console.error("❌ [Secrets] Current process.env state:", {
       NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
       NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'MISSING',
       OKTA_CLIENT_ID: !!process.env.OKTA_CLIENT_ID,
       OKTA_CLIENT_SECRET: !!process.env.OKTA_CLIENT_SECRET,
       OKTA_ISSUER: process.env.OKTA_ISSUER || 'MISSING',
+      LAMBDA_FUNCTION_URL: !!process.env.LAMBDA_FUNCTION_URL,
+      NEXT_PUBLIC_LAMBDA_FUNCTION_URL: !!process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL,
     });
     
-    if (!process.env.NEXTAUTH_SECRET || !process.env.NEXTAUTH_URL || 
-        !process.env.OKTA_CLIENT_ID || !process.env.OKTA_CLIENT_SECRET || !process.env.OKTA_ISSUER) {
-      console.error("❌ [Secrets] CRITICAL: Required environment variables are missing after initialization!");
-      throw new Error("Required NextAuth and Okta environment variables are not set");
-    }
-    
-    console.log("✅ [Secrets] All critical secrets verified and available");
-  } catch (error) {
-    console.error("❌ Failed to initialize secrets:", error);
-    // Check if we have the minimum required vars for NextAuth to work
+    // Final check - sometimes Amplify injects them late
     const hasMinimum = !!(
       process.env.NEXTAUTH_SECRET && 
       process.env.NEXTAUTH_URL &&
@@ -313,7 +351,7 @@ export const initializeSecrets = async (): Promise<void> => {
     );
     
     if (hasMinimum) {
-      console.log("✅ [Secrets] Fallback: All required environment variables are available");
+      console.log("✅ [Secrets] Final fallback: Environment variables are now available");
       return;
     }
     
