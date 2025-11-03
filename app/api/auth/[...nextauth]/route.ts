@@ -12,7 +12,7 @@ let cachedHandler: ((req: Request, ctx?: unknown) => Response | Promise<Response
 let handlerInitializing = false;
 
 // Initialize secrets before creating the NextAuth handler
-async function getHandler() {
+async function getHandler(): Promise<(req: Request, ctx?: unknown) => Response | Promise<Response>> {
   // Return cached handler if available
   if (cachedHandler) {
     return cachedHandler;
@@ -20,11 +20,15 @@ async function getHandler() {
 
   // Prevent concurrent initialization
   if (handlerInitializing) {
-    // Wait a bit and try again
-    await new Promise(resolve => setTimeout(resolve, 100));
-    if (cachedHandler) {
-      return cachedHandler;
+    // Wait a bit and try again (with retries)
+    for (let i = 0; i < 10; i++) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      if (cachedHandler) {
+        return cachedHandler;
+      }
     }
+    // If still not initialized after retries, throw error
+    throw new Error('Handler initialization timed out');
   }
 
   try {
@@ -47,10 +51,15 @@ async function getHandler() {
     const { getAuthOptions } = await import('@/lib/auth-config');
     const authOptions = await getAuthOptions();
     
-    cachedHandler = NextAuth(authOptions);
+    const handler = NextAuth(authOptions);
     console.log('[NextAuth] Handler initialized and cached successfully');
     
-    return cachedHandler;
+    if (!handler) {
+      throw new Error('Failed to create NextAuth handler');
+    }
+    
+    cachedHandler = handler;
+    return handler;
   } catch (error) {
     console.error('[NextAuth] Failed to initialize handler:', error);
     // Clear cache on error to allow retry
@@ -73,6 +82,9 @@ export const GET = async (req: Request, ctx: unknown) => {
     }
     
     const handler = await getHandler();
+    if (!handler) {
+      throw new Error('Failed to initialize NextAuth handler');
+    }
     const res = await handler(req as unknown as Request, ctx as unknown as Record<string, unknown>);
     
     // Log response status
@@ -123,6 +135,9 @@ export const POST = async (req: Request, ctx: unknown) => {
     console.log('[NextAuth][POST] Request path:', url.pathname, 'Query:', url.search);
     
     const handler = await getHandler();
+    if (!handler) {
+      throw new Error('Failed to initialize NextAuth handler');
+    }
     const res = await handler(req as unknown as Request, ctx as unknown as Record<string, unknown>);
     
     // Log response status

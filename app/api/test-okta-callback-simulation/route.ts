@@ -6,16 +6,44 @@ import NextAuth from 'next-auth';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+interface TestResult {
+  timestamp: string;
+  tests: {
+    secretsInitialized?: boolean;
+    authOptionsRetrieved?: boolean;
+    handlerCreated?: boolean;
+    handlerMethods?: {
+      hasGET: boolean;
+      hasPOST: boolean;
+    };
+    oktaProviderFound?: boolean;
+    oktaProviderConfig?: {
+      hasClientId: boolean;
+      hasClientSecret: boolean;
+      hasIssuer: boolean;
+    };
+    nextAuthSecret?: {
+      exists: boolean;
+      length: number;
+      isValid: boolean;
+    };
+  };
+  errors: string[];
+  summary?: {
+    allTestsPassed: boolean;
+    totalTests: number;
+    passedTests: number;
+    totalErrors: number;
+  };
+  recommendations?: string[];
+}
+
 /**
  * Simulate what happens during an OAuth callback
  * This helps diagnose Configuration errors that occur after Okta login
  */
 export async function GET() {
-  const results: {
-    timestamp: string;
-    tests: Record<string, unknown>;
-    errors: string[];
-  } = {
+  const results: TestResult = {
     timestamp: new Date().toISOString(),
     tests: {},
     errors: [],
@@ -97,13 +125,14 @@ export async function GET() {
     }
 
     // Summary
-    const allTestsPassed = 
+    const allTestsPassed = !!(
       results.tests.secretsInitialized &&
       results.tests.authOptionsRetrieved &&
       results.tests.handlerCreated &&
       results.tests.oktaProviderFound &&
       results.tests.nextAuthSecret?.exists &&
-      results.tests.nextAuthSecret?.isValid;
+      results.tests.nextAuthSecret?.isValid
+    );
 
     results.summary = {
       allTestsPassed,
