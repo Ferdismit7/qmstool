@@ -48,10 +48,8 @@ export async function GET(request: Request) {
     };
 
     // Check 3: Test getAuthOptions
-    let authOptionsTest = false;
     try {
       await getAuthOptions();
-      authOptionsTest = true;
       results.checks.getAuthOptions = { success: true };
     } catch (error) {
       results.checks.getAuthOptions = {
