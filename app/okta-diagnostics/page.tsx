@@ -121,6 +121,8 @@ export default function OktaDiagnosticsPage() {
               {Object.entries(results.checks.environmentVariables).map(([key, value]) => {
                 const val = value as Record<string, unknown>;
                 const exists = val.exists || val.value !== 'MISSING';
+                const preview = typeof val.preview === 'string' ? val.preview : null;
+                const valueStr = typeof val.value === 'string' && val.value !== 'MISSING' ? val.value : null;
                 return (
                   <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                     <span className="font-medium">{key}</span>
@@ -130,11 +132,11 @@ export default function OktaDiagnosticsPage() {
                       ) : (
                         <span className="text-red-600">❌ Missing</span>
                       )}
-                      {val.preview && (
-                        <span className="text-sm text-gray-500">{String(val.preview)}</span>
+                      {preview && (
+                        <span className="text-sm text-gray-500">{preview}</span>
                       )}
-                      {val.value && val.value !== 'MISSING' && (
-                        <span className="text-sm text-gray-500 font-mono">{String(val.value).substring(0, 50)}</span>
+                      {valueStr && (
+                        <span className="text-sm text-gray-500 font-mono">{valueStr.substring(0, 50)}</span>
                       )}
                     </div>
                   </div>
@@ -161,7 +163,7 @@ export default function OktaDiagnosticsPage() {
                 <li>Log in to Okta Admin Console</li>
                 <li>Go to Applications → Your Application</li>
                 <li>Click on General Settings</li>
-                <li>Find "Sign-in redirect URIs" section</li>
+                <li>Find &quot;Sign-in redirect URIs&quot; section</li>
                 <li>Add the URL shown above (copy it exactly, no trailing slashes)</li>
                 <li>Save the changes</li>
               </ol>
@@ -258,7 +260,7 @@ export default function OktaDiagnosticsPage() {
             <div className="border-l-4 border-yellow-500 pl-4">
               <h3 className="font-semibold text-gray-900">1. Configuration Error</h3>
               <p className="text-sm text-gray-600 mt-1">
-                This usually means the callback URL doesn't match. Verify the redirect URI in Okta matches exactly:
+                This usually means the callback URL doesn&apos;t match. Verify the redirect URI in Okta matches exactly:
               </p>
               {results.checks?.callbackUrl && (
                 <p className="text-xs font-mono bg-gray-100 p-2 rounded mt-2">

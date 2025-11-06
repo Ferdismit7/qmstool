@@ -70,7 +70,7 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
         }
         
         // Refresh token if expired (only if refresh token exists)
-        if (token.refreshToken && token.expiresAt && Date.now() >= token.expiresAt) {
+        if (token.refreshToken && typeof token.expiresAt === 'number' && Date.now() >= token.expiresAt) {
           try {
             console.log('[NextAuth] Access token expired, attempting refresh...');
             // Construct token endpoint URL - works for both default and custom authorization servers
