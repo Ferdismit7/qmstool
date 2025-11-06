@@ -49,10 +49,10 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
         issuer: process.env.OKTA_ISSUER,
         authorization: {
           params: {
-            scope: "openid email profile",
+            scope: "openid email profile offline_access", // offline_access enables refresh tokens
           },
         },
-        checks: ["pkce", "state"],
+        checks: ["pkce", "state"], // PKCE enabled - matches Okta configuration
       }),
     ],
     secret: process.env.NEXTAUTH_SECRET,
@@ -61,9 +61,68 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
     },
     callbacks: {
       async jwt({ token, user, account }) {
+        // Initial sign in - store tokens
         if (account) {
           token.accessToken = account.access_token;
+          token.refreshToken = account.refresh_token;
           token.provider = account.provider;
+          token.expiresAt = account.expires_at ? account.expires_at * 1000 : undefined; // Convert to milliseconds
+        }
+        
+        // Refresh token if expired (only if refresh token exists)
+        if (token.refreshToken && token.expiresAt && Date.now() >= token.expiresAt) {
+          try {
+            console.log('[NextAuth] Access token expired, attempting refresh...');
+            // Construct token endpoint URL - works for both default and custom authorization servers
+            // If issuer includes /oauth2/, use it directly; otherwise append /oauth2/v1/token for default server
+            const issuer = process.env.OKTA_ISSUER!;
+            let tokenEndpoint: string;
+            if (issuer.includes('/oauth2/')) {
+              // Custom authorization server (e.g., https://domain.okta.com/oauth2/default)
+              tokenEndpoint = `${issuer.replace(/\/$/, '')}/v1/token`;
+            } else {
+              // Default authorization server (e.g., https://domain.okta.com)
+              tokenEndpoint = `${issuer.replace(/\/$/, '')}/oauth2/v1/token`;
+            }
+            
+            const response = await fetch(tokenEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: new URLSearchParams({
+                grant_type: 'refresh_token',
+                refresh_token: token.refreshToken as string,
+                client_id: process.env.OKTA_CLIENT_ID!,
+                client_secret: process.env.OKTA_CLIENT_SECRET!,
+              }),
+            });
+
+            if (response.ok) {
+              const refreshedTokens = await response.json();
+              token.accessToken = refreshedTokens.access_token;
+              token.expiresAt = Date.now() + (refreshedTokens.expires_in * 1000);
+              
+              // Update refresh token if a new one is provided
+              if (refreshedTokens.refresh_token) {
+                token.refreshToken = refreshedTokens.refresh_token;
+              }
+              
+              console.log('[NextAuth] Token refreshed successfully');
+            } else {
+              console.error('[NextAuth] Token refresh failed:', response.status);
+              // Clear tokens to force re-authentication
+              token.accessToken = undefined;
+              token.refreshToken = undefined;
+              token.expiresAt = undefined;
+            }
+          } catch (error) {
+            console.error('[NextAuth] Token refresh error:', error);
+            // Clear tokens to force re-authentication
+            token.accessToken = undefined;
+            token.refreshToken = undefined;
+            token.expiresAt = undefined;
+          }
         }
         if (user || token?.email) {
           // Ensure DB user exists and attach dbUserId
