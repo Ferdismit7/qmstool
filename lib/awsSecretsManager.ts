@@ -47,12 +47,18 @@ export const getSecrets = async (): Promise<Secrets> => {
 
   // PRIORITY 1: Check if critical environment variables are already set (build-time in Amplify)
   // If they are, use them directly without calling Lambda
+  // IMPORTANT: Check for non-empty strings, not just truthy values
   const hasCriticalEnvVars = !!(
     process.env.NEXTAUTH_SECRET &&
+    process.env.NEXTAUTH_SECRET.trim().length > 0 &&
     process.env.NEXTAUTH_URL &&
+    process.env.NEXTAUTH_URL.trim().length > 0 &&
     process.env.OKTA_CLIENT_ID &&
+    process.env.OKTA_CLIENT_ID.trim().length > 0 &&
     process.env.OKTA_CLIENT_SECRET &&
-    process.env.OKTA_ISSUER
+    process.env.OKTA_CLIENT_SECRET.trim().length > 0 &&
+    process.env.OKTA_ISSUER &&
+    process.env.OKTA_ISSUER.trim().length > 0
   );
 
   if (hasCriticalEnvVars) {
@@ -60,25 +66,32 @@ export const getSecrets = async (): Promise<Secrets> => {
     console.log("🔑 [Secrets] Environment variables check:");
     console.log(`  - JWT_SECRET: ${process.env.JWT_SECRET ? '✅ SET' : '⚠️ OPTIONAL'}`);
     console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? '✅ SET' : '⚠️ OPTIONAL'}`);
-    console.log(`  - NEXTAUTH_SECRET: ✅ SET`);
-    console.log(`  - NEXTAUTH_URL: ✅ SET`);
-    console.log(`  - OKTA_CLIENT_ID: ✅ SET`);
-    console.log(`  - OKTA_CLIENT_SECRET: ✅ SET`);
-    console.log(`  - OKTA_ISSUER: ✅ SET`);
+    console.log(`  - NEXTAUTH_SECRET: ✅ SET (${process.env.NEXTAUTH_SECRET.length} chars)`);
+    console.log(`  - NEXTAUTH_URL: ✅ SET (${process.env.NEXTAUTH_URL})`);
+    console.log(`  - OKTA_CLIENT_ID: ✅ SET (${process.env.OKTA_CLIENT_ID.substring(0, 8)}...)`);
+    console.log(`  - OKTA_CLIENT_SECRET: ✅ SET (${process.env.OKTA_CLIENT_SECRET.length} chars)`);
+    console.log(`  - OKTA_ISSUER: ✅ SET (${process.env.OKTA_ISSUER})`);
     
     const envSecrets: Secrets = {
       DATABASE_URL: process.env.DATABASE_URL || '',
       JWT_SECRET: process.env.JWT_SECRET || '',
       S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
       REGION: process.env.REGION || 'eu-north-1',
-      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
-      NEXTAUTH_URL: process.env.NEXTAUTH_URL || '',
-      OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID || '',
-      OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET || '',
-      OKTA_ISSUER: process.env.OKTA_ISSUER || '',
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET.trim(),
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL.trim(),
+      OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID.trim(),
+      OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET.trim(),
+      OKTA_ISSUER: process.env.OKTA_ISSUER.trim(),
       ACCESS_KEY_ID: process.env.ACCESS_KEY_ID || '',
       SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY || '',
     };
+    
+    // Ensure process.env is set with trimmed values
+    process.env.NEXTAUTH_SECRET = envSecrets.NEXTAUTH_SECRET;
+    process.env.NEXTAUTH_URL = envSecrets.NEXTAUTH_URL;
+    process.env.OKTA_CLIENT_ID = envSecrets.OKTA_CLIENT_ID;
+    process.env.OKTA_CLIENT_SECRET = envSecrets.OKTA_CLIENT_SECRET;
+    process.env.OKTA_ISSUER = envSecrets.OKTA_ISSUER;
     
     cachedSecrets = envSecrets;
     console.log("✅ [Secrets] Using environment variables directly (skip Lambda call)");
@@ -201,34 +214,66 @@ export const getSecrets = async (): Promise<Secrets> => {
     // Fallback to environment variables if Lambda fails
     console.warn("⚠️ [Secrets] Lambda function failed, attempting fallback to environment variables");
     
-    // Log what's available
+    // Log what's available (check for non-empty strings)
     console.log("🔑 [Secrets] Available environment variables:");
-    console.log(`  - JWT_SECRET: ${process.env.JWT_SECRET ? '✅' : '❌'}`);
-    console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? '✅' : '❌'}`);
-    console.log(`  - NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? '✅' : '❌'}`);
-    console.log(`  - NEXTAUTH_URL: ${process.env.NEXTAUTH_URL ? '✅' : '❌'}`);
-    console.log(`  - OKTA_CLIENT_ID: ${process.env.OKTA_CLIENT_ID ? '✅' : '❌'}`);
-    console.log(`  - OKTA_CLIENT_SECRET: ${process.env.OKTA_CLIENT_SECRET ? '✅' : '❌'}`);
-    console.log(`  - OKTA_ISSUER: ${process.env.OKTA_ISSUER ? '✅' : '❌'}`);
+    console.log(`  - JWT_SECRET: ${process.env.JWT_SECRET?.trim() ? '✅' : '❌'}`);
+    console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL?.trim() ? '✅' : '❌'}`);
+    console.log(`  - NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET?.trim() ? `✅ (${process.env.NEXTAUTH_SECRET.length} chars)` : '❌'}`);
+    console.log(`  - NEXTAUTH_URL: ${process.env.NEXTAUTH_URL?.trim() ? `✅ (${process.env.NEXTAUTH_URL})` : '❌'}`);
+    console.log(`  - OKTA_CLIENT_ID: ${process.env.OKTA_CLIENT_ID?.trim() ? `✅ (${process.env.OKTA_CLIENT_ID.substring(0, 8)}...)` : '❌'}`);
+    console.log(`  - OKTA_CLIENT_SECRET: ${process.env.OKTA_CLIENT_SECRET?.trim() ? `✅ (${process.env.OKTA_CLIENT_SECRET.length} chars)` : '❌'}`);
+    console.log(`  - OKTA_ISSUER: ${process.env.OKTA_ISSUER?.trim() ? `✅ (${process.env.OKTA_ISSUER})` : '❌'}`);
+    
+    // Check if critical NextAuth variables are available (even if Lambda failed)
+    const hasFallbackSecrets = !!(
+      process.env.NEXTAUTH_SECRET &&
+      process.env.NEXTAUTH_SECRET.trim().length > 0 &&
+      process.env.NEXTAUTH_URL &&
+      process.env.NEXTAUTH_URL.trim().length > 0 &&
+      process.env.OKTA_CLIENT_ID &&
+      process.env.OKTA_CLIENT_ID.trim().length > 0 &&
+      process.env.OKTA_CLIENT_SECRET &&
+      process.env.OKTA_CLIENT_SECRET.trim().length > 0 &&
+      process.env.OKTA_ISSUER &&
+      process.env.OKTA_ISSUER.trim().length > 0
+    );
+    
+    if (!hasFallbackSecrets) {
+      console.error("❌ [Secrets] CRITICAL: Required NextAuth environment variables are missing!");
+      console.error("❌ [Secrets] Please ensure these are set in AWS Amplify Console:");
+      console.error("   - NEXTAUTH_SECRET");
+      console.error("   - NEXTAUTH_URL");
+      console.error("   - OKTA_CLIENT_ID");
+      console.error("   - OKTA_CLIENT_SECRET");
+      console.error("   - OKTA_ISSUER");
+      throw new Error("Required NextAuth environment variables are not available from either Lambda or Amplify Console");
+    }
     
     // For NextAuth, we only absolutely need NEXTAUTH_SECRET and NEXTAUTH_URL
     // JWT_SECRET and DATABASE_URL can be empty for NextAuth-only auth
     const fallbackSecrets: Secrets = {
-      DATABASE_URL: process.env.DATABASE_URL || '',
-      JWT_SECRET: process.env.JWT_SECRET || '',
-      S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
-      REGION: process.env.REGION || 'eu-north-1',
-      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
-      NEXTAUTH_URL: process.env.NEXTAUTH_URL || '',
-      OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID || '',
-      OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET || '',
-      OKTA_ISSUER: process.env.OKTA_ISSUER || '',
-      ACCESS_KEY_ID: process.env.ACCESS_KEY_ID || '',
-      SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY || '',
+      DATABASE_URL: process.env.DATABASE_URL?.trim() || '',
+      JWT_SECRET: process.env.JWT_SECRET?.trim() || '',
+      S3_BUCKET_NAME: process.env.S3_BUCKET_NAME?.trim() || 'qms-tool-documents-qms-1',
+      REGION: process.env.REGION?.trim() || 'eu-north-1',
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET!.trim(),
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL!.trim(),
+      OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID!.trim(),
+      OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET!.trim(),
+      OKTA_ISSUER: process.env.OKTA_ISSUER!.trim(),
+      ACCESS_KEY_ID: process.env.ACCESS_KEY_ID?.trim() || '',
+      SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY?.trim() || '',
     };
     
+    // Ensure process.env is set with trimmed values
+    process.env.NEXTAUTH_SECRET = fallbackSecrets.NEXTAUTH_SECRET;
+    process.env.NEXTAUTH_URL = fallbackSecrets.NEXTAUTH_URL;
+    process.env.OKTA_CLIENT_ID = fallbackSecrets.OKTA_CLIENT_ID;
+    process.env.OKTA_CLIENT_SECRET = fallbackSecrets.OKTA_CLIENT_SECRET;
+    process.env.OKTA_ISSUER = fallbackSecrets.OKTA_ISSUER;
+    
     cachedSecrets = fallbackSecrets;
-    console.log("✅ [Secrets] Using fallback environment variables");
+    console.log("✅ [Secrets] Using fallback environment variables from Amplify Console");
     console.log("🔑 [Secrets] Fallback AWS Credentials check:", {
       hasAccessKey: !!fallbackSecrets.ACCESS_KEY_ID,
       accessKeyLength: fallbackSecrets.ACCESS_KEY_ID?.length || 0,
