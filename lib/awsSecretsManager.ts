@@ -62,15 +62,22 @@ export const getSecrets = async (): Promise<Secrets> => {
   );
 
   if (hasCriticalEnvVars) {
+    // TypeScript-safe: we know these exist from the check above
+    const nextAuthSecret = process.env.NEXTAUTH_SECRET!;
+    const nextAuthUrl = process.env.NEXTAUTH_URL!;
+    const oktaClientId = process.env.OKTA_CLIENT_ID!;
+    const oktaClientSecret = process.env.OKTA_CLIENT_SECRET!;
+    const oktaIssuer = process.env.OKTA_ISSUER!;
+    
     console.log("✅ [Secrets] Critical environment variables are already set, using them directly");
     console.log("🔑 [Secrets] Environment variables check:");
     console.log(`  - JWT_SECRET: ${process.env.JWT_SECRET ? '✅ SET' : '⚠️ OPTIONAL'}`);
     console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? '✅ SET' : '⚠️ OPTIONAL'}`);
-    console.log(`  - NEXTAUTH_SECRET: ✅ SET (${process.env.NEXTAUTH_SECRET.length} chars)`);
-    console.log(`  - NEXTAUTH_URL: ✅ SET (${process.env.NEXTAUTH_URL})`);
-    console.log(`  - OKTA_CLIENT_ID: ✅ SET (${process.env.OKTA_CLIENT_ID.substring(0, 8)}...)`);
-    console.log(`  - OKTA_CLIENT_SECRET: ✅ SET (${process.env.OKTA_CLIENT_SECRET.length} chars)`);
-    console.log(`  - OKTA_ISSUER: ✅ SET (${process.env.OKTA_ISSUER})`);
+    console.log(`  - NEXTAUTH_SECRET: ✅ SET (${nextAuthSecret.length} chars)`);
+    console.log(`  - NEXTAUTH_URL: ✅ SET (${nextAuthUrl})`);
+    console.log(`  - OKTA_CLIENT_ID: ✅ SET (${oktaClientId.substring(0, 8)}...)`);
+    console.log(`  - OKTA_CLIENT_SECRET: ✅ SET (${oktaClientSecret.length} chars)`);
+    console.log(`  - OKTA_ISSUER: ✅ SET (${oktaIssuer})`);
     
     const envSecrets: Secrets = {
       DATABASE_URL: process.env.DATABASE_URL || '',
@@ -218,11 +225,16 @@ export const getSecrets = async (): Promise<Secrets> => {
     console.log("🔑 [Secrets] Available environment variables:");
     console.log(`  - JWT_SECRET: ${process.env.JWT_SECRET?.trim() ? '✅' : '❌'}`);
     console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL?.trim() ? '✅' : '❌'}`);
-    console.log(`  - NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET?.trim() ? `✅ (${process.env.NEXTAUTH_SECRET.length} chars)` : '❌'}`);
-    console.log(`  - NEXTAUTH_URL: ${process.env.NEXTAUTH_URL?.trim() ? `✅ (${process.env.NEXTAUTH_URL})` : '❌'}`);
-    console.log(`  - OKTA_CLIENT_ID: ${process.env.OKTA_CLIENT_ID?.trim() ? `✅ (${process.env.OKTA_CLIENT_ID.substring(0, 8)}...)` : '❌'}`);
-    console.log(`  - OKTA_CLIENT_SECRET: ${process.env.OKTA_CLIENT_SECRET?.trim() ? `✅ (${process.env.OKTA_CLIENT_SECRET.length} chars)` : '❌'}`);
-    console.log(`  - OKTA_ISSUER: ${process.env.OKTA_ISSUER?.trim() ? `✅ (${process.env.OKTA_ISSUER})` : '❌'}`);
+    const nextAuthSecret = process.env.NEXTAUTH_SECRET?.trim();
+    const nextAuthUrl = process.env.NEXTAUTH_URL?.trim();
+    const oktaClientId = process.env.OKTA_CLIENT_ID?.trim();
+    const oktaClientSecret = process.env.OKTA_CLIENT_SECRET?.trim();
+    const oktaIssuer = process.env.OKTA_ISSUER?.trim();
+    console.log(`  - NEXTAUTH_SECRET: ${nextAuthSecret ? `✅ (${nextAuthSecret.length} chars)` : '❌'}`);
+    console.log(`  - NEXTAUTH_URL: ${nextAuthUrl ? `✅ (${nextAuthUrl})` : '❌'}`);
+    console.log(`  - OKTA_CLIENT_ID: ${oktaClientId ? `✅ (${oktaClientId.substring(0, 8)}...)` : '❌'}`);
+    console.log(`  - OKTA_CLIENT_SECRET: ${oktaClientSecret ? `✅ (${oktaClientSecret.length} chars)` : '❌'}`);
+    console.log(`  - OKTA_ISSUER: ${oktaIssuer ? `✅ (${oktaIssuer})` : '❌'}`);
     
     // Check if critical NextAuth variables are available (even if Lambda failed)
     const hasFallbackSecrets = !!(
