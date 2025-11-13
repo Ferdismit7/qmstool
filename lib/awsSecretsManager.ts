@@ -42,17 +42,21 @@ const setCachedSecrets = (secrets: Secrets) => {
 
 const readEnvValue = (key: keyof Secrets): string | undefined => {
   const value = process.env[key as keyof NodeJS.ProcessEnv];
-  return typeof value === 'string' ? value : undefined;
+  return typeof value === 'string' ? value.trim() : undefined;
 };
 
 export const getSecretValue = (key: keyof Secrets): string | undefined => {
+  const envValue = readEnvValue(key);
+  if (envValue) {
+    return envValue;
+  }
   if (cachedSecrets) {
     const cachedValue = cachedSecrets[key];
     if (cachedValue && cachedValue.trim().length > 0) {
-      return cachedValue;
+      return cachedValue.trim();
     }
   }
-  return readEnvValue(key);
+  return undefined;
 };
 
 export const isOktaEnabled = (): boolean => {
@@ -74,26 +78,27 @@ export const getSecrets = async (): Promise<Secrets> => {
   // PRIORITY 1: Check if critical environment variables are already set (build-time in Amplify)
   // If they are, use them directly without calling Lambda
   // IMPORTANT: Check for non-empty strings, not just truthy values
+  const envNextAuthSecret = readEnvValue('NEXTAUTH_SECRET');
+  const envNextAuthUrl = readEnvValue('NEXTAUTH_URL');
+  const envOktaClientId = readEnvValue('OKTA_CLIENT_ID');
+  const envOktaClientSecret = readEnvValue('OKTA_CLIENT_SECRET');
+  const envOktaIssuer = readEnvValue('OKTA_ISSUER');
+
   const hasCriticalEnvVars = !!(
-    process.env.NEXTAUTH_SECRET &&
-    process.env.NEXTAUTH_SECRET.trim().length > 0 &&
-    process.env.NEXTAUTH_URL &&
-    process.env.NEXTAUTH_URL.trim().length > 0 &&
-    process.env.OKTA_CLIENT_ID &&
-    process.env.OKTA_CLIENT_ID.trim().length > 0 &&
-    process.env.OKTA_CLIENT_SECRET &&
-    process.env.OKTA_CLIENT_SECRET.trim().length > 0 &&
-    process.env.OKTA_ISSUER &&
-    process.env.OKTA_ISSUER.trim().length > 0
+    envNextAuthSecret &&
+    envNextAuthUrl &&
+    envOktaClientId &&
+    envOktaClientSecret &&
+    envOktaIssuer
   );
 
   if (hasCriticalEnvVars) {
     // TypeScript-safe: we know these exist from the check above
-    const nextAuthSecret = process.env.NEXTAUTH_SECRET!;
-    const nextAuthUrl = process.env.NEXTAUTH_URL!;
-    const oktaClientId = process.env.OKTA_CLIENT_ID!;
-    const oktaClientSecret = process.env.OKTA_CLIENT_SECRET!;
-    const oktaIssuer = process.env.OKTA_ISSUER!;
+    const nextAuthSecret = envNextAuthSecret!;
+    const nextAuthUrl = envNextAuthUrl!;
+    const oktaClientId = envOktaClientId!;
+    const oktaClientSecret = envOktaClientSecret!;
+    const oktaIssuer = envOktaIssuer!;
     
     console.log("✅ [Secrets] Critical environment variables are already set, using them directly");
     console.log("🔑 [Secrets] Environment variables check:");
@@ -139,27 +144,27 @@ export const getSecrets = async (): Promise<Secrets> => {
       console.log("🔑 [Secrets] Checking fallback environment variables:");
       console.log(`  - JWT_SECRET: ${process.env.JWT_SECRET ? '✅ SET' : '❌ MISSING'}`);
       console.log(`  - DATABASE_URL: ${process.env.DATABASE_URL ? '✅ SET' : '❌ MISSING'}`);
-      console.log(`  - NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? '✅ SET' : '❌ MISSING'}`);
-      console.log(`  - NEXTAUTH_URL: ${process.env.NEXTAUTH_URL ? '✅ SET' : '❌ MISSING'}`);
-      console.log(`  - OKTA_CLIENT_ID: ${process.env.OKTA_CLIENT_ID ? '✅ SET' : '❌ MISSING'}`);
-      console.log(`  - OKTA_CLIENT_SECRET: ${process.env.OKTA_CLIENT_SECRET ? '✅ SET' : '❌ MISSING'}`);
-      console.log(`  - OKTA_ISSUER: ${process.env.OKTA_ISSUER ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - NEXTAUTH_SECRET: ${envNextAuthSecret ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - NEXTAUTH_URL: ${envNextAuthUrl ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - OKTA_CLIENT_ID: ${envOktaClientId ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - OKTA_CLIENT_SECRET: ${envOktaClientSecret ? '✅ SET' : '❌ MISSING'}`);
+      console.log(`  - OKTA_ISSUER: ${envOktaIssuer ? '✅ SET' : '❌ MISSING'}`);
       
       // For NextAuth, we only need NextAuth-specific variables
       // JWT_SECRET and DATABASE_URL can be empty for NextAuth-only auth
       const oktaEnabledFallback = process.env.OKTA_ENABLED?.trim() ?? 'false';
       const fallbackSecrets: Secrets = {
-        DATABASE_URL: process.env.DATABASE_URL || '',
-        JWT_SECRET: process.env.JWT_SECRET || '',
-        S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'qms-tool-documents-qms-1',
-        REGION: process.env.REGION || 'eu-north-1',
-        NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || '',
-        NEXTAUTH_URL: process.env.NEXTAUTH_URL || '',
-        OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID || '',
-        OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET || '',
-        OKTA_ISSUER: process.env.OKTA_ISSUER || '',
-        ACCESS_KEY_ID: process.env.ACCESS_KEY_ID || '',
-        SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY || '',
+        DATABASE_URL: readEnvValue('DATABASE_URL') || '',
+        JWT_SECRET: readEnvValue('JWT_SECRET') || '',
+        S3_BUCKET_NAME: readEnvValue('S3_BUCKET_NAME') || 'qms-tool-documents-qms-1',
+        REGION: readEnvValue('REGION') || 'eu-north-1',
+        NEXTAUTH_SECRET: envNextAuthSecret || '',
+        NEXTAUTH_URL: envNextAuthUrl || '',
+        OKTA_CLIENT_ID: envOktaClientId || '',
+        OKTA_CLIENT_SECRET: envOktaClientSecret || '',
+        OKTA_ISSUER: envOktaIssuer || '',
+        ACCESS_KEY_ID: readEnvValue('ACCESS_KEY_ID') || '',
+        SECRET_ACCESS_KEY: readEnvValue('SECRET_ACCESS_KEY') || '',
         OKTA_ENABLED: oktaEnabledFallback === '' ? 'false' : oktaEnabledFallback,
       };
       
