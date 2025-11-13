@@ -14,6 +14,7 @@ interface LambdaSecretsResponse {
     OKTA_ISSUER: string;
     ACCESS_KEY_ID: string;
     SECRET_ACCESS_KEY: string;
+    OKTA_ENABLED?: string;
   };
   error?: string;
 }

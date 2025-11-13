@@ -52,11 +52,15 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
   const providers = [];
 
   if (oktaEnabled) {
+    const oktaClientId = process.env.OKTA_CLIENT_ID as string;
+    const oktaClientSecret = process.env.OKTA_CLIENT_SECRET as string;
+    const oktaIssuer = process.env.OKTA_ISSUER as string;
+
     providers.push(
       OktaProvider({
-        clientId: process.env.OKTA_CLIENT_ID,
-        clientSecret: process.env.OKTA_CLIENT_SECRET,
-        issuer: process.env.OKTA_ISSUER,
+        clientId: oktaClientId,
+        clientSecret: oktaClientSecret,
+        issuer: oktaIssuer,
         authorization: {
           params: {
             scope: "openid email profile offline_access", // offline_access enables refresh tokens
