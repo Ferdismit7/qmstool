@@ -23,15 +23,17 @@ async function getHandler(): Promise<(req: Request, ctx?: unknown) => Response |
     throw error;
   }
   
+  const secrets = await getSecrets();
+
   // Verify critical environment variables are set BEFORE using cache
   // This prevents using a cached handler from another instance with missing secrets
   // Check both existence and non-empty values
-  const nextAuthSecret = getSecretValue('NEXTAUTH_SECRET')?.trim();
-  const nextAuthUrl = getSecretValue('NEXTAUTH_URL')?.trim();
-  const oktaClientId = getSecretValue('OKTA_CLIENT_ID')?.trim();
-  const oktaClientSecret = getSecretValue('OKTA_CLIENT_SECRET')?.trim();
-  const oktaIssuer = getSecretValue('OKTA_ISSUER')?.trim();
-  const oktaEnabled = isOktaEnabled();
+  const nextAuthSecret = secrets.NEXTAUTH_SECRET?.trim();
+  const nextAuthUrl = secrets.NEXTAUTH_URL?.trim();
+  const oktaClientId = secrets.OKTA_CLIENT_ID?.trim();
+  const oktaClientSecret = secrets.OKTA_CLIENT_SECRET?.trim();
+  const oktaIssuer = secrets.OKTA_ISSUER?.trim();
+  const oktaEnabled = secrets.OKTA_ENABLED.trim().toLowerCase() === 'true';
   
   const hasRequiredSecrets = !!(
     nextAuthSecret &&
