@@ -381,15 +381,22 @@ export const initializeSecrets = async (): Promise<void> => {
       
       // getSecrets should have set process.env from either Lambda or env vars
       // Now verify they're actually set
+      const finalNextAuthSecret = getSecretValue('NEXTAUTH_SECRET');
+      const finalNextAuthUrl = getSecretValue('NEXTAUTH_URL');
+      const finalOktaEnabled = isOktaEnabled();
+      const finalOktaClientId = getSecretValue('OKTA_CLIENT_ID');
+      const finalOktaClientSecret = getSecretValue('OKTA_CLIENT_SECRET');
+      const finalOktaIssuer = getSecretValue('OKTA_ISSUER');
+
       const finalCheck = !!(
-        process.env.NEXTAUTH_SECRET && 
-        process.env.NEXTAUTH_URL &&
+        finalNextAuthSecret &&
+        finalNextAuthUrl &&
         (
-          process.env.OKTA_ENABLED !== 'true' ||
+          !finalOktaEnabled ||
           (
-            process.env.OKTA_CLIENT_ID &&
-            process.env.OKTA_CLIENT_SECRET &&
-            process.env.OKTA_ISSUER
+            finalOktaClientId &&
+            finalOktaClientSecret &&
+            finalOktaIssuer
           )
         )
       );
@@ -397,12 +404,12 @@ export const initializeSecrets = async (): Promise<void> => {
       if (!finalCheck) {
         console.error("❌ [Secrets] CRITICAL: Required environment variables are missing after getSecrets!");
         console.error("❌ [Secrets] Missing variables:", {
-          NEXTAUTH_SECRET: !process.env.NEXTAUTH_SECRET,
-          NEXTAUTH_URL: !process.env.NEXTAUTH_URL,
-        OKTA_ENABLED: process.env.OKTA_ENABLED,
-        OKTA_CLIENT_ID: process.env.OKTA_ENABLED === 'true' ? !process.env.OKTA_CLIENT_ID : 'skipped',
-        OKTA_CLIENT_SECRET: process.env.OKTA_ENABLED === 'true' ? !process.env.OKTA_CLIENT_SECRET : 'skipped',
-        OKTA_ISSUER: process.env.OKTA_ENABLED === 'true' ? !process.env.OKTA_ISSUER : 'skipped',
+          NEXTAUTH_SECRET: !!finalNextAuthSecret,
+          NEXTAUTH_URL: !!finalNextAuthUrl,
+          OKTA_ENABLED: finalOktaEnabled,
+          OKTA_CLIENT_ID: finalOktaEnabled ? !!finalOktaClientId : 'skipped',
+          OKTA_CLIENT_SECRET: finalOktaEnabled ? !!finalOktaClientSecret : 'skipped',
+          OKTA_ISSUER: finalOktaEnabled ? !!finalOktaIssuer : 'skipped',
         });
         throw new Error("Required NextAuth and Okta environment variables are not available from either environment variables or Lambda");
       }
@@ -412,15 +419,22 @@ export const initializeSecrets = async (): Promise<void> => {
       console.error("❌ [Secrets] Error getting secrets from Lambda:", lambdaError);
       
       // Final fallback: check if env vars are now available (might have been set by Amplify)
+      const finalEnvNextAuthSecret = getSecretValue('NEXTAUTH_SECRET');
+      const finalEnvNextAuthUrl = getSecretValue('NEXTAUTH_URL');
+      const finalEnvOktaEnabled = isOktaEnabled();
+      const finalEnvOktaClientId = getSecretValue('OKTA_CLIENT_ID');
+      const finalEnvOktaClientSecret = getSecretValue('OKTA_CLIENT_SECRET');
+      const finalEnvOktaIssuer = getSecretValue('OKTA_ISSUER');
+
       const finalEnvCheck = !!(
-        process.env.NEXTAUTH_SECRET && 
-        process.env.NEXTAUTH_URL &&
+        finalEnvNextAuthSecret &&
+        finalEnvNextAuthUrl &&
         (
-          process.env.OKTA_ENABLED !== 'true' ||
+          !finalEnvOktaEnabled ||
           (
-            process.env.OKTA_CLIENT_ID &&
-            process.env.OKTA_CLIENT_SECRET &&
-            process.env.OKTA_ISSUER
+            finalEnvOktaClientId &&
+            finalEnvOktaClientSecret &&
+            finalEnvOktaIssuer
           )
         )
       );
@@ -446,18 +460,26 @@ export const initializeSecrets = async (): Promise<void> => {
     });
     
     // Final check - sometimes Amplify injects them late
-    const hasMinimum = !!(
-      process.env.NEXTAUTH_SECRET && 
-      process.env.NEXTAUTH_URL &&
-      (
-        process.env.OKTA_ENABLED !== 'true' ||
+    const hasMinimum = (() => {
+      const minNextAuthSecret = getSecretValue('NEXTAUTH_SECRET');
+      const minNextAuthUrl = getSecretValue('NEXTAUTH_URL');
+      const minOktaEnabled = isOktaEnabled();
+      const minOktaClientId = getSecretValue('OKTA_CLIENT_ID');
+      const minOktaClientSecret = getSecretValue('OKTA_CLIENT_SECRET');
+      const minOktaIssuer = getSecretValue('OKTA_ISSUER');
+      return !!(
+        minNextAuthSecret &&
+        minNextAuthUrl &&
         (
-          process.env.OKTA_CLIENT_ID &&
-          process.env.OKTA_CLIENT_SECRET &&
-          process.env.OKTA_ISSUER
+          !minOktaEnabled ||
+          (
+            minOktaClientId &&
+            minOktaClientSecret &&
+            minOktaIssuer
+          )
         )
-      )
-    );
+      );
+    })();
     
     if (hasMinimum) {
       console.log("✅ [Secrets] Final fallback: Environment variables are now available");
