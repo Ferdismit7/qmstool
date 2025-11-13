@@ -36,6 +36,13 @@ interface Secrets {
 
 let cachedSecrets: Secrets | null = null;
 
+const setEnvVar = (key: string, value: string) => {
+  if (typeof process === 'undefined' || !process.env) {
+    return;
+  }
+  (process.env as Record<string, string | undefined>)[key] = value;
+};
+
 /**
  * Retrieve secrets from Lambda function URL
  * Uses caching to avoid multiple API calls
@@ -98,12 +105,12 @@ export const getSecrets = async (): Promise<Secrets> => {
     };
     
     // Ensure process.env is set with trimmed values
-    process.env['NEXTAUTH_SECRET'] = envSecrets.NEXTAUTH_SECRET;
-    process.env['NEXTAUTH_URL'] = envSecrets.NEXTAUTH_URL;
-    process.env['OKTA_CLIENT_ID'] = envSecrets.OKTA_CLIENT_ID;
-    process.env['OKTA_CLIENT_SECRET'] = envSecrets.OKTA_CLIENT_SECRET;
-    process.env['OKTA_ISSUER'] = envSecrets.OKTA_ISSUER;
-    process.env['OKTA_ENABLED'] = envSecrets.OKTA_ENABLED;
+    setEnvVar('NEXTAUTH_SECRET', envSecrets.NEXTAUTH_SECRET);
+    setEnvVar('NEXTAUTH_URL', envSecrets.NEXTAUTH_URL);
+    setEnvVar('OKTA_CLIENT_ID', envSecrets.OKTA_CLIENT_ID);
+    setEnvVar('OKTA_CLIENT_SECRET', envSecrets.OKTA_CLIENT_SECRET);
+    setEnvVar('OKTA_ISSUER', envSecrets.OKTA_ISSUER);
+    setEnvVar('OKTA_ENABLED', envSecrets.OKTA_ENABLED);
     
     cachedSecrets = envSecrets;
     console.log("✅ [Secrets] Using environment variables directly (skip Lambda call)");
@@ -201,18 +208,18 @@ export const getSecrets = async (): Promise<Secrets> => {
     };
     
     // Set environment variables
-    process.env['DATABASE_URL'] = secrets.DATABASE_URL;
-    process.env['JWT_SECRET'] = secrets.JWT_SECRET;
-    process.env['S3_BUCKET_NAME'] = secrets.S3_BUCKET_NAME;
-    process.env['REGION'] = secrets.REGION;
-    process.env['NEXTAUTH_SECRET'] = secrets.NEXTAUTH_SECRET;
-    process.env['NEXTAUTH_URL'] = secrets.NEXTAUTH_URL;
-    process.env['OKTA_CLIENT_ID'] = secrets.OKTA_CLIENT_ID;
-    process.env['OKTA_CLIENT_SECRET'] = secrets.OKTA_CLIENT_SECRET;
-    process.env['OKTA_ISSUER'] = secrets.OKTA_ISSUER;
-    process.env['ACCESS_KEY_ID'] = secrets.ACCESS_KEY_ID;
-    process.env['SECRET_ACCESS_KEY'] = secrets.SECRET_ACCESS_KEY;
-    process.env['OKTA_ENABLED'] = secrets.OKTA_ENABLED;
+    setEnvVar('DATABASE_URL', secrets.DATABASE_URL);
+    setEnvVar('JWT_SECRET', secrets.JWT_SECRET);
+    setEnvVar('S3_BUCKET_NAME', secrets.S3_BUCKET_NAME);
+    setEnvVar('REGION', secrets.REGION);
+    setEnvVar('NEXTAUTH_SECRET', secrets.NEXTAUTH_SECRET);
+    setEnvVar('NEXTAUTH_URL', secrets.NEXTAUTH_URL);
+    setEnvVar('OKTA_CLIENT_ID', secrets.OKTA_CLIENT_ID);
+    setEnvVar('OKTA_CLIENT_SECRET', secrets.OKTA_CLIENT_SECRET);
+    setEnvVar('OKTA_ISSUER', secrets.OKTA_ISSUER);
+    setEnvVar('ACCESS_KEY_ID', secrets.ACCESS_KEY_ID);
+    setEnvVar('SECRET_ACCESS_KEY', secrets.SECRET_ACCESS_KEY);
+    setEnvVar('OKTA_ENABLED', secrets.OKTA_ENABLED);
 
     // Cache the secrets
     cachedSecrets = secrets;
@@ -306,12 +313,12 @@ export const getSecrets = async (): Promise<Secrets> => {
     };
     
     // Ensure process.env is set with trimmed values
-    process.env['NEXTAUTH_SECRET'] = fallbackSecrets.NEXTAUTH_SECRET;
-    process.env['NEXTAUTH_URL'] = fallbackSecrets.NEXTAUTH_URL;
-    process.env['OKTA_CLIENT_ID'] = fallbackSecrets.OKTA_CLIENT_ID;
-    process.env['OKTA_CLIENT_SECRET'] = fallbackSecrets.OKTA_CLIENT_SECRET;
-    process.env['OKTA_ISSUER'] = fallbackSecrets.OKTA_ISSUER;
-    process.env['OKTA_ENABLED'] = fallbackSecrets.OKTA_ENABLED;
+    setEnvVar('NEXTAUTH_SECRET', fallbackSecrets.NEXTAUTH_SECRET);
+    setEnvVar('NEXTAUTH_URL', fallbackSecrets.NEXTAUTH_URL);
+    setEnvVar('OKTA_CLIENT_ID', fallbackSecrets.OKTA_CLIENT_ID);
+    setEnvVar('OKTA_CLIENT_SECRET', fallbackSecrets.OKTA_CLIENT_SECRET);
+    setEnvVar('OKTA_ISSUER', fallbackSecrets.OKTA_ISSUER);
+    setEnvVar('OKTA_ENABLED', fallbackSecrets.OKTA_ENABLED);
     
     cachedSecrets = fallbackSecrets;
     console.log("✅ [Secrets] Using fallback environment variables from Amplify Console");
