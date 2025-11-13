@@ -36,6 +36,37 @@ interface Secrets {
 
 let cachedSecrets: Secrets | null = null;
 
+const setEnvVar = (key: keyof Secrets, value: string) => {
+  if (typeof globalThis.process === 'undefined' || !globalThis.process?.env) {
+    return;
+  }
+  Object.assign(globalThis.process.env, { [key]: value });
+};
+
+const syncProcessEnv = (secrets: Secrets) => {
+  const keys: (keyof Secrets)[] = [
+    'DATABASE_URL',
+    'JWT_SECRET',
+    'S3_BUCKET_NAME',
+    'REGION',
+    'NEXTAUTH_SECRET',
+    'NEXTAUTH_URL',
+    'OKTA_CLIENT_ID',
+    'OKTA_CLIENT_SECRET',
+    'OKTA_ISSUER',
+    'ACCESS_KEY_ID',
+    'SECRET_ACCESS_KEY',
+    'OKTA_ENABLED',
+  ];
+
+  keys.forEach((key) => {
+    const value = secrets[key];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      setEnvVar(key, value);
+    }
+  });
+};
+
 const setCachedSecrets = (secrets: Secrets) => {
   cachedSecrets = secrets;
 };
@@ -127,6 +158,7 @@ export const getSecrets = async (): Promise<Secrets> => {
     };
     
     setCachedSecrets(envSecrets);
+    syncProcessEnv(envSecrets);
     console.log("✅ [Secrets] Using environment variables directly (skip Lambda call)");
     return envSecrets;
   }
@@ -169,6 +201,7 @@ export const getSecrets = async (): Promise<Secrets> => {
       };
       
     setCachedSecrets(fallbackSecrets);
+    syncProcessEnv(fallbackSecrets);
     console.log("✅ [Secrets] Using fallback environment variables");
     console.log("🔑 [Secrets] Fallback AWS Credentials check:", {
       hasAccessKey: !!fallbackSecrets.ACCESS_KEY_ID,
@@ -220,6 +253,7 @@ export const getSecrets = async (): Promise<Secrets> => {
     };
     
     setCachedSecrets(secrets);
+    syncProcessEnv(secrets);
     
     console.log("✅ Secrets retrieved successfully from Lambda function URL");
     console.log("🔑 [Secrets] AWS Credentials check:", {
@@ -311,6 +345,7 @@ export const getSecrets = async (): Promise<Secrets> => {
     
     // Ensure process.env is set with trimmed values
     setCachedSecrets(fallbackSecrets);
+    syncProcessEnv(fallbackSecrets);
     console.log("✅ [Secrets] Using fallback environment variables from Amplify Console");
     console.log("🔑 [Secrets] Fallback AWS Credentials check:", {
       hasAccessKey: !!fallbackSecrets.ACCESS_KEY_ID,
