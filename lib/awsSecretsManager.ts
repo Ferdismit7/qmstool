@@ -330,6 +330,9 @@ export const getSecrets = async (): Promise<Secrets> => {
  */
 export const initializeSecrets = async (): Promise<void> => {
   try {
+    // Temporary cache clear to ensure fresh secrets after redeploy
+    cachedSecrets = null;
+
     // First check if environment variables are already set (from Amplify Console)
     const oktaEnabledFlag = process.env.OKTA_ENABLED === 'true';
     const hasEnvVars = !!(
