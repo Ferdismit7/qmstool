@@ -40,12 +40,7 @@ const setEnvVar = (key: string, value: string) => {
   if (typeof globalThis.process === 'undefined' || !globalThis.process?.env) {
     return;
   }
-  Object.defineProperty(globalThis.process.env, key, {
-    value,
-    writable: true,
-    configurable: true,
-    enumerable: true,
-  });
+  Object.assign(globalThis.process.env, { [key]: value });
 };
 
 /**
