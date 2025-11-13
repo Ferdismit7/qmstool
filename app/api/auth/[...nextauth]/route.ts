@@ -31,18 +31,24 @@ async function getHandler(): Promise<(req: Request, ctx?: unknown) => Response |
   const oktaClientId = process.env.OKTA_CLIENT_ID?.trim();
   const oktaClientSecret = process.env.OKTA_CLIENT_SECRET?.trim();
   const oktaIssuer = process.env.OKTA_ISSUER?.trim();
+  const oktaEnabled = process.env.OKTA_ENABLED === 'true';
   
   const hasRequiredSecrets = !!(
     nextAuthSecret &&
     nextAuthSecret.length > 0 &&
     nextAuthUrl &&
     nextAuthUrl.length > 0 &&
-    oktaClientId &&
-    oktaClientId.length > 0 &&
-    oktaClientSecret &&
-    oktaClientSecret.length > 0 &&
-    oktaIssuer &&
-    oktaIssuer.length > 0
+    (
+      !oktaEnabled ||
+      (
+        oktaClientId &&
+        oktaClientId.length > 0 &&
+        oktaClientSecret &&
+        oktaClientSecret.length > 0 &&
+        oktaIssuer &&
+        oktaIssuer.length > 0
+      )
+    )
   );
   
   // Also validate NEXTAUTH_SECRET meets NextAuth requirements (at least 32 chars recommended)
@@ -57,14 +63,15 @@ async function getHandler(): Promise<(req: Request, ctx?: unknown) => Response |
       NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
       NEXTAUTH_SECRET_LENGTH: process.env.NEXTAUTH_SECRET?.length || 0,
       NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'MISSING',
-      OKTA_CLIENT_ID: !!process.env.OKTA_CLIENT_ID,
-      OKTA_CLIENT_ID_VALUE: process.env.OKTA_CLIENT_ID ? `${process.env.OKTA_CLIENT_ID.substring(0, 8)}...` : 'MISSING',
-      OKTA_CLIENT_SECRET: !!process.env.OKTA_CLIENT_SECRET,
-      OKTA_CLIENT_SECRET_LENGTH: process.env.OKTA_CLIENT_SECRET?.length || 0,
-      OKTA_ISSUER: process.env.OKTA_ISSUER || 'MISSING',
+      OKTA_ENABLED: process.env.OKTA_ENABLED,
+      OKTA_CLIENT_ID: oktaEnabled ? !!process.env.OKTA_CLIENT_ID : 'skipped',
+      OKTA_CLIENT_ID_VALUE: oktaEnabled && process.env.OKTA_CLIENT_ID ? `${process.env.OKTA_CLIENT_ID.substring(0, 8)}...` : 'skipped',
+      OKTA_CLIENT_SECRET: oktaEnabled ? !!process.env.OKTA_CLIENT_SECRET : 'skipped',
+      OKTA_CLIENT_SECRET_LENGTH: oktaEnabled ? process.env.OKTA_CLIENT_SECRET?.length || 0 : 'skipped',
+      OKTA_ISSUER: oktaEnabled ? process.env.OKTA_ISSUER || 'MISSING' : 'skipped',
     });
     cachedHandler = null;
-    throw new Error('NEXTAUTH_SECRET, NEXTAUTH_URL, or Okta configuration not available after secrets initialization');
+    throw new Error('NEXTAUTH_SECRET or NEXTAUTH_URL missing, or Okta configuration missing while OKTA_ENABLED=true after secrets initialization');
   }
 
   // Return cached handler if available AND secrets are valid (secrets were just verified above)
@@ -96,9 +103,10 @@ async function getHandler(): Promise<(req: Request, ctx?: unknown) => Response |
       NEXTAUTH_SECRET: !!nextAuthSecret,
       NEXTAUTH_SECRET_LENGTH: nextAuthSecret?.length || 0,
       NEXTAUTH_URL: nextAuthUrl || 'MISSING',
-      OKTA_CLIENT_ID: oktaClientId ? `${oktaClientId.substring(0, 8)}...` : 'MISSING',
-      OKTA_CLIENT_SECRET: !!oktaClientSecret,
-      OKTA_ISSUER: oktaIssuer || 'MISSING',
+      OKTA_ENABLED: oktaEnabled,
+      OKTA_CLIENT_ID: oktaEnabled ? (oktaClientId ? `${oktaClientId.substring(0, 8)}...` : 'MISSING') : 'skipped',
+      OKTA_CLIENT_SECRET: oktaEnabled ? !!oktaClientSecret : 'skipped',
+      OKTA_ISSUER: oktaEnabled ? oktaIssuer || 'MISSING' : 'skipped',
     });
 
     const NextAuth = (await import('next-auth')).default;

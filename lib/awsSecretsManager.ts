@@ -30,6 +30,7 @@ interface Secrets {
   OKTA_ISSUER: string;
   ACCESS_KEY_ID: string;
   SECRET_ACCESS_KEY: string;
+  OKTA_ENABLED: string;
 }
 
 let cachedSecrets: Secrets | null = null;
@@ -79,6 +80,7 @@ export const getSecrets = async (): Promise<Secrets> => {
     console.log(`  - OKTA_CLIENT_SECRET: ✅ SET (${oktaClientSecret.length} chars)`);
     console.log(`  - OKTA_ISSUER: ✅ SET (${oktaIssuer})`);
     
+    const oktaEnabledEnv = process.env.OKTA_ENABLED?.trim() ?? 'false';
     const envSecrets: Secrets = {
       DATABASE_URL: process.env.DATABASE_URL || '',
       JWT_SECRET: process.env.JWT_SECRET || '',
@@ -91,6 +93,7 @@ export const getSecrets = async (): Promise<Secrets> => {
       OKTA_ISSUER: oktaIssuer.trim(),
       ACCESS_KEY_ID: process.env.ACCESS_KEY_ID || '',
       SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY || '',
+      OKTA_ENABLED: oktaEnabledEnv === '' ? 'false' : oktaEnabledEnv,
     };
     
     // Ensure process.env is set with trimmed values
@@ -99,6 +102,8 @@ export const getSecrets = async (): Promise<Secrets> => {
     process.env.OKTA_CLIENT_ID = envSecrets.OKTA_CLIENT_ID;
     process.env.OKTA_CLIENT_SECRET = envSecrets.OKTA_CLIENT_SECRET;
     process.env.OKTA_ISSUER = envSecrets.OKTA_ISSUER;
+    process.env.OKTA_ENABLED = envSecrets.OKTA_ENABLED;
+    process.env.NEXT_PUBLIC_OKTA_ENABLED = envSecrets.OKTA_ENABLED;
     
     cachedSecrets = envSecrets;
     console.log("✅ [Secrets] Using environment variables directly (skip Lambda call)");
@@ -126,6 +131,7 @@ export const getSecrets = async (): Promise<Secrets> => {
       
       // For NextAuth, we only need NextAuth-specific variables
       // JWT_SECRET and DATABASE_URL can be empty for NextAuth-only auth
+      const oktaEnabledFallback = process.env.OKTA_ENABLED?.trim() ?? 'false';
       const fallbackSecrets: Secrets = {
         DATABASE_URL: process.env.DATABASE_URL || '',
         JWT_SECRET: process.env.JWT_SECRET || '',
@@ -138,9 +144,12 @@ export const getSecrets = async (): Promise<Secrets> => {
         OKTA_ISSUER: process.env.OKTA_ISSUER || '',
         ACCESS_KEY_ID: process.env.ACCESS_KEY_ID || '',
         SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY || '',
+        OKTA_ENABLED: oktaEnabledFallback === '' ? 'false' : oktaEnabledFallback,
       };
       
     cachedSecrets = fallbackSecrets;
+    process.env.OKTA_ENABLED = fallbackSecrets.OKTA_ENABLED;
+    process.env.NEXT_PUBLIC_OKTA_ENABLED = fallbackSecrets.OKTA_ENABLED;
     console.log("✅ [Secrets] Using fallback environment variables");
     console.log("🔑 [Secrets] Fallback AWS Credentials check:", {
       hasAccessKey: !!fallbackSecrets.ACCESS_KEY_ID,
@@ -175,6 +184,7 @@ export const getSecrets = async (): Promise<Secrets> => {
       throw new Error(data.error || "Lambda function returned unsuccessful response");
     }
 
+    const oktaEnabled = (data.secrets.OKTA_ENABLED ?? '').toString().trim() || 'false';
     const secrets: Secrets = {
       DATABASE_URL: data.secrets.DATABASE_URL,
       JWT_SECRET: data.secrets.JWT_SECRET,
@@ -187,6 +197,7 @@ export const getSecrets = async (): Promise<Secrets> => {
       OKTA_ISSUER: data.secrets.OKTA_ISSUER,
       ACCESS_KEY_ID: data.secrets.ACCESS_KEY_ID,
       SECRET_ACCESS_KEY: data.secrets.SECRET_ACCESS_KEY,
+      OKTA_ENABLED: oktaEnabled,
     };
     
     // Set environment variables
@@ -201,6 +212,8 @@ export const getSecrets = async (): Promise<Secrets> => {
     process.env.OKTA_ISSUER = secrets.OKTA_ISSUER;
     process.env.ACCESS_KEY_ID = secrets.ACCESS_KEY_ID;
     process.env.SECRET_ACCESS_KEY = secrets.SECRET_ACCESS_KEY;
+    process.env.OKTA_ENABLED = secrets.OKTA_ENABLED;
+    process.env.NEXT_PUBLIC_OKTA_ENABLED = secrets.OKTA_ENABLED;
 
     // Cache the secrets
     cachedSecrets = secrets;
@@ -237,17 +250,23 @@ export const getSecrets = async (): Promise<Secrets> => {
     console.log(`  - OKTA_ISSUER: ${oktaIssuer ? `✅ (${oktaIssuer})` : '❌'}`);
     
     // Check if critical NextAuth variables are available (even if Lambda failed)
+    const oktaEnabledFromEnv = process.env.OKTA_ENABLED === 'true';
     const hasFallbackSecrets = !!(
       process.env.NEXTAUTH_SECRET &&
       process.env.NEXTAUTH_SECRET.trim().length > 0 &&
       process.env.NEXTAUTH_URL &&
       process.env.NEXTAUTH_URL.trim().length > 0 &&
-      process.env.OKTA_CLIENT_ID &&
-      process.env.OKTA_CLIENT_ID.trim().length > 0 &&
-      process.env.OKTA_CLIENT_SECRET &&
-      process.env.OKTA_CLIENT_SECRET.trim().length > 0 &&
-      process.env.OKTA_ISSUER &&
-      process.env.OKTA_ISSUER.trim().length > 0
+      (
+        !oktaEnabledFromEnv ||
+        (
+          process.env.OKTA_CLIENT_ID &&
+          process.env.OKTA_CLIENT_ID.trim().length > 0 &&
+          process.env.OKTA_CLIENT_SECRET &&
+          process.env.OKTA_CLIENT_SECRET.trim().length > 0 &&
+          process.env.OKTA_ISSUER &&
+          process.env.OKTA_ISSUER.trim().length > 0
+        )
+      )
     );
     
     if (!hasFallbackSecrets) {
@@ -255,14 +274,17 @@ export const getSecrets = async (): Promise<Secrets> => {
       console.error("❌ [Secrets] Please ensure these are set in AWS Amplify Console:");
       console.error("   - NEXTAUTH_SECRET");
       console.error("   - NEXTAUTH_URL");
-      console.error("   - OKTA_CLIENT_ID");
-      console.error("   - OKTA_CLIENT_SECRET");
-      console.error("   - OKTA_ISSUER");
+      if (oktaEnabledFromEnv) {
+        console.error("   - OKTA_CLIENT_ID");
+        console.error("   - OKTA_CLIENT_SECRET");
+        console.error("   - OKTA_ISSUER");
+      }
       throw new Error("Required NextAuth environment variables are not available from either Lambda or Amplify Console");
     }
     
     // For NextAuth, we only absolutely need NEXTAUTH_SECRET and NEXTAUTH_URL
     // JWT_SECRET and DATABASE_URL can be empty for NextAuth-only auth
+    const fallbackOktaEnabled = process.env.OKTA_ENABLED?.trim() ?? 'false';
     const fallbackSecrets: Secrets = {
       DATABASE_URL: process.env.DATABASE_URL?.trim() || '',
       JWT_SECRET: process.env.JWT_SECRET?.trim() || '',
@@ -270,11 +292,18 @@ export const getSecrets = async (): Promise<Secrets> => {
       REGION: process.env.REGION?.trim() || 'eu-north-1',
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET!.trim(),
       NEXTAUTH_URL: process.env.NEXTAUTH_URL!.trim(),
-      OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID!.trim(),
-      OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET!.trim(),
-      OKTA_ISSUER: process.env.OKTA_ISSUER!.trim(),
+      OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID?.trim()
+        ? process.env.OKTA_CLIENT_ID.trim()
+        : '',
+      OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET?.trim()
+        ? process.env.OKTA_CLIENT_SECRET.trim()
+        : '',
+      OKTA_ISSUER: process.env.OKTA_ISSUER?.trim()
+        ? process.env.OKTA_ISSUER.trim()
+        : '',
       ACCESS_KEY_ID: process.env.ACCESS_KEY_ID?.trim() || '',
       SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY?.trim() || '',
+      OKTA_ENABLED: fallbackOktaEnabled === '' ? 'false' : fallbackOktaEnabled,
     };
     
     // Ensure process.env is set with trimmed values
@@ -283,6 +312,8 @@ export const getSecrets = async (): Promise<Secrets> => {
     process.env.OKTA_CLIENT_ID = fallbackSecrets.OKTA_CLIENT_ID;
     process.env.OKTA_CLIENT_SECRET = fallbackSecrets.OKTA_CLIENT_SECRET;
     process.env.OKTA_ISSUER = fallbackSecrets.OKTA_ISSUER;
+    process.env.OKTA_ENABLED = fallbackSecrets.OKTA_ENABLED;
+    process.env.NEXT_PUBLIC_OKTA_ENABLED = fallbackSecrets.OKTA_ENABLED;
     
     cachedSecrets = fallbackSecrets;
     console.log("✅ [Secrets] Using fallback environment variables from Amplify Console");
@@ -305,12 +336,18 @@ export const getSecrets = async (): Promise<Secrets> => {
 export const initializeSecrets = async (): Promise<void> => {
   try {
     // First check if environment variables are already set (from Amplify Console)
+    const oktaEnabledFlag = process.env.OKTA_ENABLED === 'true';
     const hasEnvVars = !!(
       process.env.NEXTAUTH_SECRET && 
       process.env.NEXTAUTH_URL &&
-      process.env.OKTA_CLIENT_ID &&
-      process.env.OKTA_CLIENT_SECRET &&
-      process.env.OKTA_ISSUER
+      (
+        !oktaEnabledFlag ||
+        (
+          process.env.OKTA_CLIENT_ID &&
+          process.env.OKTA_CLIENT_SECRET &&
+          process.env.OKTA_ISSUER
+        )
+      )
     );
 
     if (hasEnvVars) {
@@ -318,6 +355,7 @@ export const initializeSecrets = async (): Promise<void> => {
       console.log("🔑 [Secrets] Environment variables check:", {
         NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
         NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'MISSING',
+        OKTA_ENABLED: process.env.OKTA_ENABLED || 'MISSING',
         OKTA_CLIENT_ID: !!process.env.OKTA_CLIENT_ID,
         OKTA_CLIENT_SECRET: !!process.env.OKTA_CLIENT_SECRET,
         OKTA_ISSUER: process.env.OKTA_ISSUER || 'MISSING',
@@ -325,8 +363,8 @@ export const initializeSecrets = async (): Promise<void> => {
       
       // Verify the values are not empty strings
       if (process.env.NEXTAUTH_SECRET && process.env.NEXTAUTH_URL && 
-          process.env.OKTA_CLIENT_ID && process.env.OKTA_CLIENT_SECRET && 
-          process.env.OKTA_ISSUER) {
+          (!oktaEnabledFlag || (process.env.OKTA_CLIENT_ID && process.env.OKTA_CLIENT_SECRET && 
+          process.env.OKTA_ISSUER))) {
         console.log("✅ [Secrets] All critical environment variables verified and available");
         // Still call getSecrets to populate cache
         await getSecrets();
@@ -348,9 +386,14 @@ export const initializeSecrets = async (): Promise<void> => {
       const finalCheck = !!(
         process.env.NEXTAUTH_SECRET && 
         process.env.NEXTAUTH_URL &&
-        process.env.OKTA_CLIENT_ID &&
-        process.env.OKTA_CLIENT_SECRET &&
-        process.env.OKTA_ISSUER
+        (
+          process.env.OKTA_ENABLED !== 'true' ||
+          (
+            process.env.OKTA_CLIENT_ID &&
+            process.env.OKTA_CLIENT_SECRET &&
+            process.env.OKTA_ISSUER
+          )
+        )
       );
       
       if (!finalCheck) {
@@ -358,9 +401,10 @@ export const initializeSecrets = async (): Promise<void> => {
         console.error("❌ [Secrets] Missing variables:", {
           NEXTAUTH_SECRET: !process.env.NEXTAUTH_SECRET,
           NEXTAUTH_URL: !process.env.NEXTAUTH_URL,
-          OKTA_CLIENT_ID: !process.env.OKTA_CLIENT_ID,
-          OKTA_CLIENT_SECRET: !process.env.OKTA_CLIENT_SECRET,
-          OKTA_ISSUER: !process.env.OKTA_ISSUER,
+        OKTA_ENABLED: process.env.OKTA_ENABLED,
+        OKTA_CLIENT_ID: process.env.OKTA_ENABLED === 'true' ? !process.env.OKTA_CLIENT_ID : 'skipped',
+        OKTA_CLIENT_SECRET: process.env.OKTA_ENABLED === 'true' ? !process.env.OKTA_CLIENT_SECRET : 'skipped',
+        OKTA_ISSUER: process.env.OKTA_ENABLED === 'true' ? !process.env.OKTA_ISSUER : 'skipped',
         });
         throw new Error("Required NextAuth and Okta environment variables are not available from either environment variables or Lambda");
       }
@@ -373,9 +417,14 @@ export const initializeSecrets = async (): Promise<void> => {
       const finalEnvCheck = !!(
         process.env.NEXTAUTH_SECRET && 
         process.env.NEXTAUTH_URL &&
-        process.env.OKTA_CLIENT_ID &&
-        process.env.OKTA_CLIENT_SECRET &&
-        process.env.OKTA_ISSUER
+        (
+          process.env.OKTA_ENABLED !== 'true' ||
+          (
+            process.env.OKTA_CLIENT_ID &&
+            process.env.OKTA_CLIENT_SECRET &&
+            process.env.OKTA_ISSUER
+          )
+        )
       );
       
       if (finalEnvCheck) {
@@ -402,9 +451,14 @@ export const initializeSecrets = async (): Promise<void> => {
     const hasMinimum = !!(
       process.env.NEXTAUTH_SECRET && 
       process.env.NEXTAUTH_URL &&
-      process.env.OKTA_CLIENT_ID &&
-      process.env.OKTA_CLIENT_SECRET &&
-      process.env.OKTA_ISSUER
+      (
+        process.env.OKTA_ENABLED !== 'true' ||
+        (
+          process.env.OKTA_CLIENT_ID &&
+          process.env.OKTA_CLIENT_SECRET &&
+          process.env.OKTA_ISSUER
+        )
+      )
     );
     
     if (hasMinimum) {

@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import OktaProvider from "next-auth/providers/okta";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { initializeSecrets } from '@/lib/awsSecretsManager';
 import { prisma } from '@/lib/prisma';
 
@@ -15,15 +16,18 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
   // Ensure secrets are initialized (this should already be done, but be safe)
   await initializeSecrets();
   
+  const oktaEnabled = process.env.OKTA_ENABLED === 'true';
+
   // Verify required environment variables are set
-  if (!process.env.OKTA_CLIENT_ID || !process.env.OKTA_CLIENT_SECRET || !process.env.OKTA_ISSUER) {
+  if (oktaEnabled && (!process.env.OKTA_CLIENT_ID || !process.env.OKTA_CLIENT_SECRET || !process.env.OKTA_ISSUER)) {
     console.error('[NextAuth] Missing Okta configuration:', {
+      OKTA_ENABLED: process.env.OKTA_ENABLED,
       OKTA_CLIENT_ID: !!process.env.OKTA_CLIENT_ID,
       OKTA_CLIENT_SECRET: !!process.env.OKTA_CLIENT_SECRET,
       OKTA_ISSUER: !!process.env.OKTA_ISSUER,
       NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     });
-    throw new Error('Okta configuration is missing. Please check environment variables.');
+    throw new Error('Okta configuration is missing while OKTA_ENABLED=true. Please check environment variables.');
   }
 
   if (!process.env.NEXTAUTH_SECRET || !process.env.NEXTAUTH_URL) {
@@ -34,15 +38,21 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
     throw new Error('NextAuth configuration is missing. Please check environment variables.');
   }
 
-  console.log('[NextAuth] Initializing Okta provider with:', {
-    issuer: process.env.OKTA_ISSUER,
-    clientId: process.env.OKTA_CLIENT_ID?.substring(0, 8) + '...',
-    nextAuthUrl: process.env.NEXTAUTH_URL,
-    callbackUrl: `${process.env.NEXTAUTH_URL}/api/auth/callback/okta`,
-  });
+  if (oktaEnabled) {
+    console.log('[NextAuth] Initializing Okta provider with:', {
+      issuer: process.env.OKTA_ISSUER,
+      clientId: process.env.OKTA_CLIENT_ID?.substring(0, 8) + '...',
+      nextAuthUrl: process.env.NEXTAUTH_URL,
+      callbackUrl: `${process.env.NEXTAUTH_URL}/api/auth/callback/okta`,
+    });
+  } else {
+    console.log('[NextAuth] OKTA_ENABLED flag is false - Okta provider will be disabled');
+  }
 
-  return {
-    providers: [
+  const providers = [];
+
+  if (oktaEnabled) {
+    providers.push(
       OktaProvider({
         clientId: process.env.OKTA_CLIENT_ID,
         clientSecret: process.env.OKTA_CLIENT_SECRET,
@@ -53,8 +63,25 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
           },
         },
         checks: ["pkce", "state"], // PKCE enabled - matches Okta configuration
-      }),
-    ],
+      })
+    );
+  } else {
+    providers.push(
+      CredentialsProvider({
+        name: 'Email/Password (QMS Tool)',
+        credentials: {
+          email: { label: 'Email', type: 'email' },
+          password: { label: 'Password', type: 'password' },
+        },
+        async authorize() {
+          throw new Error('Email/password login is handled by the dedicated QMS endpoints.');
+        },
+      })
+    );
+  }
+
+  return {
+    providers,
     secret: process.env.NEXTAUTH_SECRET,
     session: {
       strategy: "jwt",

@@ -191,6 +191,7 @@ const getSecrets = async () => {
     OKTA_CLIENT_ID: rawSecrets.OKTA_CLIENT_ID,
     OKTA_CLIENT_SECRET: rawSecrets.OKTA_CLIENT_SECRET,
     OKTA_ISSUER: rawSecrets.OKTA_ISSUER,
+    OKTA_ENABLED: rawSecrets.OKTA_ENABLED ?? 'false',
   };
 
   console.log('Secrets processed successfully');
