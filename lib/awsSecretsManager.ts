@@ -37,10 +37,15 @@ interface Secrets {
 let cachedSecrets: Secrets | null = null;
 
 const setEnvVar = (key: string, value: string) => {
-  if (typeof process === 'undefined' || !process.env) {
+  if (typeof globalThis.process === 'undefined' || !globalThis.process?.env) {
     return;
   }
-  (process.env as Record<string, string | undefined>)[key] = value;
+  Object.defineProperty(globalThis.process.env, key, {
+    value,
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
 };
 
 /**
