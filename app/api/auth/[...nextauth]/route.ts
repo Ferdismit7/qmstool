@@ -1,4 +1,4 @@
-import { initializeSecrets, getSecretValue, isOktaEnabled } from "@/lib/awsSecretsManager";
+import { initializeSecrets, getSecretValue } from "@/lib/awsSecretsManager";
 import { NextResponse } from "next/server";
 
 // Ensure this route runs on the Node.js runtime (some providers don't work on Edge)
