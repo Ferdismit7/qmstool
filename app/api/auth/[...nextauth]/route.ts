@@ -1,4 +1,4 @@
-import { initializeSecrets } from "@/lib/awsSecretsManager";
+import { initializeSecrets, getSecretValue, isOktaEnabled } from "@/lib/awsSecretsManager";
 import { NextResponse } from "next/server";
 
 // Ensure this route runs on the Node.js runtime (some providers don't work on Edge)
@@ -26,12 +26,12 @@ async function getHandler(): Promise<(req: Request, ctx?: unknown) => Response |
   // Verify critical environment variables are set BEFORE using cache
   // This prevents using a cached handler from another instance with missing secrets
   // Check both existence and non-empty values
-  const nextAuthSecret = process.env.NEXTAUTH_SECRET?.trim();
-  const nextAuthUrl = process.env.NEXTAUTH_URL?.trim();
-  const oktaClientId = process.env.OKTA_CLIENT_ID?.trim();
-  const oktaClientSecret = process.env.OKTA_CLIENT_SECRET?.trim();
-  const oktaIssuer = process.env.OKTA_ISSUER?.trim();
-  const oktaEnabled = process.env.OKTA_ENABLED === 'true';
+  const nextAuthSecret = getSecretValue('NEXTAUTH_SECRET')?.trim();
+  const nextAuthUrl = getSecretValue('NEXTAUTH_URL')?.trim();
+  const oktaClientId = getSecretValue('OKTA_CLIENT_ID')?.trim();
+  const oktaClientSecret = getSecretValue('OKTA_CLIENT_SECRET')?.trim();
+  const oktaIssuer = getSecretValue('OKTA_ISSUER')?.trim();
+  const oktaEnabled = isOktaEnabled();
   
   const hasRequiredSecrets = !!(
     nextAuthSecret &&
@@ -60,15 +60,13 @@ async function getHandler(): Promise<(req: Request, ctx?: unknown) => Response |
     // Clear cache if secrets are missing - don't use a stale handler
     console.error('[NextAuth] CRITICAL: Required secrets missing! Clearing cache.');
     console.error('[NextAuth] Missing secrets:', {
-      NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
-      NEXTAUTH_SECRET_LENGTH: process.env.NEXTAUTH_SECRET?.length || 0,
-      NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'MISSING',
-      OKTA_ENABLED: process.env.OKTA_ENABLED,
-      OKTA_CLIENT_ID: oktaEnabled ? !!process.env.OKTA_CLIENT_ID : 'skipped',
-      OKTA_CLIENT_ID_VALUE: oktaEnabled && process.env.OKTA_CLIENT_ID ? `${process.env.OKTA_CLIENT_ID.substring(0, 8)}...` : 'skipped',
-      OKTA_CLIENT_SECRET: oktaEnabled ? !!process.env.OKTA_CLIENT_SECRET : 'skipped',
-      OKTA_CLIENT_SECRET_LENGTH: oktaEnabled ? process.env.OKTA_CLIENT_SECRET?.length || 0 : 'skipped',
-      OKTA_ISSUER: oktaEnabled ? process.env.OKTA_ISSUER || 'MISSING' : 'skipped',
+      NEXTAUTH_SECRET: !!nextAuthSecret,
+      NEXTAUTH_SECRET_LENGTH: nextAuthSecret?.length || 0,
+      NEXTAUTH_URL: nextAuthUrl || 'MISSING',
+      OKTA_ENABLED: oktaEnabled,
+      OKTA_CLIENT_ID: oktaEnabled ? (oktaClientId ? `${oktaClientId.substring(0, 8)}...` : 'MISSING') : 'skipped',
+      OKTA_CLIENT_SECRET: oktaEnabled ? !!oktaClientSecret : 'skipped',
+      OKTA_ISSUER: oktaEnabled ? oktaIssuer || 'MISSING' : 'skipped',
     });
     cachedHandler = null;
     throw new Error('NEXTAUTH_SECRET or NEXTAUTH_URL missing, or Okta configuration missing while OKTA_ENABLED=true after secrets initialization');
@@ -153,11 +151,17 @@ export const GET = async (req: Request, ctx: unknown) => {
       console.log('[NextAuth][GET] OAuth CALLBACK REQUEST DETECTED');
       console.log('[NextAuth][GET] ============================================');
       console.log('[NextAuth][GET] Checking environment variables BEFORE handler creation:');
-      console.log('[NextAuth][GET]   NEXTAUTH_SECRET:', !!process.env.NEXTAUTH_SECRET, process.env.NEXTAUTH_SECRET ? `(${process.env.NEXTAUTH_SECRET.length} chars)` : 'MISSING');
-      console.log('[NextAuth][GET]   NEXTAUTH_URL:', process.env.NEXTAUTH_URL || 'MISSING');
-      console.log('[NextAuth][GET]   OKTA_CLIENT_ID:', !!process.env.OKTA_CLIENT_ID, process.env.OKTA_CLIENT_ID ? `(${process.env.OKTA_CLIENT_ID.substring(0, 8)}...)` : 'MISSING');
-      console.log('[NextAuth][GET]   OKTA_CLIENT_SECRET:', !!process.env.OKTA_CLIENT_SECRET, process.env.OKTA_CLIENT_SECRET ? '(SET)' : 'MISSING');
-      console.log('[NextAuth][GET]   OKTA_ISSUER:', process.env.OKTA_ISSUER || 'MISSING');
+      const debugNextAuthSecret = getSecretValue('NEXTAUTH_SECRET');
+      const debugNextAuthUrl = getSecretValue('NEXTAUTH_URL');
+      const debugOktaClientId = getSecretValue('OKTA_CLIENT_ID');
+      const debugOktaClientSecret = getSecretValue('OKTA_CLIENT_SECRET');
+      const debugOktaIssuer = getSecretValue('OKTA_ISSUER');
+
+      console.log('[NextAuth][GET]   NEXTAUTH_SECRET:', !!debugNextAuthSecret, debugNextAuthSecret ? `(${debugNextAuthSecret.length} chars)` : 'MISSING');
+      console.log('[NextAuth][GET]   NEXTAUTH_URL:', debugNextAuthUrl || 'MISSING');
+      console.log('[NextAuth][GET]   OKTA_CLIENT_ID:', !!debugOktaClientId, debugOktaClientId ? `(${debugOktaClientId.substring(0, 8)}...)` : 'MISSING');
+      console.log('[NextAuth][GET]   OKTA_CLIENT_SECRET:', !!debugOktaClientSecret, debugOktaClientSecret ? '(SET)' : 'MISSING');
+      console.log('[NextAuth][GET]   OKTA_ISSUER:', debugOktaIssuer || 'MISSING');
     }
     
     const handler = await getHandler();

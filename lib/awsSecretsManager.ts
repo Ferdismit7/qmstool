@@ -36,11 +36,28 @@ interface Secrets {
 
 let cachedSecrets: Secrets | null = null;
 
-const setEnvVar = (key: string, value: string) => {
-  if (typeof globalThis.process === 'undefined' || !globalThis.process?.env) {
-    return;
+const setCachedSecrets = (secrets: Secrets) => {
+  cachedSecrets = secrets;
+};
+
+const readEnvValue = (key: keyof Secrets): string | undefined => {
+  const value = process.env[key as keyof NodeJS.ProcessEnv];
+  return typeof value === 'string' ? value : undefined;
+};
+
+export const getSecretValue = (key: keyof Secrets): string | undefined => {
+  if (cachedSecrets) {
+    const cachedValue = cachedSecrets[key];
+    if (cachedValue && cachedValue.trim().length > 0) {
+      return cachedValue;
+    }
   }
-  Object.assign(globalThis.process.env, { [key]: value });
+  return readEnvValue(key);
+};
+
+export const isOktaEnabled = (): boolean => {
+  const flag = getSecretValue('OKTA_ENABLED') ?? 'false';
+  return flag.trim().toLowerCase() === 'true';
 };
 
 /**
@@ -104,16 +121,7 @@ export const getSecrets = async (): Promise<Secrets> => {
       OKTA_ENABLED: oktaEnabledEnv === '' ? 'false' : oktaEnabledEnv,
     };
     
-    // Ensure process.env is set with trimmed values
-    setEnvVar('NEXTAUTH_SECRET', envSecrets.NEXTAUTH_SECRET);
-    setEnvVar('NEXTAUTH_URL', envSecrets.NEXTAUTH_URL);
-    setEnvVar('OKTA_CLIENT_ID', envSecrets.OKTA_CLIENT_ID);
-    setEnvVar('OKTA_CLIENT_SECRET', envSecrets.OKTA_CLIENT_SECRET);
-    setEnvVar('OKTA_ISSUER', envSecrets.OKTA_ISSUER);
-    setEnvVar('OKTA_ENABLED', envSecrets.OKTA_ENABLED);
-    setEnvVar('NEXT_PUBLIC_OKTA_ENABLED', envSecrets.OKTA_ENABLED);
-    
-    cachedSecrets = envSecrets;
+    setCachedSecrets(envSecrets);
     console.log("✅ [Secrets] Using environment variables directly (skip Lambda call)");
     return envSecrets;
   }
@@ -155,9 +163,7 @@ export const getSecrets = async (): Promise<Secrets> => {
         OKTA_ENABLED: oktaEnabledFallback === '' ? 'false' : oktaEnabledFallback,
       };
       
-    cachedSecrets = fallbackSecrets;
-    setEnvVar('OKTA_ENABLED', fallbackSecrets.OKTA_ENABLED);
-    setEnvVar('NEXT_PUBLIC_OKTA_ENABLED', fallbackSecrets.OKTA_ENABLED);
+    setCachedSecrets(fallbackSecrets);
     console.log("✅ [Secrets] Using fallback environment variables");
     console.log("🔑 [Secrets] Fallback AWS Credentials check:", {
       hasAccessKey: !!fallbackSecrets.ACCESS_KEY_ID,
@@ -208,23 +214,7 @@ export const getSecrets = async (): Promise<Secrets> => {
       OKTA_ENABLED: oktaEnabled,
     };
     
-    // Set environment variables
-    setEnvVar('DATABASE_URL', secrets.DATABASE_URL);
-    setEnvVar('JWT_SECRET', secrets.JWT_SECRET);
-    setEnvVar('S3_BUCKET_NAME', secrets.S3_BUCKET_NAME);
-    setEnvVar('REGION', secrets.REGION);
-    setEnvVar('NEXTAUTH_SECRET', secrets.NEXTAUTH_SECRET);
-    setEnvVar('NEXTAUTH_URL', secrets.NEXTAUTH_URL);
-    setEnvVar('OKTA_CLIENT_ID', secrets.OKTA_CLIENT_ID);
-    setEnvVar('OKTA_CLIENT_SECRET', secrets.OKTA_CLIENT_SECRET);
-    setEnvVar('OKTA_ISSUER', secrets.OKTA_ISSUER);
-    setEnvVar('ACCESS_KEY_ID', secrets.ACCESS_KEY_ID);
-    setEnvVar('SECRET_ACCESS_KEY', secrets.SECRET_ACCESS_KEY);
-    setEnvVar('OKTA_ENABLED', secrets.OKTA_ENABLED);
-    setEnvVar('NEXT_PUBLIC_OKTA_ENABLED', secrets.OKTA_ENABLED);
-
-    // Cache the secrets
-    cachedSecrets = secrets;
+    setCachedSecrets(secrets);
     
     console.log("✅ Secrets retrieved successfully from Lambda function URL");
     console.log("🔑 [Secrets] AWS Credentials check:", {
@@ -315,14 +305,7 @@ export const getSecrets = async (): Promise<Secrets> => {
     };
     
     // Ensure process.env is set with trimmed values
-    setEnvVar('NEXTAUTH_SECRET', fallbackSecrets.NEXTAUTH_SECRET);
-    setEnvVar('NEXTAUTH_URL', fallbackSecrets.NEXTAUTH_URL);
-    setEnvVar('OKTA_CLIENT_ID', fallbackSecrets.OKTA_CLIENT_ID);
-    setEnvVar('OKTA_CLIENT_SECRET', fallbackSecrets.OKTA_CLIENT_SECRET);
-    setEnvVar('OKTA_ISSUER', fallbackSecrets.OKTA_ISSUER);
-    setEnvVar('OKTA_ENABLED', fallbackSecrets.OKTA_ENABLED);
-    
-    cachedSecrets = fallbackSecrets;
+    setCachedSecrets(fallbackSecrets);
     console.log("✅ [Secrets] Using fallback environment variables from Amplify Console");
     console.log("🔑 [Secrets] Fallback AWS Credentials check:", {
       hasAccessKey: !!fallbackSecrets.ACCESS_KEY_ID,

@@ -1,7 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import OktaProvider from "next-auth/providers/okta";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { initializeSecrets } from '@/lib/awsSecretsManager';
+import { initializeSecrets, getSecretValue, isOktaEnabled } from '@/lib/awsSecretsManager';
 import { prisma } from '@/lib/prisma';
 
 function usernameFromEmail(email?: string | null, fallback?: string | null) {
@@ -16,34 +16,39 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
   // Ensure secrets are initialized (this should already be done, but be safe)
   await initializeSecrets();
   
-  const oktaEnabled = process.env.OKTA_ENABLED === 'true';
+  const oktaEnabled = isOktaEnabled();
+  const nextAuthSecret = getSecretValue('NEXTAUTH_SECRET');
+  const nextAuthUrl = getSecretValue('NEXTAUTH_URL');
+  const oktaClientId = getSecretValue('OKTA_CLIENT_ID');
+  const oktaClientSecret = getSecretValue('OKTA_CLIENT_SECRET');
+  const oktaIssuer = getSecretValue('OKTA_ISSUER');
 
   // Verify required environment variables are set
-  if (oktaEnabled && (!process.env.OKTA_CLIENT_ID || !process.env.OKTA_CLIENT_SECRET || !process.env.OKTA_ISSUER)) {
+  if (oktaEnabled && (!oktaClientId || !oktaClientSecret || !oktaIssuer)) {
     console.error('[NextAuth] Missing Okta configuration:', {
-      OKTA_ENABLED: process.env.OKTA_ENABLED,
-      OKTA_CLIENT_ID: !!process.env.OKTA_CLIENT_ID,
-      OKTA_CLIENT_SECRET: !!process.env.OKTA_CLIENT_SECRET,
-      OKTA_ISSUER: !!process.env.OKTA_ISSUER,
-      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      OKTA_ENABLED: oktaEnabled,
+      OKTA_CLIENT_ID: !!oktaClientId,
+      OKTA_CLIENT_SECRET: !!oktaClientSecret,
+      OKTA_ISSUER: !!oktaIssuer,
+      NEXTAUTH_URL: nextAuthUrl,
     });
     throw new Error('Okta configuration is missing while OKTA_ENABLED=true. Please check environment variables.');
   }
 
-  if (!process.env.NEXTAUTH_SECRET || !process.env.NEXTAUTH_URL) {
+  if (!nextAuthSecret || !nextAuthUrl) {
     console.error('[NextAuth] Missing NextAuth configuration:', {
-      NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
-      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      NEXTAUTH_SECRET: !!nextAuthSecret,
+      NEXTAUTH_URL: nextAuthUrl,
     });
     throw new Error('NextAuth configuration is missing. Please check environment variables.');
   }
 
   if (oktaEnabled) {
     console.log('[NextAuth] Initializing Okta provider with:', {
-      issuer: process.env.OKTA_ISSUER,
-      clientId: process.env.OKTA_CLIENT_ID?.substring(0, 8) + '...',
-      nextAuthUrl: process.env.NEXTAUTH_URL,
-      callbackUrl: `${process.env.NEXTAUTH_URL}/api/auth/callback/okta`,
+      issuer: oktaIssuer,
+      clientId: oktaClientId?.substring(0, 8) + '...',
+      nextAuthUrl: nextAuthUrl,
+      callbackUrl: `${nextAuthUrl}/api/auth/callback/okta`,
     });
   } else {
     console.log('[NextAuth] OKTA_ENABLED flag is false - Okta provider will be disabled');
@@ -52,15 +57,11 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
   const providers = [];
 
   if (oktaEnabled) {
-    const oktaClientId = process.env.OKTA_CLIENT_ID as string;
-    const oktaClientSecret = process.env.OKTA_CLIENT_SECRET as string;
-    const oktaIssuer = process.env.OKTA_ISSUER as string;
-
     providers.push(
       OktaProvider({
-        clientId: oktaClientId,
-        clientSecret: oktaClientSecret,
-        issuer: oktaIssuer,
+        clientId: oktaClientId!,
+        clientSecret: oktaClientSecret!,
+        issuer: oktaIssuer!,
         authorization: {
           params: {
             scope: "openid email profile offline_access", // offline_access enables refresh tokens
@@ -86,7 +87,7 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
 
   return {
     providers,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: nextAuthSecret!,
     session: {
       strategy: "jwt",
     },
@@ -106,7 +107,7 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
             console.log('[NextAuth] Access token expired, attempting refresh...');
             // Construct token endpoint URL - works for both default and custom authorization servers
             // If issuer includes /oauth2/, use it directly; otherwise append /oauth2/v1/token for default server
-            const issuer = process.env.OKTA_ISSUER!;
+            const issuer = oktaIssuer!;
             let tokenEndpoint: string;
             if (issuer.includes('/oauth2/')) {
               // Custom authorization server (e.g., https://domain.okta.com/oauth2/default)
@@ -124,8 +125,8 @@ export const getAuthOptions = async (): Promise<NextAuthOptions> => {
               body: new URLSearchParams({
                 grant_type: 'refresh_token',
                 refresh_token: token.refreshToken as string,
-                client_id: process.env.OKTA_CLIENT_ID!,
-                client_secret: process.env.OKTA_CLIENT_SECRET!,
+                client_id: oktaClientId!,
+                client_secret: oktaClientSecret!,
               }),
             });
 
