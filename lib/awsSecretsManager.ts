@@ -111,6 +111,7 @@ export const getSecrets = async (): Promise<Secrets> => {
     setEnvVar('OKTA_CLIENT_SECRET', envSecrets.OKTA_CLIENT_SECRET);
     setEnvVar('OKTA_ISSUER', envSecrets.OKTA_ISSUER);
     setEnvVar('OKTA_ENABLED', envSecrets.OKTA_ENABLED);
+    setEnvVar('NEXT_PUBLIC_OKTA_ENABLED', envSecrets.OKTA_ENABLED);
     
     cachedSecrets = envSecrets;
     console.log("✅ [Secrets] Using environment variables directly (skip Lambda call)");
@@ -155,8 +156,8 @@ export const getSecrets = async (): Promise<Secrets> => {
       };
       
     cachedSecrets = fallbackSecrets;
-    process.env.OKTA_ENABLED = fallbackSecrets.OKTA_ENABLED;
-    process.env.NEXT_PUBLIC_OKTA_ENABLED = fallbackSecrets.OKTA_ENABLED;
+    setEnvVar('OKTA_ENABLED', fallbackSecrets.OKTA_ENABLED);
+    setEnvVar('NEXT_PUBLIC_OKTA_ENABLED', fallbackSecrets.OKTA_ENABLED);
     console.log("✅ [Secrets] Using fallback environment variables");
     console.log("🔑 [Secrets] Fallback AWS Credentials check:", {
       hasAccessKey: !!fallbackSecrets.ACCESS_KEY_ID,
@@ -220,6 +221,7 @@ export const getSecrets = async (): Promise<Secrets> => {
     setEnvVar('ACCESS_KEY_ID', secrets.ACCESS_KEY_ID);
     setEnvVar('SECRET_ACCESS_KEY', secrets.SECRET_ACCESS_KEY);
     setEnvVar('OKTA_ENABLED', secrets.OKTA_ENABLED);
+    setEnvVar('NEXT_PUBLIC_OKTA_ENABLED', secrets.OKTA_ENABLED);
 
     // Cache the secrets
     cachedSecrets = secrets;
