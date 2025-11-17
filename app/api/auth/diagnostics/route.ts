@@ -14,13 +14,14 @@ export async function GET() {
 
     // Step 2: Check environment variables
     const envVars = {
-      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-      OKTA_CLIENT_ID: process.env.OKTA_CLIENT_ID,
-      OKTA_CLIENT_SECRET: process.env.OKTA_CLIENT_SECRET,
-      OKTA_ISSUER: process.env.OKTA_ISSUER,
       DATABASE_URL: process.env.DATABASE_URL,
+      JWT_SECRET: process.env.JWT_SECRET,
+      ACCESS_KEY_ID: process.env.ACCESS_KEY_ID,
+      SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY,
+      S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
+      REGION: process.env.REGION,
       LAMBDA_FUNCTION_URL: process.env.LAMBDA_FUNCTION_URL,
+      NEXT_PUBLIC_LAMBDA_FUNCTION_URL: process.env.NEXT_PUBLIC_LAMBDA_FUNCTION_URL,
       NODE_ENV: process.env.NODE_ENV,
     };
 
@@ -42,7 +43,7 @@ export async function GET() {
 
     // Step 3: Check for missing critical variables
     const missingVars = Object.entries(envVars)
-      .filter(([key, value]) => !value && key !== 'DATABASE_URL') // DATABASE_URL is optional for NextAuth
+      .filter(([key, value]) => !value && key !== 'NEXT_PUBLIC_LAMBDA_FUNCTION_URL')
       .map(([key]) => key);
 
     // Step 4: Test Lambda connectivity

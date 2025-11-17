@@ -1,10 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Remove env section - secrets should be loaded at runtime via Lambda
-  // env: {
-  //   // SECURITY: Never expose secrets at build time
-  //   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-  // },
+  // Secrets are injected at runtime via the Lambda proxy; never bake them into the build
   images: {
     unoptimized: true,
   },

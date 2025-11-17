@@ -57,20 +57,21 @@ export async function GET() {
       }, { status: 500 });
     }
 
+    const requiredKeys = [
+      'DATABASE_URL',
+      'JWT_SECRET',
+      'S3_BUCKET_NAME',
+      'REGION',
+      'ACCESS_KEY_ID',
+      'SECRET_ACCESS_KEY',
+    ];
+
     return NextResponse.json({
       success: true,
       lambdaStatus: response.status,
       hasSecrets: !!data.secrets,
       secretKeys: data.secrets ? Object.keys(data.secrets) : [],
-      allSecretsPresent: data.secrets && [
-        'DATABASE_URL',
-        'JWT_SECRET',
-        'NEXTAUTH_SECRET',
-        'NEXTAUTH_URL',
-        'OKTA_CLIENT_ID',
-        'OKTA_CLIENT_SECRET',
-        'OKTA_ISSUER',
-      ].every(key => data.secrets[key]),
+      allSecretsPresent: data.secrets ? requiredKeys.every(key => data.secrets[key]) : false,
     });
   } catch (error) {
     console.error('🔍 [Lambda Test] Error:', error);

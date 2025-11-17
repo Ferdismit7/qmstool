@@ -292,14 +292,14 @@ model User {
   id                  Int                   @id @default(autoincrement())
   email               String                @unique(map: "email") @db.VarChar(50)
   username            String                @unique(map: "username") @db.VarChar(20)
-  password            String?               @db.VarChar(255) // Made optional for OAuth users
+  password            String?               @db.VarChar(255) // Made optional for federated users
   business_area       String?               @db.VarChar(50)
   created_at          DateTime?             @default(now()) @db.Timestamp(0)
-  // NextAuth fields
+  // Legacy OAuth fields
   name                String?               @db.VarChar(191)
   emailVerified       DateTime?             @db.DateTime(3)
   image               String?               @db.VarChar(191)
-  // NextAuth relations
+  // Legacy OAuth relations
   accounts            Account[]
   sessions            Session[]
   // Existing relations
@@ -621,7 +621,7 @@ model user_business_areas {
   @@index([business_area], map: "business_area")
 }
 
-// NextAuth.js models
+// Legacy OAuth support models
 model Account {
   id                String  @id @default(cuid())
   userId            Int

@@ -135,13 +135,11 @@ export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload
   try {
     console.log('getUserFromToken called');
     
-    // ISO 27001 Compliant: Initialize secrets from Lambda
     await initializeSecrets();
     
-    // Check if JWT_SECRET is available after initialization
     if (!process.env.JWT_SECRET) {
       console.warn('JWT_SECRET not available after initialization');
-      // Don't return yet – we can still try NextAuth session fallback
+      return null;
     }
 
     // First try to get token from HttpOnly cookies (for server-side requests)
@@ -165,47 +163,6 @@ export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload
     }
     
     if (!token) {
-      console.log('No token found in cookies or headers – trying NextAuth JWT cookie fallback');
-      try {
-        const { getToken: getNextAuthToken } = await import('next-auth/jwt');
-        const nat = await getNextAuthToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-        if (nat?.email) {
-          const username = (nat.name || nat.email || '').toString();
-          const payload: JWTPayload = {
-            userId: 0,
-            email: nat.email as string,
-            businessArea: '',
-            username,
-          };
-          console.log('Using NextAuth JWT cookie fallback payload:', payload);
-          return payload;
-        }
-      } catch (jwtErr) {
-        console.log('NextAuth getToken fallback failed:', jwtErr);
-      }
-
-      console.log('Trying NextAuth session fallback');
-      try {
-        const { getServerSession } = await import('next-auth');
-        const { getAuthOptions } = await import('@/lib/auth-config');
-        const authOptions = await getAuthOptions();
-        const session = await getServerSession(authOptions);
-        if (session?.user?.email) {
-          // Map minimal payload from session; downstream can resolve business areas by email
-          const username = (session.user.name || session.user.email || '').toString();
-          const payload: JWTPayload = {
-            userId: 0,
-            email: session.user.email as string,
-            businessArea: '',
-            username,
-          };
-          console.log('Using NextAuth session fallback payload:', payload);
-          return payload;
-        }
-      } catch (sessionErr) {
-        console.log('NextAuth session fallback failed:', sessionErr);
-      }
-      console.log('No token and no NextAuth session');
       return null;
     }
 
@@ -222,39 +179,7 @@ export const getUserFromToken = async (request: NextRequest): Promise<JWTPayload
     console.log('JWT verification successful:', decoded);
     return decoded;
   } catch (error) {
-    console.log('JWT verification failed, attempting NextAuth fallbacks:', error);
-    try {
-      const { getToken: getNextAuthToken } = await import('next-auth/jwt');
-      const nat = await getNextAuthToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-      if (nat?.email) {
-        const username = (nat.name || nat.email || '').toString();
-        const payload: JWTPayload = {
-          userId: 0,
-          email: nat.email as string,
-          businessArea: '',
-          username,
-        };
-        console.log('Using NextAuth JWT cookie after JWT failure:', payload);
-        return payload;
-      }
-    } catch {}
-    try {
-      const { getServerSession } = await import('next-auth');
-      const { getAuthOptions } = await import('@/lib/auth-config');
-      const authOptions = await getAuthOptions();
-      const session = await getServerSession(authOptions);
-      if (session?.user?.email) {
-        const username = (session.user.name || session.user.email || '').toString();
-        const payload: JWTPayload = {
-          userId: 0,
-          email: session.user.email as string,
-          businessArea: '',
-          username,
-        };
-        console.log('Using NextAuth session after JWT failure:', payload);
-        return payload;
-      }
-    } catch {}
+    console.log('JWT verification failed:', error);
     return null;
   }
 };
@@ -298,7 +223,7 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
       ORDER BY business_area ASC
     ` as unknown as Array<{ business_area: string }>;
 
-    // If no business areas mapped, fall back to all areas (authenticated via NextAuth)
+    // If no business areas mapped, fall back to all areas (user authenticated via JWT)
     if (userBusinessAreas.length === 0) {
       if (user.businessArea) {
         return [user.businessArea];

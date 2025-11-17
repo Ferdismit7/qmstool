@@ -1,43 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import LoginForm from '../components/LoginForm';
 import SignupForm from '../components/SignupForm';
+import { clientTokenUtils } from '@/lib/auth';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const { status: sessionStatus } = useSession();
   const router = useRouter();
-  const oktaEnabled = process.env.NEXT_PUBLIC_OKTA_ENABLED === 'true';
 
   useEffect(() => {
-    // Only redirect if authenticated and not loading
-    // This prevents redirect loops during Okta OAuth flow
-    if (sessionStatus === 'authenticated') {
-      console.log('Session authenticated, redirecting to dashboard');
+    const token = clientTokenUtils.getToken();
+    if (token && !clientTokenUtils.isTokenExpired(token)) {
       router.replace('/dashboard');
     }
-  }, [sessionStatus, router]);
-
-  const handleOktaSignIn = async () => {
-    if (!oktaEnabled) {
-      console.warn('Okta sign-in attempted while OKTA_ENABLED is false');
-      return;
-    }
-    try {
-      console.log('Initiating Okta sign-in...');
-      // Use redirect: true to ensure proper OAuth flow
-      // When redirect: true, signIn returns undefined and handles redirect automatically
-      await signIn('okta', { 
-        callbackUrl: '/dashboard',
-        redirect: true 
-      });
-    } catch (error) {
-      console.error('Error initiating Okta sign-in:', error);
-    }
-  };
+  }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -48,39 +26,7 @@ export default function AuthPage() {
           </h2>
         </div>
         
-        {/* Okta Sign In Button */}
-        {oktaEnabled && (
-          <div className="mt-6">
-            <button
-              onClick={handleOktaSignIn}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-            >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-              </svg>
-              Sign in with Okta
-            </button>
-          </div>
-        )}
-        {!oktaEnabled && (
-          <p className="mt-6 text-sm text-center text-gray-500">
-            Okta sign-in is temporarily disabled. Use your email and password below.
-          </p>
-        )}
-
-        {/* Divider */}
-        {oktaEnabled && (
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-gray-500">Or continue with email</span>
-            </div>
-          </div>
-        )}
-
-        {/* Existing Login/Signup Forms */}
+        {/* Login/Signup Forms */}
         <div className="mt-6">
           {isLogin ? (
             <LoginForm onToggleForm={() => setIsLogin(false)} />

@@ -9,34 +9,15 @@ export async function GET() {
     await initializeSecrets();
     
     const envCheck = {
-      // NextAuth variables
-      NEXTAUTH_SECRET: {
-        exists: !!process.env.NEXTAUTH_SECRET,
-        length: process.env.NEXTAUTH_SECRET?.length || 0,
-        preview: process.env.NEXTAUTH_SECRET ? `${process.env.NEXTAUTH_SECRET.substring(0, 8)}...` : 'NOT_SET'
+      DATABASE_URL: {
+        exists: !!process.env.DATABASE_URL,
+        value: process.env.DATABASE_URL ? '***SET***' : 'NOT_SET',
       },
-      NEXTAUTH_URL: {
-        exists: !!process.env.NEXTAUTH_URL,
-        value: process.env.NEXTAUTH_URL || 'NOT_SET'
+      JWT_SECRET: {
+        exists: !!process.env.JWT_SECRET,
+        length: process.env.JWT_SECRET?.length || 0,
+        preview: process.env.JWT_SECRET ? `${process.env.JWT_SECRET.substring(0, 8)}...` : 'NOT_SET',
       },
-      
-      // Okta variables
-      OKTA_CLIENT_ID: {
-        exists: !!process.env.OKTA_CLIENT_ID,
-        length: process.env.OKTA_CLIENT_ID?.length || 0,
-        preview: process.env.OKTA_CLIENT_ID ? `${process.env.OKTA_CLIENT_ID.substring(0, 8)}...` : 'NOT_SET'
-      },
-      OKTA_CLIENT_SECRET: {
-        exists: !!process.env.OKTA_CLIENT_SECRET,
-        length: process.env.OKTA_CLIENT_SECRET?.length || 0,
-        preview: process.env.OKTA_CLIENT_SECRET ? `${process.env.OKTA_CLIENT_SECRET.substring(0, 8)}...` : 'NOT_SET'
-      },
-      OKTA_ISSUER: {
-        exists: !!process.env.OKTA_ISSUER,
-        value: process.env.OKTA_ISSUER || 'NOT_SET'
-      },
-      
-      // AWS variables
       ACCESS_KEY_ID: {
         exists: !!process.env.ACCESS_KEY_ID,
         length: process.env.ACCESS_KEY_ID?.length || 0,
@@ -70,8 +51,6 @@ export async function GET() {
     };
     
     const allEnvVars = Object.keys(process.env).filter(key => 
-      key.includes('NEXTAUTH') || 
-      key.includes('OKTA') || 
       key.includes('ACCESS') || 
       key.includes('SECRET') || 
       key.includes('REGION') || 

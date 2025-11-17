@@ -36,7 +36,6 @@
     "jspdf-autotable": "^5.0.2",
     "mysql2": "^3.14.1",
     "next": "^15.3.5",
-    "next-auth": "^4.24.11",
     "postcss": "^8.5.6",
     "prisma": "^6.8.2",
     "react": "^18.2.0",

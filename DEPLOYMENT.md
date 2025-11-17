@@ -39,11 +39,6 @@ AWS Amplify Build
   "host": "database-qms-1.cvwog4weiwge.eu-north-1.rds.amazonaws.com",
   "port": 3306,
   "JWT_SECRET": "your-jwt-secret",
-  "NEXTAUTH_SECRET": "your-nextauth-secret",
-  "NEXTAUTH_URL": "https://main.d2jejl0mkthuo3.amplifyapp.com",
-  "OKTA_CLIENT_ID": "your-okta-client-id",
-  "OKTA_CLIENT_SECRET": "your-okta-client-secret",
-  "OKTA_ISSUER": "https://trial-3200908.okta.com/oauth2/default",
   "S3_BUCKET_NAME": "qms-tool-documents-qms-1",
   "REGION": "eu-north-1",
   "ACCESS_KEY_ID": "your-aws-access-key",
@@ -99,8 +94,10 @@ preBuild:
     # 2. Parse and export as environment variables
     - export DATABASE_URL="mysql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/qmstool"
     - export JWT_SECRET=$(cat /tmp/secrets.json | jq -r '.JWT_SECRET')
-    - export NEXTAUTH_SECRET=$(cat /tmp/secrets.json | jq -r '.NEXTAUTH_SECRET')
-    # ... etc
+    - export S3_BUCKET_NAME=$(cat /tmp/secrets.json | jq -r '.S3_BUCKET_NAME')
+    - export REGION=$(cat /tmp/secrets.json | jq -r '.REGION')
+    - export ACCESS_KEY_ID=$(cat /tmp/secrets.json | jq -r '.ACCESS_KEY_ID')
+    - export SECRET_ACCESS_KEY=$(cat /tmp/secrets.json | jq -r '.SECRET_ACCESS_KEY')
     
     # 3. Clean up temporary file
     - rm /tmp/secrets.json
@@ -109,7 +106,6 @@ preBuild:
 ### At Runtime
 
 - All secrets are available in `process.env`
-- NextAuth uses them for authentication
 - Prisma uses DATABASE_URL for database connections
 - API routes use JWT_SECRET for token verification
 

@@ -66,7 +66,7 @@ Amplify Build → Secrets Manager → Environment Variables
 ### Files Modified:
 1. `amplify.yml` - Fetches secrets during build
 2. `lib/awsSecretsManager.ts` - Enhanced fallback logic
-3. `app/api/auth/[...nextauth]/route.ts` - Fixed ESLint error
+3. `app/api/auth/[...nextauth]/route.ts` - Removed legacy OAuth handler
 4. `app/api/test-lambda-connection/route.ts` - New diagnostic endpoint
 
 ### Files Added:
@@ -98,7 +98,7 @@ Major Changes:
 - Add comprehensive deployment documentation
 - Create IAM policy template for Amplify service role
 - Add diagnostic endpoints for troubleshooting
-- Fix ESLint errors in NextAuth route
+- Remove unused OAuth handler and associated lint warnings
 
 Security Improvements:
 - Secrets loaded via IAM role (no manual env vars)

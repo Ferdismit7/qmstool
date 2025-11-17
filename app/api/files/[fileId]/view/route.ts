@@ -12,24 +12,17 @@ export async function GET(
     // Initialize secrets
     await initializeSecrets();
     
-    // Check for authentication tokens (custom JWT or NextAuth)
     const authToken = request.cookies.get('authToken')?.value || 
                      request.cookies.get('clientAuthToken')?.value;
-    const nextAuthToken = request.cookies.get('next-auth.session-token')?.value || 
-                         request.cookies.get('__Secure-next-auth.session-token')?.value ||
-                         request.cookies.get('authjs.session-token')?.value ||
-                         request.cookies.get('__Secure-authjs.session-token')?.value;
     
     const allCookies = request.cookies.getAll();
     console.log('Session check:', { 
       hasAuthToken: !!authToken,
-      hasNextAuthToken: !!nextAuthToken,
       totalCookies: allCookies.length,
       cookies: allCookies.map(c => ({ name: c.name, hasValue: !!c.value }))
     });
     
-    // Accept either custom JWT token or NextAuth session token
-    if (!authToken && !nextAuthToken) {
+    if (!authToken) {
       return NextResponse.json(
         { 
           error: 'Unauthorized - No authentication token found',
@@ -37,7 +30,6 @@ export async function GET(
             totalCookies: allCookies.length,
             cookieNames: allCookies.map(c => c.name),
             hasAuthToken: !!authToken,
-            hasNextAuthToken: !!nextAuthToken
           }
         },
         { status: 401 }
@@ -106,7 +98,6 @@ export async function GET(
     }
 
     // Check access - for now, allow access if user is authenticated
-    // TODO: Implement proper business area access control with NextAuth
     console.log('File access check - business_area:', fileRecord.business_area);
 
     // Handle file URL - could be S3 URL or local path
