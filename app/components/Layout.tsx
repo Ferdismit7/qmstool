@@ -189,6 +189,33 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   }, [isLoading, user, pathname, router, fetchUserData]);
 
+  // Clear tokens when window is closed
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      console.log('Window closing, clearing authentication tokens');
+      clientTokenUtils.clearTokens();
+      
+      // Call logout API to clear server-side cookies
+      // Use fetch with keepalive for reliable delivery during page unload
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        keepalive: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }).catch(() => {
+        // Ignore errors - window is closing
+      });
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   const getInitials = (username: string) => {
     const initial = username.charAt(0).toUpperCase();
     console.log('Getting initial for username:', username, 'Initial:', initial);
