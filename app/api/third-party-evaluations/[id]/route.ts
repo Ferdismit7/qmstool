@@ -59,8 +59,8 @@ export async function PUT(
     const body = await request.json();
     console.log('Received update body:', body);
 
-    // Handle file upload data
-    const fileUploadResult = await handleFileUploadFromJson(request);
+    // Handle file upload data - pass the already-parsed body instead of request
+    const fileUploadResult = await handleFileUploadFromJson(body);
     if (!fileUploadResult.success && fileUploadResult.error) {
       return NextResponse.json({ error: fileUploadResult.error }, { status: 400 });
     }

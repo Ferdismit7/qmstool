@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { FaArrowLeft, FaEdit } from 'react-icons/fa';
 import { CenteredLoadingSpinner } from '@/app/components/ui/LoadingSpinner';
 import RiskTimelineChart from '@/app/components/RiskTimelineChart';
+import { clientTokenUtils } from '@/lib/auth';
 
 interface RiskManagementControl {
   id: number;
@@ -66,24 +67,89 @@ export default function RiskControlDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchControl = async () => {
       try {
-        const response = await fetch(`/api/risk-management/${params.id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch risk control');
+        // Get token for Authorization header (fallback if cookies don't work)
+        let token = clientTokenUtils.getToken();
+        if (!token) {
+          // Retry getting token after a short delay, as it might not be immediately available on page load
+          await new Promise(resolve => setTimeout(resolve, 100));
+          token = clientTokenUtils.getToken();
         }
+
+        // If no token, user might be logging out - don't make request
+        if (!token) {
+          return;
+        }
+
+        const headers: HeadersInit = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`/api/risk-management/${params.id}`, {
+          credentials: 'include',
+          headers
+        });
+
+        // Check if component is still mounted before updating state
+        if (!isMounted) return;
+
+        if (!response.ok) {
+          // If 401, check if token was cleared (user is logging out)
+          if (response.status === 401) {
+            const currentToken = clientTokenUtils.getToken();
+            if (!currentToken) {
+              // User is logging out, don't set error - just return
+              return;
+            }
+            if (isMounted) {
+              setError('You do not have permission to view this risk control. Please ensure you have access to the control\'s business area.');
+            }
+            return;
+          } else if (response.status === 404) {
+            if (isMounted) {
+              setError('Risk control not found. It may have been deleted or you do not have access to it.');
+            }
+            return;
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            if (isMounted) {
+              setError(errorData.error || 'Failed to fetch risk control');
+            }
+            return;
+          }
+        }
+
         const data = await response.json();
-        setControl(data);
+        if (isMounted) {
+          setControl(data);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        // Only set error if component is still mounted and it's not a logout-related issue
+        if (isMounted) {
+          const token = clientTokenUtils.getToken();
+          if (token) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+          }
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     if (params.id) {
       fetchControl();
     }
+
+    // Cleanup function to mark component as unmounted
+    return () => {
+      isMounted = false;
+    };
   }, [params.id]);
 
   const getRiskLevel = (score: number) => {

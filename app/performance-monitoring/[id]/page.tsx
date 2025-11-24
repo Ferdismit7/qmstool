@@ -7,6 +7,7 @@ import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
 import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
 import Notification from '@/app/components/Notification';
 import { useRouter } from 'next/navigation';
+import { clientTokenUtils } from '@/lib/auth';
 
 interface PerformanceMonitoringControl {
   id: number;
@@ -53,25 +54,93 @@ export default function PerformanceMonitoringControlDetailPage({
   });
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchControl = async () => {
       try {
         const { id } = await params;
         setLoading(true);
         setError(null);
-        const response = await fetch(`/api/performance-monitoring/${id}`, { credentials: 'include' });
-        if (!response.ok) throw new Error('Failed to fetch control');
+
+        // Get token for Authorization header (fallback if cookies don't work)
+        let token = clientTokenUtils.getToken();
+        if (!token) {
+          // Retry getting token after a short delay, as it might not be immediately available on page load
+          await new Promise(resolve => setTimeout(resolve, 100));
+          token = clientTokenUtils.getToken();
+        }
+
+        // If no token, user might be logging out - don't make request
+        if (!token) {
+          return;
+        }
+
+        const headers: HeadersInit = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`/api/performance-monitoring/${id}`, {
+          credentials: 'include',
+          headers
+        });
+
+        // Check if component is still mounted before updating state
+        if (!isMounted) return;
+
+        if (!response.ok) {
+          // If 401, check if token was cleared (user is logging out)
+          if (response.status === 401) {
+            const currentToken = clientTokenUtils.getToken();
+            if (!currentToken) {
+              // User is logging out, don't set error - just return
+              return;
+            }
+            if (isMounted) {
+              setError('You do not have permission to view this performance monitoring control. Please ensure you have access to the control\'s business area.');
+            }
+            return;
+          } else if (response.status === 404) {
+            if (isMounted) {
+              setError('Performance monitoring control not found. It may have been deleted or you do not have access to it.');
+            }
+            return;
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            if (isMounted) {
+              setError(errorData.error || 'Failed to fetch control');
+            }
+            return;
+          }
+        }
+
         const data = await response.json();
         // Support both envelope { success, data } and raw object
-        setControl(data?.data ?? data ?? null);
+        if (isMounted) {
+          setControl(data?.data ?? data ?? null);
+        }
       } catch (err) {
-        console.error('Error fetching control:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch control');
+        // Only set error if component is still mounted and it's not a logout-related issue
+        if (isMounted) {
+          const token = clientTokenUtils.getToken();
+          if (token) {
+            console.error('Error fetching control:', err);
+            setError(err instanceof Error ? err.message : 'Failed to fetch control');
+          }
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchControl();
+
+    // Cleanup function to mark component as unmounted
+    return () => {
+      isMounted = false;
+    };
   }, [params]);
 
   const getStatusColor = (status: string) => {

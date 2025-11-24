@@ -127,10 +127,20 @@ export const handleFileUpload = async (request: NextRequest): Promise<FileUpload
 
 /**
  * Handle file upload from JSON request
+ * Can accept either a NextRequest (will parse body) or an already-parsed body object
  */
-export const handleFileUploadFromJson = async (request: NextRequest): Promise<FileUploadResult> => {
+export const handleFileUploadFromJson = async (
+  requestOrBody: NextRequest | Record<string, unknown>
+): Promise<FileUploadResult> => {
   try {
-    const body = await request.json();
+    // Check if it's a NextRequest or already parsed body
+    let body: Record<string, unknown>;
+    if (requestOrBody instanceof NextRequest) {
+      body = await requestOrBody.json();
+    } else {
+      body = requestOrBody;
+    }
+    
     const fileData = extractFileDataFromJson(body);
     
     const validation = validateFileData(fileData);

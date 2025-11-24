@@ -8,6 +8,7 @@ import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
 import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
 import Notification from '@/app/components/Notification';
 import { useRouter } from 'next/navigation';
+import { clientTokenUtils } from '@/lib/auth';
 
 interface BusinessQualityObjective {
   id: number;
@@ -52,6 +53,8 @@ export default function BusinessQualityObjectiveDetailPage() {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchObjective = async () => {
       try {
         const id = window.location.pathname.split('/').pop();
@@ -60,21 +63,83 @@ export default function BusinessQualityObjectiveDetailPage() {
           throw new Error('No objective ID provided');
         }
 
-        const response = await fetch(`/api/business-quality-objectives/${id}`);
+        // Get token for Authorization header (fallback if cookies don't work)
+        let token = clientTokenUtils.getToken();
+        if (!token) {
+          // Retry getting token after a short delay, as it might not be immediately available on page load
+          await new Promise(resolve => setTimeout(resolve, 100));
+          token = clientTokenUtils.getToken();
+        }
+
+        // If no token, user might be logging out - don't make request
+        if (!token) {
+          return;
+        }
+
+        const headers: HeadersInit = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`/api/business-quality-objectives/${id}`, {
+          credentials: 'include', // Include cookies for authentication
+          headers
+        });
+
+        // Check if component is still mounted before updating state
+        if (!isMounted) return;
+
         if (!response.ok) {
-          throw new Error('Failed to fetch business quality objective');
+          // If 401, check if token was cleared (user is logging out)
+          if (response.status === 401) {
+            const currentToken = clientTokenUtils.getToken();
+            if (!currentToken) {
+              // User is logging out, don't set error - just return
+              return;
+            }
+            if (isMounted) {
+              setError('You do not have permission to view this business quality objective. Please ensure you have access to the objective\'s business area.');
+            }
+            return;
+          } else if (response.status === 404) {
+            if (isMounted) {
+              setError('Business quality objective not found. It may have been deleted or you do not have access to it.');
+            }
+            return;
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            if (isMounted) {
+              setError(errorData.error || 'Failed to fetch business quality objective');
+            }
+            return;
+          }
         }
         
         const data = await response.json();
-        setObjective(data);
+        if (isMounted) {
+          setObjective(data);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        // Only set error if component is still mounted and it's not a logout-related issue
+        if (isMounted) {
+          const token = clientTokenUtils.getToken();
+          if (token) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+          }
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchObjective();
+
+    // Cleanup function to mark component as unmounted
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const getStatusColor = (status: string) => {

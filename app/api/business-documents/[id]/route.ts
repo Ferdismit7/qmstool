@@ -26,13 +26,16 @@ export async function GET(
       );
     }
 
-    // Use Prisma to fetch document with linked documents (same approach as business processes)
-    const document = await prisma.businessDocumentRegister.findFirst({
+    const documentId = parseInt(id);
+
+    // First, try to find the document with user's business area access
+    let document = await prisma.businessDocumentRegister.findFirst({
       where: {
-        id: parseInt(id),
+        id: documentId,
         business_area: {
           in: userBusinessAreas
-        }
+        },
+        deleted_at: null // Filter out soft-deleted documents
       },
       include: {
         businessareas: true,
@@ -51,7 +54,9 @@ export async function GET(
                 file_name: true,
                 file_size: true,
                 file_type: true,
-                uploaded_at: true
+                uploaded_at: true,
+                business_area: true, // Include business_area for access control
+                deleted_at: true // Include deleted_at to filter later
               }
             },
             createdBy: {
@@ -69,16 +74,97 @@ export async function GET(
       }
     });
 
+    // If document not found with direct access, check if it's linked to a document the user has access to
     if (!document) {
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+      // Check if this document is linked to any document the user has access to
+      const linkedAccess = await prisma.businessDocumentLink.findFirst({
+        where: {
+          OR: [
+            {
+              primary_document_id: documentId,
+              primaryDocument: {
+                business_area: { in: userBusinessAreas },
+                deleted_at: null
+              }
+            },
+            {
+              related_document_id: documentId,
+              relatedDocument: {
+                business_area: { in: userBusinessAreas },
+                deleted_at: null
+              }
+            }
+          ]
+        }
+      });
+
+      // If linked, allow access even if from different business area
+      if (linkedAccess) {
+        document = await prisma.businessDocumentRegister.findFirst({
+          where: {
+            id: documentId,
+            deleted_at: null // Only check if not deleted
+          },
+          include: {
+            businessareas: true,
+            relatedDocumentsPrimary: {
+              include: {
+                relatedDocument: {
+                  select: {
+                    id: true,
+                    document_name: true,
+                    document_type: true,
+                    version: true,
+                    doc_status: true,
+                    progress: true,
+                    status_percentage: true,
+                    file_url: true,
+                    file_name: true,
+                    file_size: true,
+                    file_type: true,
+                    uploaded_at: true,
+                    business_area: true,
+                    deleted_at: true
+                  }
+                },
+                createdBy: {
+                  select: {
+                    id: true,
+                    username: true,
+                    email: true
+                  }
+                }
+              },
+              orderBy: {
+                created_at: 'desc'
+              }
+            }
+          }
+        });
+      }
     }
+
+    if (!document) {
+      return NextResponse.json({ error: 'Document not found or you do not have access to it' }, { status: 404 });
+    }
+
+    // Filter out links to deleted documents
+    // Allow viewing linked documents even if from different business areas (since they're linked)
+    const validLinks = document.relatedDocumentsPrimary.filter(link => {
+      // Check if related document exists and is not deleted
+      if (!link.relatedDocument || link.relatedDocument.deleted_at) {
+        return false;
+      }
+      // Allow all linked documents (they're linked, so user should be able to view them)
+      return true;
+    });
 
     // Transform the data to match the expected format (similar to business processes)
     const transformedDocument = {
       ...document,
       // Convert BigInt values to numbers for JSON serialization
       file_size: document.file_size ? Number(document.file_size) : null,
-      linkedDocuments: document.relatedDocumentsPrimary.map(link => ({
+      linkedDocuments: validLinks.map(link => ({
         id: link.id,
         business_process_id: 0, // Not applicable for document-to-document links
         business_document_id: link.related_document_id,
@@ -88,7 +174,9 @@ export async function GET(
         businessDocument: {
           ...link.relatedDocument,
           // Convert BigInt values in related documents too
-          file_size: link.relatedDocument.file_size ? Number(link.relatedDocument.file_size) : null
+          file_size: link.relatedDocument.file_size ? Number(link.relatedDocument.file_size) : null,
+          // Remove deleted_at from response
+          deleted_at: undefined
         },
         createdBy: link.createdBy
       }))

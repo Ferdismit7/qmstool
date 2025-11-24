@@ -7,6 +7,7 @@ import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
 import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
 import Notification from '@/app/components/Notification';
 import { useRouter } from 'next/navigation';
+import { clientTokenUtils } from '@/lib/auth';
 
 interface ThirdPartyEvaluation {
   id: number;
@@ -57,42 +58,94 @@ export default function ThirdPartyEvaluationDetail({ params }: { params: Promise
   });
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchEvaluation = async () => {
       try {
         const { id } = await params;
         setIsLoading(true);
         setError(null);
 
-        const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+        // Get token for Authorization header (fallback if cookies don't work)
+        let token = clientTokenUtils.getToken();
         if (!token) {
-          throw new Error('No authentication token found');
+          // Retry getting token after a short delay, as it might not be immediately available on page load
+          await new Promise(resolve => setTimeout(resolve, 100));
+          token = clientTokenUtils.getToken();
+        }
+
+        // If no token, user might be logging out - don't make request
+        if (!token) {
+          return;
+        }
+
+        const headers: HeadersInit = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
         }
 
         const response = await fetch(`/api/third-party-evaluations/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include', // Include cookies for authentication
+          headers
         });
+
+        // Check if component is still mounted before updating state
+        if (!isMounted) return;
         
         if (!response.ok) {
-          throw new Error('Failed to fetch third party evaluation');
+          // If 401, check if token was cleared (user is logging out)
+          if (response.status === 401) {
+            const currentToken = clientTokenUtils.getToken();
+            if (!currentToken) {
+              // User is logging out, don't set error - just return
+              return;
+            }
+            if (isMounted) {
+              setError('You do not have permission to view this third party evaluation. Please ensure you have access to the evaluation\'s business area.');
+            }
+            return;
+          } else if (response.status === 404) {
+            if (isMounted) {
+              setError('Third party evaluation not found. It may have been deleted or you do not have access to it.');
+            }
+            return;
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            if (isMounted) {
+              setError(errorData.error || 'Failed to fetch third party evaluation');
+            }
+            return;
+          }
         }
         
         const data = await response.json();
-        if (data.success) {
+        if (data.success && isMounted) {
           setEvaluation(data.data);
-        } else {
-          throw new Error(data.error || 'Failed to fetch third party evaluation');
+        } else if (isMounted) {
+          setError(data.error || 'Failed to fetch third party evaluation');
         }
       } catch (error) {
-        console.error('Error fetching third party evaluation:', error);
-        setError(error instanceof Error ? error.message : 'Failed to fetch third party evaluation');
+        // Only set error if component is still mounted and it's not a logout-related issue
+        if (isMounted) {
+          const token = clientTokenUtils.getToken();
+          if (token) {
+            console.error('Error fetching third party evaluation:', error);
+            setError(error instanceof Error ? error.message : 'Failed to fetch third party evaluation');
+          }
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchEvaluation();
+
+    // Cleanup function to mark component as unmounted
+    return () => {
+      isMounted = false;
+    };
   }, [params]);
 
   const getStatusColor = (status: string) => {

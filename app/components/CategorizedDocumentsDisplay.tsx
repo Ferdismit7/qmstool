@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FiFileText, FiTrash2, FiEye, FiDownload, FiUser, FiCalendar, FiChevronDown, FiChevronRight } from 'react-icons/fi';
 import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
 
@@ -49,6 +50,7 @@ export default function CategorizedDocumentsDisplay({
   canEdit = true,
   className = ""
 }: CategorizedDocumentsDisplayProps) {
+  const router = useRouter();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [unlinkingDocument, setUnlinkingDocument] = useState<number | null>(null);
 
@@ -235,7 +237,7 @@ export default function CategorizedDocumentsDisplay({
                         onClick={() => {
                           const currentUrl = window.location.pathname;
                           const referrer = encodeURIComponent(currentUrl);
-                          window.location.href = `/business-document-registry/${link.businessDocument!.id}?from=${referrer}`;
+                          router.push(`/business-document-registry/${link.businessDocument!.id}?from=${referrer}`);
                         }}
                       >
                         <div className="flex items-start justify-between">
@@ -300,7 +302,7 @@ export default function CategorizedDocumentsDisplay({
                               onClick={() => {
                                 const currentUrl = window.location.pathname;
                                 const referrer = encodeURIComponent(currentUrl);
-                                window.location.href = `/business-document-registry/${link.businessDocument!.id}?from=${referrer}`;
+                                router.push(`/business-document-registry/${link.businessDocument!.id}?from=${referrer}`);
                               }}
                               className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
                               title="View document details"

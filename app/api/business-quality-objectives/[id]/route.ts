@@ -68,8 +68,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized to modify business area' }, { status: 403 });
     }
 
-    // Handle file upload data
-    const fileUploadResult = await handleFileUploadFromJson(request);
+    // Handle file upload data - pass the already-parsed body instead of request
+    const fileUploadResult = await handleFileUploadFromJson(data);
     if (!fileUploadResult.success && fileUploadResult.error) {
       return NextResponse.json({ error: fileUploadResult.error }, { status: 400 });
     }

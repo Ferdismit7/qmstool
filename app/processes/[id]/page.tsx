@@ -8,6 +8,7 @@ import { extractFileIdFromUrl } from '@/lib/utils/fileUtils';
 import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
 import Notification from '@/app/components/Notification';
 import { useRouter } from 'next/navigation';
+import { clientTokenUtils } from '@/lib/auth';
 
 interface BusinessDocument {
   id: number;
@@ -85,6 +86,8 @@ export default function BusinessProcessDetailPage() {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchProcess = async () => {
       try {
         const id = window.location.pathname.split('/').pop();
@@ -93,22 +96,85 @@ export default function BusinessProcessDetailPage() {
           throw new Error('No process ID provided');
         }
 
-        const response = await fetch(`/api/business-processes/${id}`);
+        // Get token for Authorization header (fallback if cookies don't work)
+        let token = clientTokenUtils.getToken();
+        if (!token) {
+          // Retry getting token after a short delay, as it might not be immediately available on page load
+          await new Promise(resolve => setTimeout(resolve, 100));
+          token = clientTokenUtils.getToken();
+        }
+
+        // If no token, user might be logging out - don't make request
+        if (!token) {
+          return;
+        }
+
+        const headers: HeadersInit = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`/api/business-processes/${id}`, {
+          credentials: 'include', // Include cookies for authentication
+          headers
+        });
+
+        // Check if component is still mounted before updating state
+        if (!isMounted) return;
+
         if (!response.ok) {
-          throw new Error('Failed to fetch business process');
+          // If 401, check if token was cleared (user is logging out)
+          if (response.status === 401) {
+            const currentToken = clientTokenUtils.getToken();
+            if (!currentToken) {
+              // User is logging out, don't set error - just return
+              return;
+            }
+            if (isMounted) {
+              setError('You do not have permission to view this process. Please ensure you have access to the process\'s business area.');
+            }
+            return;
+          } else if (response.status === 404) {
+            if (isMounted) {
+              setError('Process not found. It may have been deleted or you do not have access to it.');
+            }
+            return;
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            if (isMounted) {
+              setError(errorData.error || 'Failed to fetch business process');
+            }
+            return;
+          }
         }
         
         const data = await response.json();
-        setProcess(data);
-        setLinkedDocuments(data.linkedDocuments || []);
+        if (isMounted) {
+          setProcess(data);
+          setLinkedDocuments(data.linkedDocuments || []);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        // Only set error if component is still mounted and it's not a logout-related issue
+        if (isMounted && err instanceof Error) {
+          // Check if token still exists - if not, user is logging out
+          const token = clientTokenUtils.getToken();
+          if (token) {
+            setError(err.message);
+          }
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchProcess();
+
+    // Cleanup function to mark component as unmounted
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const getStatusColor = (status: string) => {

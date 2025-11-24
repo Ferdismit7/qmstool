@@ -52,10 +52,14 @@ export async function GET(
     });
 
     // Manually fetch the related document data for each link
+    // Filter out deleted documents only - allow viewing linked documents from different business areas
     const linkedDocuments = await Promise.all(
       links.map(async (link) => {
-        const relatedDocument = await prisma.businessDocumentRegister.findUnique({
-          where: { id: link.related_document_id },
+        const relatedDocument = await prisma.businessDocumentRegister.findFirst({
+          where: { 
+            id: link.related_document_id,
+            deleted_at: null // Only include non-deleted documents (allow different business areas since they're linked)
+          },
           select: {
             id: true,
             document_name: true,
@@ -71,6 +75,11 @@ export async function GET(
           }
         });
 
+        // Only return links where the related document exists and is not deleted
+        if (!relatedDocument) {
+          return null;
+        }
+
         return {
           ...link,
           relatedDocument
@@ -78,9 +87,12 @@ export async function GET(
       })
     );
 
+    // Filter out null entries (deleted or inaccessible documents)
+    const validLinkedDocuments = linkedDocuments.filter(link => link !== null);
+
     return NextResponse.json({ 
       success: true, 
-      data: linkedDocuments 
+      data: validLinkedDocuments 
     });
   } catch (error) {
     console.error('Error fetching document links:', error);
