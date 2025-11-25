@@ -259,7 +259,7 @@ export default function RiskManagementForm({ control, onSuccess, onCancel, isVie
         <button
           type="button"
           onClick={onCancel || (() => router.back())}
-          className="px-6 py-2 rounded-lg bg-brand-dark/30 border border-brand-gray3 text-brand-white hover:bg-brand-white/40 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
           {isViewMode ? 'Close' : 'Cancel'}
         </button>
@@ -267,7 +267,7 @@ export default function RiskManagementForm({ control, onSuccess, onCancel, isVie
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 rounded-lg bg-brand-dark/30 border border-brand-gray3 text-white hover:bg-brand-white/40 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50 disabled:opacity-50"
           >
             {loading ? 'Saving...' : control ? 'Update' : 'Create'}
           </button>

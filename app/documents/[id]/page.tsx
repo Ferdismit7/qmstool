@@ -342,30 +342,33 @@ export default function DocumentDetail({ params }: { params: Promise<{ id: strin
         <div className="flex items-center gap-4">
           <Link
             href="/documents"
-            className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
             title="Back to documents"
           >
-            <FiArrowLeft size={20} />
+            <FiArrowLeft size={12} />
+            Back
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-brand-white">{document.document_name}</h1>
             <p className="text-brand-gray3 mt-1">Document Details</p>
           </div>
         </div>
-        <Link
-          href={`/documents/${document.id}/edit`}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
-        >
-          <FiEdit2 size={16} />
-          Edit Document
-        </Link>
-        <button
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/documents/${document.id}/edit`}
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
+          >
+            <FiEdit2 size={12} />
+            Edit Document
+          </Link>
+          <button
           onClick={() => setShowDeleteModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
-          <FiTrash2 size={16} />
+          <FiTrash2 size={12} />
           Delete Document
         </button>
+        </div>
       </div>
 
       {/* Document Details */}

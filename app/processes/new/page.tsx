@@ -113,10 +113,10 @@ export default function NewBusinessProcessPage() {
         <div className="flex items-center gap-4">
           <Link
             href="/processes"
-            className="flex items-center gap-2 text-brand-gray3 hover:text-brand-white transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
           >
-            <FiArrowLeft size={16} />
-            Back to Business Processes
+            <FiArrowLeft size={12} />
+            Back
           </Link>
         </div>
       </div>
@@ -396,14 +396,14 @@ export default function NewBusinessProcessPage() {
             <button
               type="submit"
               disabled={isSaving}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <FiSave size={16} />
+              <FiSave size={12} />
               {isSaving ? 'Creating...' : 'Create Process'}
             </button>
             <Link
               href="/processes"
-              className="px-4 py-2 text-brand-gray3 hover:text-brand-white transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
             >
               Cancel
             </Link>

@@ -286,30 +286,33 @@ export default function ThirdPartyEvaluationDetail({ params }: { params: Promise
         <div className="flex items-center gap-4">
           <Link
             href="/third-party-evaluations"
-            className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
             title="Back to third party evaluations"
           >
-            <FiArrowLeft size={20} />
+            <FiArrowLeft size={12} />
+            Back
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-brand-white">Third Party Evaluation Details</h1>
             <p className="text-brand-gray3 mt-1">{evaluation.third_party_name || `Evaluation ${evaluation.id}`}</p>
           </div>
         </div>
-        <Link
-          href={`/third-party-evaluations/${evaluation.id}/edit`}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
-        >
-          <FiEdit2 size={16} />
-          Edit Evaluation
-        </Link>
-        <button
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/third-party-evaluations/${evaluation.id}/edit`}
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
+          >
+            <FiEdit2 size={12} />
+            Edit Evaluation
+          </Link>
+          <button
           onClick={() => setShowDeleteModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
-          <FiTrash2 size={16} />
+          <FiTrash2 size={12} />
           Delete Evaluation
         </button>
+        </div>
       </div>
 
       {/* Evaluation Details */}

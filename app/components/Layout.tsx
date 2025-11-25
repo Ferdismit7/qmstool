@@ -288,9 +288,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="relative z-10 flex-shrink-0 border-b border-brand-gray2/50 bg-brand-gray1">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 sm:py-3">
-              {/* Logo/Title Section */}
+          <div className="px-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-4 sm:py-3 relative">
+              {/* Logo/Title Section - Left */}
               <div className="flex items-center mb-4 sm:mb-0">
                 {shouldShowSidebar && (
                   <MobileMenuButton onClick={handleSidebarToggle} isOpen={sidebarOpen} />
@@ -300,51 +300,58 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </h1>
               </div>
 
-              {/* Navigation Buttons */}
+              {/* Management Report - Center */}
               {user && (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                  {/* Home and Business Areas - Stack on mobile, inline on desktop */}
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <Link
-                      href="/dashboard"
-                      className="flex items-center justify-center w-10 h-10 sm:w-8 sm:h-8 rounded-lg sm:rounded-full bg-brand-gray2/50 hover:bg-brand-gray2 text-white hover:text-blue-400 transition-colors"
-                      aria-label="Go to home page"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="w-5 h-5 sm:w-6 sm:h-6"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-                        />
-                      </svg>
-                    </Link>
-                    <Link
-                      href="/management-report"
-                      className="px-3 py-2 sm:px-3 sm:py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 font-medium text-sm transition-colors whitespace-nowrap"
-                      aria-label="View Management Report"
-                    >
-                      Management Report
-                    </Link>
-                  </div>
+                <div className="absolute left-1/2 transform -translate-x-1/2 hidden sm:block">
+                  <Link
+                    href="/management-report"
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50 whitespace-nowrap"
+                    aria-label="View Management Report"
+                  >
+                    Management Report
+                  </Link>
+                </div>
+              )}
 
-                  {/* Profile and Logout - Always on the right */}
-                  <div className="flex items-center gap-2 sm:gap-3 ml-auto sm:ml-0">
-                    <Link
-                      href="/profile/edit"
-                      className="flex items-center justify-center w-10 h-10 sm:w-8 sm:h-8 rounded-lg sm:rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
-                      aria-label="Edit user profile"
+              {/* Home, Profile and Logout - Right side */}
+              {user && (
+                <div className="flex items-center gap-2 sm:gap-2 ml-auto">
+                  {/* Management Report - Show on mobile, hidden on desktop (center takes over) */}
+                  <Link
+                    href="/management-report"
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50 whitespace-nowrap sm:hidden"
+                    aria-label="View Management Report"
+                  >
+                    Management Report
+                  </Link>
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center justify-center w-10 h-10 sm:w-8 sm:h-8 rounded-lg sm:rounded-full bg-brand-gray2/50 hover:bg-brand-gray2 text-white hover:text-blue-400 transition-colors"
+                    aria-label="Go to home page"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-5 h-5 sm:w-6 sm:h-6"
                     >
-                      {getInitials(user.username)}
-                    </Link>
-                    <LogoutButton />
-                  </div>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+                      />
+                    </svg>
+                  </Link>
+                  <Link
+                    href="/profile/edit"
+                    className="flex items-center justify-center w-10 h-10 sm:w-8 sm:h-8 rounded-lg sm:rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
+                    aria-label="Edit user profile"
+                  >
+                    {getInitials(user.username)}
+                  </Link>
+                  <LogoutButton />
                 </div>
               )}
             </div>

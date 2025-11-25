@@ -315,26 +315,28 @@ export default function BusinessProcessDetailPage() {
         <div className="flex items-center gap-4">
           <Link
             href="/processes"
-            className="flex items-center gap-2 text-brand-gray3 hover:text-brand-white transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
           >
-            <FiArrowLeft size={16} />
+            <FiArrowLeft size={12} />
             Back to Business Processes
           </Link>
         </div>
-        <Link
-          href={`/processes/${process.id}/edit`}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
-        >
-          <FiEdit2 size={16} />
-          Edit Process
-        </Link>
-        <button
-          onClick={() => setShowDeleteModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-        >
-          <FiTrash2 size={16} />
-          Delete Process
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/processes/${process.id}/edit`}
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
+          >
+            <FiEdit2 size={12} />
+            Edit Process
+          </Link>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
+          >
+            <FiTrash2 size={12} />
+            Delete Process
+          </button>
+        </div>
       </div>
 
       <div>

@@ -49,10 +49,11 @@ export default function NewDocument() {
         <div className="flex items-center gap-4">
           <Link
             href="/documents"
-            className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
             title="Back to documents"
           >
-            <FiArrowLeft size={20} />
+            <FiArrowLeft size={12} />
+            Back
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-brand-white">Add New Document</h1>
@@ -61,9 +62,9 @@ export default function NewDocument() {
         </div>
         <Link
           href="/documents"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-gray1 text-brand-white rounded-lg hover:bg-brand-gray1/80 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
-          <FiX size={16} />
+          <FiX size={12} />
           Cancel
         </Link>
       </div>

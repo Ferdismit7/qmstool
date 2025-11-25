@@ -169,9 +169,9 @@ export default function RiskManagementPage() {
         <p className="text-brand-gray3">Manage your risk assessment and control matrix</p>
         <button
           onClick={handleAddControl}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-blue text-brand-white hover:bg-brand-blue/90 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
-          <FaPlus /> Add Risk Control
+          <FaPlus size={12} /> Add Risk Control
         </button>
       </div>
 
@@ -215,7 +215,7 @@ export default function RiskManagementPage() {
           <div className="text-gray-400 text-lg">No risk management controls found.</div>
           <button
             onClick={handleAddControl}
-            className="mt-4 px-6 py-2 bg-brand-blue text-brand-white rounded-lg hover:bg-brand-blue/90 transition-colors"
+            className="mt-4 inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
           >
             Create Your First Control
           </button>

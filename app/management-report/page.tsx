@@ -507,9 +507,9 @@ function ManagementReportContent() {
         <button
           onClick={handleDownloadPDF}
           disabled={downloading || !reportData}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 flex items-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         >
-          <FiDownload />
+          <FiDownload size={12} />
           {downloading ? 'Generating PDF...' : 'Download PDF'}
         </button>
       </div>

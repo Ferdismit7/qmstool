@@ -171,7 +171,7 @@ export default function RiskControlDetailPage() {
           <p>{error || 'Risk control not found'}</p>
           <button
             onClick={() => router.push('/risk-management')}
-            className="mt-4 px-6 py-2 bg-brand-blue text-white rounded-lg hover:bg-brand-blue/90 transition-colors"
+            className="mt-4 inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
           >
             Back to Risk Management
           </button>
@@ -190,7 +190,7 @@ export default function RiskControlDetailPage() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push('/risk-management')}
-            className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
             title="Back to risk management"
           >
             <FaArrowLeft size={20} />
@@ -202,7 +202,7 @@ export default function RiskControlDetailPage() {
         </div>
         <button
           onClick={() => router.push(`/risk-management/${control.id}/edit`)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
           <FaEdit size={16} />
           Edit Control

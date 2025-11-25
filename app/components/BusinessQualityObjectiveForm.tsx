@@ -232,14 +232,14 @@ export default function BusinessQualityObjectiveForm({ objective, mode }: Props)
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-6 py-2 rounded-lg bg-brand-gray1 text-brand-white hover:bg-brand-gray2"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 rounded-lg bg-brand-primary text-brand-white hover:bg-brand-primary/80 disabled:opacity-50"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50 disabled:opacity-50"
         >
           {loading ? 'Saving...' : mode === 'create' ? 'Create Objective' : 'Update Objective'}
         </button>

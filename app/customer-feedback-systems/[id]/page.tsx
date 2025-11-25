@@ -265,30 +265,33 @@ export default function CustomerFeedbackSystemDetail({ params }: { params: Promi
         <div className="flex items-center gap-4">
           <Link
             href="/customer-feedback-systems"
-            className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
             title="Back to customer feedback systems"
           >
-            <FiArrowLeft size={20} />
+            <FiArrowLeft size={12} />
+            Back
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-brand-white">Customer Feedback System Details</h1>
             <p className="text-brand-gray3 mt-1">{`System ${system.id}`}</p>
           </div>
         </div>
-        <Link
-          href={`/customer-feedback-systems/${system.id}/edit`}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
-        >
-          <FiEdit2 size={16} />
-          Edit System
-        </Link>
-        <button
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/customer-feedback-systems/${system.id}/edit`}
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
+          >
+            <FiEdit2 size={12} />
+            Edit System
+          </Link>
+          <button
           onClick={() => setShowDeleteModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
-          <FiTrash2 size={16} />
+          <FiTrash2 size={12} />
           Delete System
         </button>
+        </div>
       </div>
 
       {/* System Details */}

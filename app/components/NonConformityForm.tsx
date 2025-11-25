@@ -584,13 +584,13 @@ export default function NonConformityForm({ onAdd, onClose, editData }: NonConfo
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 text-brand-white hover:text-brand-gray2"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-brand-primary text-white rounded hover:bg-brand-primary/80"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
           {editData ? 'Update Non-Conformity' : 'Add Non-Conformity'}
         </button>

@@ -164,18 +164,18 @@ export default function BusinessProcessForm({ mode, process }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex justify-end space-x-4 mb-6">
+      <div className="flex justify-end gap-2 mb-6">
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-6 py-2 rounded-lg border border-brand-gray3/50 bg-brand-dark/50 text-brand-white hover:bg-brand-gray3 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 rounded-lg border border-brand-gray3/50 bg-brand-dark/50 text-white hover:bg-brand-blue/90 transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50 disabled:opacity-50"
         >
           {loading ? 'Saving...' : mode === 'create' ? 'Create' : 'Update'}
         </button>

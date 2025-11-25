@@ -161,7 +161,7 @@ export default function EditThirdPartyEvaluationPage() {
       <div className="flex items-center gap-4">
         <Link
           href="/third-party-evaluations"
-          className="flex items-center gap-2 text-brand-gray3 hover:text-brand-white transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
           <FiArrowLeft size={16} />
           Back to Evaluations
@@ -352,7 +352,7 @@ export default function EditThirdPartyEvaluationPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FiSave size={16} />
             {isSubmitting ? 'Updating...' : 'Update Evaluation'}

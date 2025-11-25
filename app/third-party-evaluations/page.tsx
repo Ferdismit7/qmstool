@@ -174,9 +174,9 @@ export default function ThirdPartyEvaluationsPage() {
         </div>
         <Link
           href="/third-party-evaluations/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 text-gray-200 text-xs rounded-md hover:bg-gray-800/80 transition-colors shadow-sm border border-gray-700/50"
         >
-          <FiPlus size={16} />
+          <FiPlus size={12} />
           Add Evaluation
         </Link>
       </div>
