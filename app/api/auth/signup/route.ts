@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import {prisma }from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { validateEnvironmentVariables, sanitizeInput, isValidEmail, validatePasswordStrength, checkRateLimit } from '@/lib/security';
 import { initializeSecrets } from '@/lib/awsSecretsManager';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     // Initialize secrets from AWS Secrets Manager
     await initializeSecrets();

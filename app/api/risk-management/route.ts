@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import {prisma } from '@/lib/prisma';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
-import { NextRequest } from 'next/server';
 
 // GET all risk management controls for current user's business areas
 export async function GET(request: NextRequest) {

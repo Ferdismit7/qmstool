@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import {prisma } from '@/lib/prisma';
 import { initializeSecrets } from '@/lib/awsSecretsManager';
 
@@ -23,7 +23,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     // Initialize secrets from AWS Secrets Manager
     await initializeSecrets();

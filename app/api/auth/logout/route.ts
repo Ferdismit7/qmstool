@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/security';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     // SECURITY: Rate limiting
     const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
