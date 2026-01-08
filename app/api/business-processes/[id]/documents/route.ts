@@ -68,7 +68,7 @@ export async function GET(
 
     return NextResponse.json({ 
       success: true, 
-      data: linkedDocuments 
+      data: linkedDocuments
     });
   } catch (error) {
     console.error('Error fetching linked documents:', error);
@@ -134,7 +134,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'One or more documents not found or access denied' }, { status: 404 });
     }
 
-    // Create the links (using createMany with skipDuplicates to handle existing links)
+    // Create the links
     const linksToCreate = documentIds.map(docId => ({
       business_process_id: processId,
       business_document_id: docId,

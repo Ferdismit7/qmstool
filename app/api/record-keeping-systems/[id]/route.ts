@@ -23,6 +23,22 @@ export async function GET(
         id: recordKeepingSystemId,
         deleted_at: null,
         business_area: { in: userBusinessAreas }
+      },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -30,7 +46,24 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Record keeping system not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: recordKeepingSystem });
+    const transformedData = {
+      ...recordKeepingSystem,
+      file_size: recordKeepingSystem.file_size ? Number(recordKeepingSystem.file_size) : null,
+      fileVersions: recordKeepingSystem.fileVersions.map(fv => ({
+        id: fv.id,
+        record_keeping_system_id: fv.record_keeping_system_id,
+        rks_version: fv.rks_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      }))
+    };
+
+    return NextResponse.json({ success: true, data: transformedData });
   } catch (error) {
     console.error('Error fetching record keeping system:', error);
     return NextResponse.json(
@@ -76,12 +109,51 @@ export async function PUT(
       status_percentage,
       doc_status,
       progress,
+      version,
       notes,
       file_url,
       file_name,
       file_size,
       file_type
     } = body;
+
+    // Get current record keeping system to check if file is being changed
+    const currentRecordKeepingSystem = await prisma.recordKeepingSystem.findFirst({
+      where: {
+        id: recordKeepingSystemId,
+        deleted_at: null,
+        business_area: { in: userBusinessAreas }
+      }
+    });
+
+    if (!currentRecordKeepingSystem) {
+      return NextResponse.json({ success: false, error: 'Record keeping system not found' }, { status: 404 });
+    }
+
+    // Get user for uploaded_by field
+    const user = await getUserFromToken(request);
+    const userId = user?.userId || null;
+
+    // If a new file is being uploaded and it's different from the current one,
+    // save the current file to versions table before updating
+    if (
+      file_url &&
+      file_url !== currentRecordKeepingSystem.file_url &&
+      currentRecordKeepingSystem.file_url &&
+      currentRecordKeepingSystem.version
+    ) {
+      await prisma.recordKeepingSystemFileVersion.create({
+        data: {
+          record_keeping_system_id: recordKeepingSystemId,
+          rks_version: currentRecordKeepingSystem.version,
+          file_url: currentRecordKeepingSystem.file_url,
+          file_name: currentRecordKeepingSystem.file_name || '',
+          file_size: currentRecordKeepingSystem.file_size,
+          file_type: currentRecordKeepingSystem.file_type,
+          uploaded_by: userId
+        }
+      });
+    }
 
     const recordKeepingSystem = await prisma.recordKeepingSystem.update({
       where: { id: recordKeepingSystemId },
@@ -104,15 +176,49 @@ export async function PUT(
         status_percentage: status_percentage ? parseFloat(status_percentage) : null,
         doc_status,
         progress,
+        version,
         notes,
         file_url,
         file_name,
         file_size: file_size ? BigInt(file_size) : null,
         file_type
+      },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     });
 
-    return NextResponse.json({ success: true, data: recordKeepingSystem });
+    const transformedData = {
+      ...recordKeepingSystem,
+      file_size: recordKeepingSystem.file_size ? Number(recordKeepingSystem.file_size) : null,
+      fileVersions: recordKeepingSystem.fileVersions.map(fv => ({
+        id: fv.id,
+        record_keeping_system_id: fv.record_keeping_system_id,
+        rks_version: fv.rks_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      }))
+    };
+
+    return NextResponse.json({ success: true, data: transformedData });
   } catch (error) {
     console.error('Error updating record keeping system:', error);
     return NextResponse.json(

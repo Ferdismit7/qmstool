@@ -57,6 +57,29 @@ export default function BusinessProcessForm({ mode, process }: Props) {
     }
   );
 
+  // Helper function to increment version
+  const incrementVersion = (currentVersion: string): string => {
+    if (!currentVersion) return '1.0';
+    
+    // Try to parse as decimal version (e.g., "1.0", "2.5")
+    const match = currentVersion.match(/^(\d+)\.(\d+)$/);
+    if (match) {
+      const major = parseInt(match[1]);
+      const minor = parseInt(match[2]);
+      return `${major}.${minor + 1}`;
+    }
+    
+    // Try to parse as integer version (e.g., "1", "2")
+    const intMatch = currentVersion.match(/^(\d+)$/);
+    if (intMatch) {
+      const num = parseInt(intMatch[1]);
+      return `${num + 1}.0`;
+    }
+    
+    // Default: append .1 or increment last number
+    return `${currentVersion}.1`;
+  };
+
   // Fetch user's business areas on component mount
   useEffect(() => {
     const fetchUserBusinessAreas = async () => {
@@ -399,16 +422,31 @@ export default function BusinessProcessForm({ mode, process }: Props) {
       <div className="mt-6">
         <FileUploadField
           label="Upload Document"
-          value={{
-            file_url: formData.file_url,
-            file_name: formData.file_name,
-            file_size: formData.file_size,
-            file_type: formData.file_type,
-          }}
+          value={
+            // When editing, don't show the current file - it should be empty
+            // The current file is visible on the detail page with version filtering
+            mode === 'edit' ? {
+              file_url: undefined,
+              file_name: undefined,
+              file_size: undefined,
+              file_type: undefined,
+            } : {
+              file_url: formData.file_url,
+              file_name: formData.file_name,
+              file_size: formData.file_size,
+              file_type: formData.file_type,
+            }
+          }
           onChange={(fileData) => {
+            const hasNewFile = fileData.file_url && fileData.file_url !== formData.file_url;
+            
             setFormData(prev => ({
               ...prev,
               ...fileData,
+              // Auto-increment version if editing and new file uploaded
+              version: (mode === 'edit' && hasNewFile) 
+                ? incrementVersion(prev.version || '1.0')
+                : prev.version,
               uploaded_at: fileData.uploaded_at ? (typeof fileData.uploaded_at === 'string' ? fileData.uploaded_at : fileData.uploaded_at.toISOString()) : ''
             }));
           }}

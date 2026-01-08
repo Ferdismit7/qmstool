@@ -54,12 +54,32 @@ export async function GET(
     `);
     console.log('Query parameters:', queryParams);
 
-    // Get the assessment
-    const [assessment] = await query(`
-      SELECT id, business_area, assessor_name, assessment_date, created_at
-      FROM qms_assessments 
-      WHERE id = ? AND business_area IN (${placeholders})
-    `, queryParams);
+    // Get the assessment using Prisma to include fileVersions
+    const assessment = await prisma.qMSAssessment.findFirst({
+      where: {
+        id: assessmentId,
+        business_area: {
+          in: userBusinessAreas
+        },
+        deleted_at: null
+      },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
 
     console.log('Assessment result:', assessment);
 
@@ -101,6 +121,19 @@ export async function GET(
       assessorName: assessment.assessor_name || '',
       assessmentDate: safeDate(assessment.assessment_date),
       createdAt: safeDate(assessment.created_at),
+      file_size: assessment.file_size ? Number(assessment.file_size) : null,
+      fileVersions: assessment.fileVersions.map(fv => ({
+        id: fv.id,
+        qms_assessment_id: fv.qms_assessment_id,
+        assessment_version: fv.assessment_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      })),
       items: (items || []).map((item: unknown) => ({
         id: (item as { id: number }).id,
         section: (item as { section: string }).section || '',
@@ -186,7 +219,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { businessArea, assessorName, assessmentDate, items, approval } = body;
+    const { businessArea, assessorName, assessmentDate, items, approval, file_url, file_name, file_size, file_type, version } = body;
 
     // Check if user has access to the specified business area
     if (!userBusinessAreas.includes(businessArea)) {
@@ -196,12 +229,63 @@ export async function PUT(
       );
     }
 
-    // Update the main assessment
-    await query(`
-      UPDATE qms_assessments 
-      SET business_area = ?, assessor_name = ?, assessment_date = ?
-      WHERE id = ? AND business_area IN (${placeholders})
-    `, [businessArea, assessorName, new Date(assessmentDate), assessmentId, ...userBusinessAreas]);
+    // Get current assessment to check if file is being changed
+    const currentAssessment = await prisma.qMSAssessment.findFirst({
+      where: {
+        id: assessmentId,
+        business_area: {
+          in: userBusinessAreas
+        },
+        deleted_at: null
+      }
+    });
+
+    if (!currentAssessment) {
+      return NextResponse.json(
+        { success: false, error: 'Assessment not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get user for uploaded_by field
+    const user = await getUserFromToken(request);
+    const userId = user?.userId || null;
+
+    // If a new file is being uploaded and it's different from the current one,
+    // save the current file to versions table before updating
+    if (
+      file_url &&
+      file_url !== currentAssessment.file_url &&
+      currentAssessment.file_url &&
+      currentAssessment.version
+    ) {
+      await prisma.qMSAssessmentFileVersion.create({
+        data: {
+          qms_assessment_id: assessmentId,
+          assessment_version: currentAssessment.version,
+          file_url: currentAssessment.file_url,
+          file_name: currentAssessment.file_name || '',
+          file_size: currentAssessment.file_size,
+          file_type: currentAssessment.file_type,
+          uploaded_by: userId
+        }
+      });
+    }
+
+    // Update the main assessment using Prisma
+    await prisma.qMSAssessment.update({
+      where: { id: assessmentId },
+      data: {
+        business_area: businessArea,
+        assessor_name: assessorName,
+        assessment_date: assessmentDate ? new Date(assessmentDate) : null,
+        file_url,
+        file_name,
+        file_size: file_size ? BigInt(file_size) : null,
+        file_type,
+        version
+      }
+    });
 
     // Update assessment items
     if (items && Array.isArray(items)) {
@@ -229,12 +313,33 @@ export async function PUT(
       ]);
     }
 
-    // After update, fetch by id only (not by business area)
-    const [updatedAssessment] = await query(`
-      SELECT id, business_area, assessor_name, assessment_date, created_at
-      FROM qms_assessments 
-      WHERE id = ?
-    `, [assessmentId]);
+    // After update, fetch using Prisma to include fileVersions
+    const updatedAssessment = await prisma.qMSAssessment.findFirst({
+      where: { id: assessmentId },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!updatedAssessment) {
+      return NextResponse.json(
+        { success: false, error: 'Assessment not found after update' },
+        { status: 404 }
+      );
+    }
 
     // Defensive transformation for updated assessment
     const safeDate = (d: unknown) => {
@@ -248,6 +353,19 @@ export async function PUT(
       assessorName: updatedAssessment.assessor_name || '',
       assessmentDate: safeDate(updatedAssessment.assessment_date),
       createdAt: safeDate(updatedAssessment.created_at),
+      file_size: updatedAssessment.file_size ? Number(updatedAssessment.file_size) : null,
+      fileVersions: updatedAssessment.fileVersions.map(fv => ({
+        id: fv.id,
+        qms_assessment_id: fv.qms_assessment_id,
+        assessment_version: fv.assessment_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      })),
       items: [], // You may want to fetch items again if needed
       approval: null // You may want to fetch approval again if needed
     };

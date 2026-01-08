@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { getCurrentUserBusinessAreas, getUserFromToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 // GET a single business document
@@ -70,6 +70,20 @@ export async function GET(
           orderBy: {
             created_at: 'desc'
           }
+        },
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
         }
       }
     });
@@ -138,6 +152,20 @@ export async function GET(
               orderBy: {
                 created_at: 'desc'
               }
+            },
+            fileVersions: {
+              orderBy: {
+                uploaded_at: 'desc'
+              },
+              include: {
+                uploadedBy: {
+                  select: {
+                    id: true,
+                    username: true,
+                    email: true
+                  }
+                }
+              }
             }
           }
         });
@@ -164,6 +192,18 @@ export async function GET(
       ...document,
       // Convert BigInt values to numbers for JSON serialization
       file_size: document.file_size ? Number(document.file_size) : null,
+      fileVersions: document.fileVersions?.map(fv => ({
+        id: fv.id,
+        business_document_id: fv.business_document_id,
+        document_version: fv.document_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      })) || [],
       linkedDocuments: validLinks.map(link => ({
         id: link.id,
         business_process_id: 0, // Not applicable for document-to-document links
@@ -227,49 +267,128 @@ export async function PUT(
       uploaded_at,
     } = data;
 
-    // Create placeholders for IN clause
-    const placeholders = userBusinessAreas.map(() => '?').join(',');
-    const queryParams = [...userBusinessAreas, parseInt(id)];
+    // Get current document to check if file is being changed
+    const currentDocument = await prisma.businessDocumentRegister.findFirst({
+      where: {
+        id: parseInt(id),
+        business_area: {
+          in: userBusinessAreas
+        },
+        deleted_at: null
+      }
+    });
 
-    // Check if document exists and user has access
-    const [existingDocument] = await query(`
-      SELECT business_area FROM businessdocumentregister 
-      WHERE business_area IN (${placeholders}) AND id = ?
-    `, queryParams);
-
-    if (!existingDocument) {
+    if (!currentDocument) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    const result = await query(`
-      UPDATE businessdocumentregister SET
-        sub_business_area = ?, document_name = ?, name_and_numbering = ?,
-        document_type = ?, version = ?, progress = ?, doc_status = ?, status_percentage = ?,
-        priority = ?, target_date = ?, document_owner = ?, update_date = NOW(),
-        remarks = ?, review_date = ?, file_url = ?, file_name = ?, file_size = ?, 
-        file_type = ?, uploaded_at = ?
-      WHERE business_area IN (${placeholders}) AND id = ?
-    `, [
-      sub_business_area, document_name, name_and_numbering, document_type,
-      version, progress, doc_status, status_percentage, priority,
-      target_date ? new Date(target_date) : null, document_owner, remarks,
-      review_date ? new Date(review_date) : null, file_url, file_name, file_size,
-      file_type, uploaded_at ? new Date(uploaded_at) : null, ...userBusinessAreas, parseInt(id)
-    ]);
+    // Get user for uploaded_by field
+    const user = await getUserFromToken(request);
+    const userId = user?.userId || null;
 
-    if ((result as unknown as { affectedRows: number }).affectedRows === 0) {
+    // If a new file is being uploaded and it's different from the current one,
+    // save the current file to versions table before updating
+    if (file_url && file_url !== currentDocument.file_url && currentDocument.file_url && currentDocument.version) {
+      await prisma.businessDocumentFileVersion.create({
+        data: {
+          business_document_id: parseInt(id),
+          document_version: currentDocument.version,
+          file_url: currentDocument.file_url,
+          file_name: currentDocument.file_name || '',
+          file_size: currentDocument.file_size,
+          file_type: currentDocument.file_type,
+          uploaded_by: userId
+        }
+      });
+    }
+
+    // Update the document using Prisma
+    const updatedDocument = await prisma.businessDocumentRegister.updateMany({
+      where: {
+        id: parseInt(id),
+        business_area: {
+          in: userBusinessAreas
+        },
+        deleted_at: null
+      },
+      data: {
+        sub_business_area,
+        document_name,
+        name_and_numbering,
+        document_type,
+        version,
+        progress,
+        doc_status,
+        status_percentage,
+        priority,
+        target_date: target_date ? new Date(target_date) : null,
+        document_owner,
+        update_date: new Date(),
+        remarks,
+        review_date: review_date ? new Date(review_date) : null,
+        file_url,
+        file_name,
+        file_size: file_size ? BigInt(file_size) : null,
+        file_type,
+        uploaded_at: uploaded_at ? new Date(uploaded_at) : null
+      }
+    });
+
+    if (updatedDocument.count === 0) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    // Fetch the updated record
-    const [updatedDocument] = await query(`
-      SELECT bdr.*, ba.business_area 
-      FROM businessdocumentregister bdr
-      LEFT JOIN businessareas ba ON bdr.business_area = ba.business_area
-      WHERE bdr.business_area IN (${placeholders}) AND bdr.id = ?
-    `, [...userBusinessAreas, parseInt(id)]);
+    // Fetch the updated record with relations
+    const updatedRecord = await prisma.businessDocumentRegister.findFirst({
+      where: {
+        id: parseInt(id),
+        business_area: {
+          in: userBusinessAreas
+        },
+        deleted_at: null
+      },
+      include: {
+        businessareas: true,
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
 
-    return NextResponse.json(updatedDocument);
+    if (!updatedRecord) {
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+
+    // Transform the response
+    const transformedDocument = {
+      ...updatedRecord,
+      file_size: updatedRecord.file_size ? Number(updatedRecord.file_size) : null,
+      fileVersions: updatedRecord.fileVersions.map(fv => ({
+        id: fv.id,
+        business_document_id: fv.business_document_id,
+        document_version: fv.document_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      }))
+    };
+
+    return NextResponse.json(transformedDocument);
   } catch (error) {
     console.error('Error updating document:', error);
     return NextResponse.json(

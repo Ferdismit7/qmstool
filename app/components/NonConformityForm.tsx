@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import FileUploadField from './FileUploadField';
+import { incrementVersion } from '@/lib/utils/versionIncrement';
 
 
 
@@ -20,6 +21,7 @@ interface NonConformityFormData {
   status: string;
   priority: string;
   impact_level: string;
+  version?: string;
   verification_method: string;
   effectiveness_review: string;
   lessons_learned: string;
@@ -45,6 +47,7 @@ interface NonConformityFormEditData {
   status?: string;
   priority?: string;
   impact_level?: string;
+  version?: string;
   verification_method?: string;
   effectiveness_review?: string;
   lessons_learned?: string;
@@ -76,6 +79,7 @@ export default function NonConformityForm({ onAdd, onClose, editData }: NonConfo
     status: '',
     priority: '',
     impact_level: '',
+    version: '',
     verification_method: '',
     effectiveness_review: '',
     lessons_learned: '',
@@ -197,6 +201,7 @@ export default function NonConformityForm({ onAdd, onClose, editData }: NonConfo
           verification_method: '',
           effectiveness_review: '',
           lessons_learned: '',
+          version: '',
           related_documents: '',
         });
         setFileData({});
@@ -545,20 +550,56 @@ export default function NonConformityForm({ onAdd, onClose, editData }: NonConfo
           />
         </div>
 
+        <div>
+          <label htmlFor="version" className="block text-sm font-medium text-brand-gray3 mb-2">
+            Version
+          </label>
+          <input
+            type="text"
+            id="version"
+            name="version"
+            value={formData.version || ''}
+            onChange={handleChange}
+            placeholder="Enter version (e.g., 1.0)"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white placeholder:text-brand-gray3 placeholder:italic focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+          />
+        </div>
+
         <div className="md:col-span-2">
           <FileUploadField
             label="Upload Supporting Document"
-            value={{
-              file_url: fileData.file_url,
-              file_name: fileData.file_name,
-              file_size: fileData.file_size,
-              file_type: fileData.file_type,
-            }}
-            onChange={(fileData) => {
-              setFileData(prev => ({
-                ...prev,
-                ...fileData
-              }));
+            value={
+              // When editing, don't show the current file - it should be empty
+              // The current file is visible on the detail page with version filtering
+              editData ? {
+                file_url: undefined,
+                file_name: undefined,
+                file_size: undefined,
+                file_type: undefined,
+              } : {
+                file_url: fileData.file_url,
+                file_name: fileData.file_name,
+                file_size: fileData.file_size,
+                file_type: fileData.file_type,
+              }
+            }
+            onChange={(newFileData) => {
+              setFileData(prev => {
+                const hasNewFile = newFileData.file_url && newFileData.file_url !== prev.file_url;
+                
+                // Auto-increment version if editing and new file uploaded
+                if (editData && hasNewFile) {
+                  setFormData(prevForm => ({
+                    ...prevForm,
+                    version: incrementVersion(prevForm.version || '1.0')
+                  }));
+                }
+                
+                return {
+                  ...prev,
+                  ...newFileData
+                };
+              });
             }}
             onRemove={() => {
               setFileData(prev => ({

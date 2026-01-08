@@ -23,6 +23,22 @@ export async function GET(
         id: nonConformityId,
         deleted_at: null,
         business_area: { in: userBusinessAreas }
+      },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -30,7 +46,24 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Non-conformity not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: nonConformity });
+    const transformedData = {
+      ...nonConformity,
+      file_size: nonConformity.file_size ? Number(nonConformity.file_size) : null,
+      fileVersions: nonConformity.fileVersions.map(fv => ({
+        id: fv.id,
+        non_conformity_id: fv.non_conformity_id,
+        nc_version: fv.nc_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      }))
+    };
+
+    return NextResponse.json({ success: true, data: transformedData });
   } catch (error) {
     console.error('Error fetching non-conformity:', error);
     return NextResponse.json(
@@ -70,6 +103,7 @@ export async function PUT(
       status,
       priority,
       impact_level,
+      version,
       verification_method,
       effectiveness_review,
       lessons_learned,
@@ -79,6 +113,44 @@ export async function PUT(
       file_size,
       file_type
     } = body;
+
+    // Get current non-conformity to check if file is being changed
+    const currentNonConformity = await prisma.nonConformity.findFirst({
+      where: {
+        id: nonConformityId,
+        deleted_at: null,
+        business_area: { in: userBusinessAreas }
+      }
+    });
+
+    if (!currentNonConformity) {
+      return NextResponse.json({ success: false, error: 'Non-conformity not found' }, { status: 404 });
+    }
+
+    // Get user for uploaded_by field
+    const user = await getUserFromToken(request);
+    const userId = user?.userId || null;
+
+    // If a new file is being uploaded and it's different from the current one,
+    // save the current file to versions table before updating
+    if (
+      file_url &&
+      file_url !== currentNonConformity.file_url &&
+      currentNonConformity.file_url &&
+      currentNonConformity.version
+    ) {
+      await prisma.nonConformityFileVersion.create({
+        data: {
+          non_conformity_id: nonConformityId,
+          nc_version: currentNonConformity.version,
+          file_url: currentNonConformity.file_url,
+          file_name: currentNonConformity.file_name || '',
+          file_size: currentNonConformity.file_size,
+          file_type: currentNonConformity.file_type,
+          uploaded_by: userId
+        }
+      });
+    }
 
     const nonConformity = await prisma.nonConformity.update({
       where: { id: nonConformityId },
@@ -95,6 +167,7 @@ export async function PUT(
         status,
         priority,
         impact_level,
+        version,
         verification_method,
         effectiveness_review,
         lessons_learned,
@@ -103,10 +176,43 @@ export async function PUT(
         file_name,
         file_size: file_size ? BigInt(file_size) : null,
         file_type
+      },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     });
 
-    return NextResponse.json({ success: true, data: nonConformity });
+    const transformedData = {
+      ...nonConformity,
+      file_size: nonConformity.file_size ? Number(nonConformity.file_size) : null,
+      fileVersions: nonConformity.fileVersions.map(fv => ({
+        id: fv.id,
+        non_conformity_id: fv.non_conformity_id,
+        nc_version: fv.nc_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      }))
+    };
+
+    return NextResponse.json({ success: true, data: transformedData });
   } catch (error) {
     console.error('Error updating non-conformity:', error);
     return NextResponse.json(

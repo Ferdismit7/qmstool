@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { getCurrentUserBusinessAreas, getUserFromToken } from '@/lib/auth';
 import { handleFileUploadFromJson, prepareFileDataForPrisma } from '@/lib/fileUpload';
 
 // Helper function to get local time in UTC+2 timezone
@@ -28,6 +28,22 @@ export async function GET(
         business_area: {
           in: userBusinessAreas
         }
+      },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -35,7 +51,24 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Feedback system not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: feedbackSystem });
+    const transformedData = {
+      ...feedbackSystem,
+      file_size: feedbackSystem.file_size ? Number(feedbackSystem.file_size) : null,
+      fileVersions: feedbackSystem.fileVersions.map(fv => ({
+        id: fv.id,
+        customer_feedback_system_id: fv.customer_feedback_system_id,
+        feedback_version: fv.feedback_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      }))
+    };
+
+    return NextResponse.json({ success: true, data: transformedData });
   } catch (error) {
     console.error('Error fetching customer feedback system:', error);
     return NextResponse.json(
@@ -59,6 +92,20 @@ export async function PUT(
     const body = await request.json();
     console.log('Received update body:', body);
 
+    // Get current feedback system to check if file is being changed
+    const currentFeedbackSystem = await prisma.customerFeedbackSystem.findFirst({
+      where: {
+        id: parseInt(resolvedParams.id),
+        business_area: {
+          in: userBusinessAreas
+        }
+      }
+    });
+
+    if (!currentFeedbackSystem) {
+      return NextResponse.json({ success: false, error: 'Feedback system not found' }, { status: 404 });
+    }
+
     // Handle file upload data - pass the already-parsed body instead of request
     const fileUploadResult = await handleFileUploadFromJson(body);
     if (!fileUploadResult.success && fileUploadResult.error) {
@@ -66,6 +113,31 @@ export async function PUT(
     }
 
     const fileData = fileUploadResult.data ? prepareFileDataForPrisma(fileUploadResult.data) : {};
+
+    // Get user for uploaded_by field
+    const user = await getUserFromToken(request);
+    const userId = user?.userId || null;
+
+    // If a new file is being uploaded and it's different from the current one,
+    // save the current file to versions table before updating
+    if (
+      fileData.file_url &&
+      fileData.file_url !== currentFeedbackSystem.file_url &&
+      currentFeedbackSystem.file_url &&
+      currentFeedbackSystem.version
+    ) {
+      await prisma.customerFeedbackSystemFileVersion.create({
+        data: {
+          customer_feedback_system_id: parseInt(resolvedParams.id),
+          feedback_version: currentFeedbackSystem.version,
+          file_url: currentFeedbackSystem.file_url,
+          file_name: currentFeedbackSystem.file_name || '',
+          file_size: currentFeedbackSystem.file_size,
+          file_type: currentFeedbackSystem.file_type,
+          uploaded_by: userId
+        }
+      });
+    }
 
     const feedbackSystem = await prisma.customerFeedbackSystem.update({
       where: {
@@ -82,13 +154,47 @@ export async function PUT(
         status_percentage: body.status_percentage || 0,
         doc_status: body.doc_status || 'Not Started',
         progress: body.progress || 'New',
+        version: body.version,
         notes: body.notes || '',
         ...fileData,
         updated_at: getLocalTime()
+      },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     });
 
-    return NextResponse.json({ success: true, data: feedbackSystem });
+    const transformedData = {
+      ...feedbackSystem,
+      file_size: feedbackSystem.file_size ? Number(feedbackSystem.file_size) : null,
+      fileVersions: feedbackSystem.fileVersions.map(fv => ({
+        id: fv.id,
+        customer_feedback_system_id: fv.customer_feedback_system_id,
+        feedback_version: fv.feedback_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      }))
+    };
+
+    return NextResponse.json({ success: true, data: transformedData });
   } catch (error) {
     console.error('Error updating customer feedback system:', error);
     return NextResponse.json(

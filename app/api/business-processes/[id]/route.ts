@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {prisma } from '@/lib/prisma';
-import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { getCurrentUserBusinessAreas, getUserFromToken } from '@/lib/auth';
 
 // Helper function to transform database fields to component expected format
 const transformBusinessProcess = (dbProcess: unknown) => {
@@ -51,6 +51,22 @@ const transformBusinessProcess = (dbProcess: unknown) => {
         email: string;
       } | null;
     }>;
+    fileVersions?: Array<{
+      id: number;
+      business_process_id: number;
+      process_version: string;
+      file_url: string;
+      file_name: string;
+      file_size: bigint | null;
+      file_type: string | null;
+      uploaded_at: Date;
+      uploaded_by: number | null;
+      uploadedBy: {
+        id: number;
+        username: string;
+        email: string;
+      } | null;
+    }>;
   };
   return {
     id: p.id,
@@ -74,6 +90,18 @@ const transformBusinessProcess = (dbProcess: unknown) => {
     file_type: p.file_type,
     uploaded_at: p.uploaded_at,
     linkedDocuments: p.linkedDocuments || [],
+    fileVersions: p.fileVersions?.map(fv => ({
+      id: fv.id,
+      business_process_id: fv.business_process_id,
+      process_version: fv.process_version,
+      file_url: fv.file_url,
+      file_name: fv.file_name,
+      file_size: fv.file_size ? Number(fv.file_size) : null,
+      file_type: fv.file_type,
+      uploaded_at: fv.uploaded_at,
+      uploaded_by: fv.uploaded_by,
+      uploadedBy: fv.uploadedBy
+    })) || [],
   };
 };
 
@@ -189,6 +217,20 @@ export async function GET(
           orderBy: {
             created_at: 'desc'
           }
+        },
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
         }
       }
     });
@@ -269,6 +311,43 @@ export async function PUT(
       }
     }
 
+    // Get current process to check if file is being changed
+    const currentProcess = await prisma.businessProcessRegister.findFirst({
+      where: {
+        id: Number(id),
+        business_area: {
+          in: userBusinessAreas
+        }
+      }
+    });
+
+    if (!currentProcess) {
+      return NextResponse.json(
+        { error: 'Process not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get user for uploaded_by field
+    const user = await getUserFromToken(request);
+    const userId = user?.userId || null;
+
+    // If a new file is being uploaded and it's different from the current one,
+    // save the current file to versions table before updating
+    if (file_url && file_url !== currentProcess.file_url && currentProcess.file_url && currentProcess.version) {
+      await prisma.businessProcessFileVersion.create({
+        data: {
+          business_process_id: Number(id),
+          process_version: currentProcess.version,
+          file_url: currentProcess.file_url,
+          file_name: currentProcess.file_name || '',
+          file_size: currentProcess.file_size,
+          file_type: currentProcess.file_type,
+          uploaded_by: userId
+        }
+      });
+    }
+
     const updatedProcess = await prisma.businessProcessRegister.updateMany({
       where: {
         id: Number(id),
@@ -314,7 +393,21 @@ export async function PUT(
         }
       },
       include: {
-        businessareas: true
+        businessareas: true,
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     });
 

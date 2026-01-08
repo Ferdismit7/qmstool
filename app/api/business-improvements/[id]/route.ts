@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUserBusinessAreas } from '@/lib/auth';
+import { getCurrentUserBusinessAreas, getUserFromToken } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
@@ -23,6 +23,22 @@ export async function GET(
         id: businessImprovementId,
         deleted_at: null,
         business_area: { in: userBusinessAreas }
+      },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -30,7 +46,24 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Business improvement not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: businessImprovement });
+    const transformedData = {
+      ...businessImprovement,
+      file_size: businessImprovement.file_size ? Number(businessImprovement.file_size) : null,
+      fileVersions: businessImprovement.fileVersions.map(fv => ({
+        id: fv.id,
+        business_improvement_id: fv.business_improvement_id,
+        improvement_version: fv.improvement_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      }))
+    };
+
+    return NextResponse.json({ success: true, data: transformedData });
   } catch (error) {
     console.error('Error fetching business improvement:', error);
     return NextResponse.json(
@@ -81,12 +114,51 @@ export async function PUT(
       status_percentage,
       doc_status,
       progress,
+      version,
       notes,
       file_url,
       file_name,
       file_size,
       file_type
     } = body;
+
+    // Get current business improvement to check if file is being changed
+    const currentBusinessImprovement = await prisma.businessImprovement.findFirst({
+      where: {
+        id: businessImprovementId,
+        deleted_at: null,
+        business_area: { in: userBusinessAreas }
+      }
+    });
+
+    if (!currentBusinessImprovement) {
+      return NextResponse.json({ success: false, error: 'Business improvement not found' }, { status: 404 });
+    }
+
+    // Get user for uploaded_by field
+    const user = await getUserFromToken(request);
+    const userId = user?.userId || null;
+
+    // If a new file is being uploaded and it's different from the current one,
+    // save the current file to versions table before updating
+    if (
+      file_url &&
+      file_url !== currentBusinessImprovement.file_url &&
+      currentBusinessImprovement.file_url &&
+      currentBusinessImprovement.version
+    ) {
+      await prisma.businessImprovementFileVersion.create({
+        data: {
+          business_improvement_id: businessImprovementId,
+          improvement_version: currentBusinessImprovement.version,
+          file_url: currentBusinessImprovement.file_url,
+          file_name: currentBusinessImprovement.file_name || '',
+          file_size: currentBusinessImprovement.file_size,
+          file_type: currentBusinessImprovement.file_type,
+          uploaded_by: userId
+        }
+      });
+    }
 
     const businessImprovement = await prisma.businessImprovement.update({
       where: { id: businessImprovementId },
@@ -114,15 +186,49 @@ export async function PUT(
         status_percentage: status_percentage ? parseFloat(status_percentage) : null,
         doc_status,
         progress,
+        version,
         notes,
         file_url,
         file_name,
         file_size: file_size ? BigInt(file_size) : null,
         file_type
+      },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     });
 
-    return NextResponse.json({ success: true, data: businessImprovement });
+    const transformedData = {
+      ...businessImprovement,
+      file_size: businessImprovement.file_size ? Number(businessImprovement.file_size) : null,
+      fileVersions: businessImprovement.fileVersions.map(fv => ({
+        id: fv.id,
+        business_improvement_id: fv.business_improvement_id,
+        improvement_version: fv.improvement_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? Number(fv.file_size) : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      }))
+    };
+
+    return NextResponse.json({ success: true, data: transformedData });
   } catch (error) {
     console.error('Error updating business improvement:', error);
     return NextResponse.json(

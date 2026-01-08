@@ -35,6 +35,7 @@ model BusinessProcessRegister {
   businessareas     BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bpr_business_area")
   deletedBy         User?          @relation("BusinessProcessDeletedBy", fields: [deleted_by], references: [id])
   linkedDocuments   BusinessProcessDocumentLink[]
+  fileVersions      BusinessProcessFileVersion[]
 
   @@index([business_area], map: "fk_bpr_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
@@ -60,6 +61,7 @@ model BusinessQualityObjective {
   progress                  String?        @db.VarChar(20)
   status_percentage         Int?
   doc_status                String?        @db.VarChar(20)
+  version                   String?        @db.VarChar(20)
   file_url                  String?        @db.VarChar(500)
   file_name                 String?        @db.VarChar(255)
   file_size                 BigInt?
@@ -70,6 +72,7 @@ model BusinessQualityObjective {
   businessareas             BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bqo_business_area")
   deletedBy                 User?          @relation("BusinessQualityObjectiveDeletedBy", fields: [deleted_by], references: [id])
   monthlyProgress           BusinessQualityObjectiveProgress[]
+  fileVersions              BusinessQualityObjectiveFileVersion[]
 
   @@index([business_area], map: "fk_bqo_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
@@ -106,6 +109,7 @@ model TrainingSession {
   sessions      String         @db.VarChar(50)
   session_date  DateTime       @db.Date
   remarks       String         @db.Text
+  version       String?        @db.VarChar(20)
   file_url      String?        @db.VarChar(500)
   file_name     String?        @db.VarChar(255)
   file_size     BigInt?
@@ -115,6 +119,7 @@ model TrainingSession {
   deleted_by    Int?
   businessareas BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_ts_business_area")
   deletedBy     User?          @relation("TrainingSessionDeletedBy", fields: [deleted_by], references: [id])
+  fileVersions  TrainingSessionFileVersion[]
 
   @@index([business_area], map: "fk_ts_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
@@ -152,6 +157,7 @@ model BusinessDocumentRegister {
   // Document-to-document links
   relatedDocumentsPrimary BusinessDocumentLink[] @relation("PrimaryDocument")
   relatedDocumentsRelated BusinessDocumentLink[] @relation("RelatedDocument")
+  fileVersions       BusinessDocumentFileVersion[]
 
   @@index([business_area], map: "fk_bdr_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
@@ -164,6 +170,7 @@ model BusinessProcessDocumentLink {
   id                    Int      @id @default(autoincrement())
   business_process_id   Int
   business_document_id  Int
+  process_version       String?  @db.VarChar(20)
   created_at            DateTime @default(now()) @db.Timestamp(0)
   updated_at            DateTime @default(now()) @updatedAt @db.Timestamp(0)
   created_by            Int?
@@ -175,9 +182,262 @@ model BusinessProcessDocumentLink {
   @@unique([business_process_id, business_document_id], map: "unique_bp_bd_link")
   @@index([business_process_id], map: "idx_business_process_id")
   @@index([business_document_id], map: "idx_business_document_id")
+  @@index([process_version], map: "idx_process_version")
   @@index([created_by], map: "idx_created_by")
   @@index([created_at], map: "idx_created_at")
   @@map("business_process_document_links")
+}
+
+/// Business Process File Versions - Stores historical file uploads for each version
+model BusinessProcessFileVersion {
+  id                Int      @id @default(autoincrement())
+  business_process_id Int
+  process_version   String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  businessProcess   BusinessProcessRegister @relation(fields: [business_process_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("BusinessProcessFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([business_process_id], map: "idx_business_process_id")
+  @@index([process_version], map: "idx_process_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("business_process_file_versions")
+}
+
+/// Business Document File Versions - Stores historical file uploads for each version
+model BusinessDocumentFileVersion {
+  id                Int      @id @default(autoincrement())
+  business_document_id Int
+  document_version   String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  businessDocument  BusinessDocumentRegister @relation(fields: [business_document_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("BusinessDocumentFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([business_document_id], map: "idx_business_document_id")
+  @@index([document_version], map: "idx_document_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("business_document_file_versions")
+}
+
+/// Business Quality Objective File Versions - Stores historical file uploads for each version
+model BusinessQualityObjectiveFileVersion {
+  id                Int      @id @default(autoincrement())
+  business_quality_objective_id Int
+  objective_version String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  businessQualityObjective BusinessQualityObjective @relation(fields: [business_quality_objective_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("BusinessQualityObjectiveFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([business_quality_objective_id], map: "idx_business_quality_objective_id")
+  @@index([objective_version], map: "idx_objective_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("business_quality_objective_file_versions")
+}
+
+/// Performance Monitoring Control File Versions - Stores historical file uploads for each version
+model PerformanceMonitoringControlFileVersion {
+  id                Int      @id @default(autoincrement())
+  performance_monitoring_control_id Int
+  control_version   String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  performanceMonitoringControl PerformanceMonitoringControl @relation(fields: [performance_monitoring_control_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("PerformanceMonitoringControlFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([performance_monitoring_control_id], map: "idx_performance_monitoring_control_id")
+  @@index([control_version], map: "idx_control_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("performance_monitoring_control_file_versions")
+}
+
+/// Non Conformity File Versions - Stores historical file uploads for each version
+model NonConformityFileVersion {
+  id                Int      @id @default(autoincrement())
+  non_conformity_id Int
+  nc_version        String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  nonConformity     NonConformity @relation(fields: [non_conformity_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("NonConformityFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([non_conformity_id], map: "idx_non_conformity_id")
+  @@index([nc_version], map: "idx_nc_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("non_conformity_file_versions")
+}
+
+/// Record Keeping System File Versions - Stores historical file uploads for each version
+model RecordKeepingSystemFileVersion {
+  id                Int      @id @default(autoincrement())
+  record_keeping_system_id Int
+  rks_version       String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  recordKeepingSystem RecordKeepingSystem @relation(fields: [record_keeping_system_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("RecordKeepingSystemFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([record_keeping_system_id], map: "idx_record_keeping_system_id")
+  @@index([rks_version], map: "idx_rks_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("record_keeping_system_file_versions")
+}
+
+/// Business Improvement File Versions - Stores historical file uploads for each version
+model BusinessImprovementFileVersion {
+  id                Int      @id @default(autoincrement())
+  business_improvement_id Int
+  improvement_version String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  businessImprovement BusinessImprovement @relation(fields: [business_improvement_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("BusinessImprovementFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([business_improvement_id], map: "idx_business_improvement_id")
+  @@index([improvement_version], map: "idx_improvement_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("business_improvement_file_versions")
+}
+
+/// Third Party Evaluation File Versions - Stores historical file uploads for each version
+model ThirdPartyEvaluationFileVersion {
+  id                Int      @id @default(autoincrement())
+  third_party_evaluation_id Int
+  evaluation_version String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  thirdPartyEvaluation ThirdPartyEvaluation @relation(fields: [third_party_evaluation_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("ThirdPartyEvaluationFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([third_party_evaluation_id], map: "idx_third_party_evaluation_id")
+  @@index([evaluation_version], map: "idx_evaluation_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("third_party_evaluation_file_versions")
+}
+
+/// Customer Feedback System File Versions - Stores historical file uploads for each version
+model CustomerFeedbackSystemFileVersion {
+  id                Int      @id @default(autoincrement())
+  customer_feedback_system_id Int
+  feedback_version  String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  customerFeedbackSystem CustomerFeedbackSystem @relation(fields: [customer_feedback_system_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("CustomerFeedbackSystemFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([customer_feedback_system_id], map: "idx_customer_feedback_system_id")
+  @@index([feedback_version], map: "idx_feedback_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("customer_feedback_system_file_versions")
+}
+
+/// Training Session File Versions - Stores historical file uploads for each version
+model TrainingSessionFileVersion {
+  id                Int      @id @default(autoincrement())
+  training_session_id Int
+  session_version   String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  trainingSession   TrainingSession @relation(fields: [training_session_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("TrainingSessionFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([training_session_id], map: "idx_training_session_id")
+  @@index([session_version], map: "idx_session_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("training_session_file_versions")
+}
+
+/// RACM Matrix File Versions - Stores historical file uploads for each version
+model RacmMatrixFileVersion {
+  id                Int      @id @default(autoincrement())
+  racm_matrix_id    Int
+  matrix_version    String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  racmMatrix        RacmMatrix @relation(fields: [racm_matrix_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("RacmMatrixFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([racm_matrix_id], map: "idx_racm_matrix_id")
+  @@index([matrix_version], map: "idx_matrix_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("racm_matrix_file_versions")
+}
+
+/// QMS Assessment File Versions - Stores historical file uploads for each version
+model QMSAssessmentFileVersion {
+  id                Int      @id @default(autoincrement())
+  qms_assessment_id Int
+  assessment_version String   @db.VarChar(20)
+  file_url          String   @db.VarChar(500)
+  file_name         String   @db.VarChar(255)
+  file_size         BigInt?
+  file_type         String?  @db.VarChar(100)
+  uploaded_at       DateTime @default(now()) @db.Timestamp(0)
+  uploaded_by       Int?
+  
+  qmsAssessment     QMSAssessment @relation(fields: [qms_assessment_id], references: [id], onDelete: Cascade)
+  uploadedBy        User? @relation("QMSAssessmentFileVersionUploadedBy", fields: [uploaded_by], references: [id])
+  
+  @@index([qms_assessment_id], map: "idx_qms_assessment_id")
+  @@index([assessment_version], map: "idx_assessment_version")
+  @@index([uploaded_by], map: "idx_uploaded_by")
+  @@map("qms_assessment_file_versions")
 }
 
 /// Links between Business Documents (e.g., policy related to SOP)
@@ -211,6 +471,7 @@ model PerformanceMonitoringControl {
   doc_status          String?        @db.VarChar(100)
   progress            String?        @db.VarChar(100)
   status_percentage   Decimal?       @db.Decimal(5, 0)
+  version             String?        @db.VarChar(20)
   target_date         DateTime?      @db.Date
   proof               String?        @db.VarChar(20)
   frequency           String?        @db.VarChar(50)
@@ -225,6 +486,7 @@ model PerformanceMonitoringControl {
   deleted_by          Int?
   businessareas       BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_pmc_business_area")
   deletedBy           User?          @relation("PerformanceMonitoringDeletedBy", fields: [deleted_by], references: [id])
+  fileVersions        PerformanceMonitoringControlFileVersion[]
 
   @@index([business_area], map: "fk_pmc_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
@@ -267,6 +529,7 @@ model RacmMatrix {
   updated_at                DateTime?      @default(now()) @updatedAt @db.Timestamp(0)
   business_area             String?        @db.VarChar(50)
   doc_status                String?        @db.VarChar(20)
+  version                   String?        @db.VarChar(20)
   file_url                  String?        @db.VarChar(500)
   file_name                 String?        @db.VarChar(255)
   file_size                 BigInt?
@@ -281,6 +544,7 @@ model RacmMatrix {
   businessareas             BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_rm_business_area")
   deletedBy                 User?          @relation("RacmMatrixDeletedBy", fields: [deleted_by], references: [id])
   history                   RacmMatrixHistory[]
+  fileVersions              RacmMatrixFileVersion[]
 
   @@index([business_area], map: "fk_rm_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
@@ -320,6 +584,18 @@ model User {
   createdBusinessQualityObjectiveProgress BusinessQualityObjectiveProgress[] @relation("BusinessQualityObjectiveProgressCreatedBy")
   createdBusinessProcessDocumentLinks BusinessProcessDocumentLink[] @relation("BusinessProcessDocumentLinkCreatedBy")
   createdBusinessDocumentLinks BusinessDocumentLink[] @relation("BusinessDocumentLinkCreatedBy")
+  uploadedBusinessProcessFileVersions BusinessProcessFileVersion[] @relation("BusinessProcessFileVersionUploadedBy")
+  uploadedBusinessDocumentFileVersions BusinessDocumentFileVersion[] @relation("BusinessDocumentFileVersionUploadedBy")
+  uploadedBusinessQualityObjectiveFileVersions BusinessQualityObjectiveFileVersion[] @relation("BusinessQualityObjectiveFileVersionUploadedBy")
+  uploadedPerformanceMonitoringControlFileVersions PerformanceMonitoringControlFileVersion[] @relation("PerformanceMonitoringControlFileVersionUploadedBy")
+  uploadedNonConformityFileVersions NonConformityFileVersion[] @relation("NonConformityFileVersionUploadedBy")
+  uploadedRecordKeepingSystemFileVersions RecordKeepingSystemFileVersion[] @relation("RecordKeepingSystemFileVersionUploadedBy")
+  uploadedBusinessImprovementFileVersions BusinessImprovementFileVersion[] @relation("BusinessImprovementFileVersionUploadedBy")
+  uploadedThirdPartyEvaluationFileVersions ThirdPartyEvaluationFileVersion[] @relation("ThirdPartyEvaluationFileVersionUploadedBy")
+  uploadedCustomerFeedbackSystemFileVersions CustomerFeedbackSystemFileVersion[] @relation("CustomerFeedbackSystemFileVersionUploadedBy")
+  uploadedTrainingSessionFileVersions TrainingSessionFileVersion[] @relation("TrainingSessionFileVersionUploadedBy")
+  uploadedRacmMatrixFileVersions RacmMatrixFileVersion[] @relation("RacmMatrixFileVersionUploadedBy")
+  uploadedQMSAssessmentFileVersions QMSAssessmentFileVersion[] @relation("QMSAssessmentFileVersionUploadedBy")
 
   @@index([business_area], map: "fk_use_business_area")
   @@map("users")
@@ -370,6 +646,7 @@ model QMSAssessment {
   section3Data             String?             @db.Text
   section4Data             String?             @db.Text
   status                   String              @default("draft") @db.VarChar(20)
+  version                  String?             @db.VarChar(20)
   updatedAt                DateTime            @default(now()) @db.Timestamp(0)
   file_url                 String?             @db.VarChar(500)
   file_name                String?             @db.VarChar(255)
@@ -381,6 +658,7 @@ model QMSAssessment {
   approval                 QMSApproval[]
   items                    QMSAssessmentItem[]
   deletedBy                User?               @relation("QMSAssessmentDeletedBy", fields: [deleted_by], references: [id])
+  fileVersions             QMSAssessmentFileVersion[]
 
   @@index([deleted_at], map: "idx_deleted_at")
   @@index([deleted_by], map: "idx_deleted_by")
@@ -434,6 +712,7 @@ model ThirdPartyEvaluation {
   status_percentage         Decimal? @db.Decimal(5, 0)
   doc_status                String   @db.VarChar(20)
   progress                  String   @db.VarChar(20)
+  version                   String?  @db.VarChar(20)
   notes                     String?  @db.Text
   file_url                  String?  @db.VarChar(500)
   file_name                 String?  @db.VarChar(255)
@@ -445,6 +724,7 @@ model ThirdPartyEvaluation {
   deleted_at                DateTime? @db.Timestamp(0)
   deleted_by                Int?
   deletedBy                 User?    @relation("ThirdPartyEvaluationDeletedBy", fields: [deleted_by], references: [id])
+  fileVersions              ThirdPartyEvaluationFileVersion[]
 
   @@index([deleted_at], map: "idx_deleted_at")
   @@index([deleted_by], map: "idx_deleted_by")
@@ -460,6 +740,7 @@ model CustomerFeedbackSystem {
   status_percentage   Decimal? @db.Decimal(5, 0)
   doc_status          String   @db.VarChar(20)
   progress            String   @db.VarChar(20)
+  version             String?  @db.VarChar(20)
   notes               String?  @db.Text
   file_url            String?  @db.VarChar(500)
   file_name           String?  @db.VarChar(255)
@@ -471,6 +752,7 @@ model CustomerFeedbackSystem {
   deleted_at          DateTime? @db.Timestamp(0)
   deleted_by          Int?
   deletedBy           User?    @relation("CustomerFeedbackSystemDeletedBy", fields: [deleted_by], references: [id])
+  fileVersions        CustomerFeedbackSystemFileVersion[]
 
   @@index([deleted_at], map: "idx_deleted_at")
   @@index([deleted_by], map: "idx_deleted_by")
@@ -493,6 +775,7 @@ model NonConformity {
   status              String?        @db.VarChar(20)
   priority            String?        @db.VarChar(20)
   impact_level        String?        @db.VarChar(20)
+  version             String?        @db.VarChar(20)
   verification_method  String?        @db.Text
   effectiveness_review String?        @db.Text
   lessons_learned     String?        @db.Text
@@ -508,6 +791,7 @@ model NonConformity {
   deleted_by          Int?
   businessareas       BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_nc_business_area")
   deletedBy           User?          @relation("NonConformityDeletedBy", fields: [deleted_by], references: [id])
+  fileVersions        NonConformityFileVersion[]
 
   @@index([business_area], map: "fk_nc_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
@@ -537,6 +821,7 @@ model RecordKeepingSystem {
   status_percentage   Decimal?       @db.Decimal(5, 0)
   doc_status          String?        @db.VarChar(20)
   progress            String?        @db.VarChar(20)
+  version             String?        @db.VarChar(20)
   notes               String?        @db.Text
   file_url            String?        @db.VarChar(500)
   file_name           String?        @db.VarChar(255)
@@ -549,6 +834,7 @@ model RecordKeepingSystem {
   deleted_by          Int?
   businessareas       BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_rks_business_area")
   deletedBy           User?          @relation("RecordKeepingDeletedBy", fields: [deleted_by], references: [id])
+  fileVersions        RecordKeepingSystemFileVersion[]
 
   @@index([business_area], map: "fk_rks_business_area")
   @@index([deleted_at], map: "idx_deleted_at")
@@ -583,6 +869,7 @@ model BusinessImprovement {
   status_percentage       Decimal?       @db.Decimal(5, 0)
   doc_status              String?        @db.VarChar(20)
   progress                String?        @db.VarChar(20)
+  version                 String?        @db.VarChar(20)
   notes                   String?        @db.Text
   file_url                String?        @db.VarChar(500)
   file_name               String?        @db.VarChar(255)
@@ -595,6 +882,7 @@ model BusinessImprovement {
   deleted_by              Int?
   businessareas           BusinessAreas? @relation(fields: [business_area], references: [business_area], onDelete: NoAction, onUpdate: NoAction, map: "fk_bi_business_area")
   deletedBy               User?          @relation("BusinessImprovementDeletedBy", fields: [deleted_by], references: [id])
+  fileVersions            BusinessImprovementFileVersion[]
 
   @@index([business_area], map: "fk_bi_business_area")
   @@index([deleted_at], map: "idx_deleted_at")

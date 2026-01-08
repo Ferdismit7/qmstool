@@ -87,6 +87,57 @@ export async function GET(
       }
     }
 
+    // If not found in main tables, search in all file version tables
+    if (!fileRecord) {
+      const versionTables = [
+        { model: prisma.businessProcessFileVersion, relation: 'businessProcess', relationField: 'business_area' },
+        { model: prisma.businessDocumentFileVersion, relation: 'businessDocument', relationField: 'business_area' },
+        { model: prisma.businessQualityObjectiveFileVersion, relation: 'businessQualityObjective', relationField: 'business_area' },
+        { model: prisma.performanceMonitoringControlFileVersion, relation: 'performanceMonitoringControl', relationField: 'business_area' },
+        { model: prisma.nonConformityFileVersion, relation: 'nonConformity', relationField: 'business_area' },
+        { model: prisma.recordKeepingSystemFileVersion, relation: 'recordKeepingSystem', relationField: 'business_area' },
+        { model: prisma.businessImprovementFileVersion, relation: 'businessImprovement', relationField: 'business_area' },
+        { model: prisma.thirdPartyEvaluationFileVersion, relation: 'thirdPartyEvaluation', relationField: 'business_area' },
+        { model: prisma.customerFeedbackSystemFileVersion, relation: 'customerFeedbackSystem', relationField: 'business_area' },
+        { model: prisma.trainingSessionFileVersion, relation: 'trainingSession', relationField: 'business_area' },
+        { model: prisma.racmMatrixFileVersion, relation: 'racmMatrix', relationField: 'business_area' },
+        { model: prisma.qMSAssessmentFileVersion, relation: 'qmsAssessment', relationField: 'business_area' },
+      ];
+
+      for (const { model, relation, relationField } of versionTables) {
+        try {
+          const versionFile = await (model as any).findFirst({
+            where: {
+              file_url: {
+                contains: decodedFileId
+              }
+            },
+            include: {
+              [relation]: {
+                select: {
+                  [relationField]: true
+                }
+              }
+            }
+          });
+
+          if (versionFile) {
+            fileRecord = {
+              id: versionFile.id,
+              file_url: versionFile.file_url,
+              file_name: versionFile.file_name,
+              file_type: versionFile.file_type,
+              business_area: versionFile[relation]?.[relationField] || null
+            };
+            break;
+          }
+        } catch (error) {
+          console.error(`Error searching in ${relation}FileVersion:`, error);
+          continue;
+        }
+      }
+    }
+
     if (!fileRecord) {
       return NextResponse.json(
         { error: 'File not found' },

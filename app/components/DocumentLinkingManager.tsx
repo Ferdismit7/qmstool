@@ -10,6 +10,7 @@ interface LinkedDocument {
   id: number;
   business_process_id: number;
   business_document_id?: number;
+  process_version?: string | null;
   created_at: string;
   updated_at: string;
   created_by: number | null;
@@ -143,6 +144,7 @@ export default function DocumentLinkingManager({
       const url = businessProcessId
         ? `/api/business-processes/${businessProcessId}/documents`
         : `/api/business-document-registry/${businessDocumentId}/links`;
+      
       const response = await fetch(url);
       const result = await response.json();
 

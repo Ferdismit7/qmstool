@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {prisma } from '@/lib/prisma';
-import { getCurrentUserBusinessArea } from '@/lib/auth';
+import { getCurrentUserBusinessArea, getUserFromToken } from '@/lib/auth';
 import { handleFileUploadFromJson, prepareFileDataForPrisma } from '@/lib/fileUpload';
 
 // GET a single business quality objective
@@ -15,7 +15,23 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const objective = await prisma.businessQualityObjective.findUnique({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(id) },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
     });
     if (!objective || objective.business_area !== userBusinessArea) {
       return NextResponse.json({ error: 'Business quality objective not found' }, { status: 404 });
@@ -24,7 +40,19 @@ export async function GET(
     // Transform BigInt fields to strings for JSON serialization
     const transformedObjective = {
       ...objective,
-      file_size: objective.file_size ? objective.file_size.toString() : null
+      file_size: objective.file_size ? objective.file_size.toString() : null,
+      fileVersions: objective.fileVersions.map(fv => ({
+        id: fv.id,
+        business_quality_objective_id: fv.business_quality_objective_id,
+        objective_version: fv.objective_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? fv.file_size.toString() : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      }))
     };
     
     return NextResponse.json(transformedObjective);
@@ -76,6 +104,31 @@ export async function PUT(
 
     const fileData = fileUploadResult.data ? prepareFileDataForPrisma(fileUploadResult.data) : {};
 
+    // Get user for uploaded_by field
+    const user = await getUserFromToken(request);
+    const userId = user?.userId || null;
+
+    // If a new file is being uploaded and it's different from the current one,
+    // save the current file to versions table before updating
+    if (
+      fileData.file_url &&
+      fileData.file_url !== existingObjective.file_url &&
+      existingObjective.file_url &&
+      existingObjective.version
+    ) {
+      await prisma.businessQualityObjectiveFileVersion.create({
+        data: {
+          business_quality_objective_id: parseInt(id),
+          objective_version: existingObjective.version,
+          file_url: existingObjective.file_url,
+          file_name: existingObjective.file_name || '',
+          file_size: existingObjective.file_size,
+          file_type: existingObjective.file_type,
+          uploaded_by: userId
+        }
+      });
+    }
+
     const parsedReviewDate = review_date ? new Date(review_date) : null;
 
     const objective = await prisma.businessQualityObjective.update({
@@ -84,13 +137,41 @@ export async function PUT(
         ...updateData,
         ...fileData,
         review_date: parsedReviewDate
+      },
+      include: {
+        fileVersions: {
+          orderBy: {
+            uploaded_at: 'desc'
+          },
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                username: true,
+                email: true
+              }
+            }
+          }
+        }
       }
     });
     
     // Transform BigInt fields to strings for JSON serialization
     const transformedObjective = {
       ...objective,
-      file_size: objective.file_size ? objective.file_size.toString() : null
+      file_size: objective.file_size ? objective.file_size.toString() : null,
+      fileVersions: objective.fileVersions.map(fv => ({
+        id: fv.id,
+        business_quality_objective_id: fv.business_quality_objective_id,
+        objective_version: fv.objective_version,
+        file_url: fv.file_url,
+        file_name: fv.file_name,
+        file_size: fv.file_size ? fv.file_size.toString() : null,
+        file_type: fv.file_type,
+        uploaded_at: fv.uploaded_at,
+        uploaded_by: fv.uploaded_by,
+        uploadedBy: fv.uploadedBy
+      }))
     };
     
     return NextResponse.json(transformedObjective);

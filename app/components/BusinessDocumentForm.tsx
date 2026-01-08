@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BusinessDocument } from '../types/businessDocument';
 import FileUploadField from './FileUploadField';
+import { incrementVersion } from '@/lib/utils/versionIncrement';
 
 /**
  * Props for the BusinessDocumentForm component
@@ -86,9 +87,16 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
       setFormData(prev => ({
         ...prev,
         ...editData,
+        version: editData.version || '1.0',
         remarks: editData.remarks ?? '',
         target_date: editData.target_date ? new Date(editData.target_date).toISOString().split('T')[0] : '',
         review_date: editData.review_date ? new Date(editData.review_date).toISOString().split('T')[0] : '',
+        // Clear file fields when editing - they should be empty in the upload field
+        // The current file is visible on the detail page with version filtering
+        file_url: '',
+        file_name: '',
+        file_size: 0,
+        file_type: '',
       }));
     }
   }, [editData]);
@@ -490,16 +498,31 @@ export default function BusinessDocumentForm({ onAdd, onClose, editData }: Busin
         <div>
           <FileUploadField
             label="Upload Document File"
-            value={{
-              file_url: formData.file_url,
-              file_name: formData.file_name,
-              file_size: formData.file_size,
-              file_type: formData.file_type,
-            }}
+            value={
+              // When editing, don't show the current file - it should be empty
+              // The current file is visible on the detail page with version filtering
+              editData ? {
+                file_url: undefined,
+                file_name: undefined,
+                file_size: undefined,
+                file_type: undefined,
+              } : {
+                file_url: formData.file_url,
+                file_name: formData.file_name,
+                file_size: formData.file_size,
+                file_type: formData.file_type,
+              }
+            }
             onChange={(fileData) => {
+              const hasNewFile = fileData.file_url && fileData.file_url !== formData.file_url;
+              
               setFormData(prev => ({
                 ...prev,
                 ...fileData,
+                // Auto-increment version if editing and new file uploaded
+                version: (editData && hasNewFile) 
+                  ? incrementVersion(prev.version || '1.0')
+                  : prev.version,
                 uploaded_at: fileData.uploaded_at ? (typeof fileData.uploaded_at === 'string' ? fileData.uploaded_at : fileData.uploaded_at.toISOString()) : ''
               }));
             }}

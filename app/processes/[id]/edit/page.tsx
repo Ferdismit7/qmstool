@@ -22,6 +22,7 @@ interface LinkedDocument {
   id: number;
   business_process_id: number;
   business_document_id?: number;
+  process_version?: string | null;
   created_at: string;
   updated_at: string;
   created_by: number | null;

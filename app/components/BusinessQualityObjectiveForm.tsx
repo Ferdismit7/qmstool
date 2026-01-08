@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import FileUploadField from './FileUploadField';
+import { incrementVersion } from '@/lib/utils/versionIncrement';
 
 /**
  * Interface representing a Business Quality Objective
@@ -41,6 +42,8 @@ interface BusinessQualityObjective {
   status_percentage: number;
   /** Document status of the objective */
   doc_status: string;
+  /** Version of the document */
+  version?: string;
   /** File URL for uploaded document */
   file_url?: string;
   /** File name of uploaded document */
@@ -109,6 +112,7 @@ export default function BusinessQualityObjectiveForm({ objective, mode }: Props)
     progress: '',
     status_percentage: 0,
     doc_status: '',
+    version: '1.0',
     ...objective
   });
 
@@ -163,7 +167,14 @@ export default function BusinessQualityObjectiveForm({ objective, mode }: Props)
       // Format the review_date to YYYY-MM-DD for the input field, preserving the local date
       const formattedObjective = {
         ...objective,
-        review_date: objective.review_date ? new Date(objective.review_date).toLocaleDateString('en-CA') : ''
+        version: objective.version || '1.0',
+        review_date: objective.review_date ? new Date(objective.review_date).toLocaleDateString('en-CA') : '',
+        // Clear file fields when editing - they should be empty in the upload field
+        // The current file is visible on the detail page with version filtering
+        file_url: undefined,
+        file_name: undefined,
+        file_size: undefined,
+        file_type: undefined,
       };
       setFormData(formattedObjective);
     }
@@ -490,22 +501,52 @@ export default function BusinessQualityObjectiveForm({ objective, mode }: Props)
             <option value="To be reviewed">To be reviewed</option>
           </select>
         </div>
+
+        <div>
+          <label htmlFor="version" className="block text-sm font-medium text-brand-white mb-2">
+            Version
+          </label>
+          <input
+            type="text"
+            id="version"
+            name="version"
+            value={formData.version || ''}
+            onChange={handleChange}
+            placeholder="Enter version (e.g., 1.0)"
+            className="w-full px-4 py-2 rounded-lg bg-brand-gray1 text-brand-white border border-brand-gray2 focus:outline-none focus:border-brand-primary placeholder:text-brand-gray3 placeholder:italic"
+          />
+        </div>
       </div>
 
       {/* File Upload Section */}
       <div className="mt-6">
         <FileUploadField
           label="Upload Document"
-          value={{
-            file_url: formData.file_url,
-            file_name: formData.file_name,
-            file_size: formData.file_size,
-            file_type: formData.file_type,
-          }}
+          value={
+            // When editing, don't show the current file - it should be empty
+            // The current file is visible on the detail page with version filtering
+            mode === 'edit' ? {
+              file_url: undefined,
+              file_name: undefined,
+              file_size: undefined,
+              file_type: undefined,
+            } : {
+              file_url: formData.file_url,
+              file_name: formData.file_name,
+              file_size: formData.file_size,
+              file_type: formData.file_type,
+            }
+          }
           onChange={(fileData) => {
+            const hasNewFile = fileData.file_url && fileData.file_url !== formData.file_url;
+            
             setFormData(prev => ({
               ...prev,
               ...fileData,
+              // Auto-increment version if editing and new file uploaded
+              version: (mode === 'edit' && hasNewFile) 
+                ? incrementVersion(prev.version || '1.0')
+                : prev.version,
               uploaded_at: fileData.uploaded_at ? (typeof fileData.uploaded_at === 'string' ? fileData.uploaded_at : fileData.uploaded_at.toISOString()) : ''
             }));
           }}

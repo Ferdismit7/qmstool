@@ -28,6 +28,7 @@ interface LinkedDocument {
   id: number;
   business_process_id: number;
   business_document_id?: number;
+  process_version?: string | null;
   created_at: string;
   updated_at: string;
   created_by: number | null;
@@ -36,6 +37,23 @@ interface LinkedDocument {
   relatedDocument?: BusinessDocument;
   businessDocument?: BusinessDocument;
   createdBy: {
+    id: number;
+    username: string;
+    email: string;
+  } | null;
+}
+
+interface FileVersion {
+  id: number;
+  business_process_id: number;
+  process_version: string;
+  file_url: string;
+  file_name: string;
+  file_size: number | null;
+  file_type: string | null;
+  uploaded_at: string;
+  uploaded_by: number | null;
+  uploadedBy: {
     id: number;
     username: string;
     email: string;
@@ -59,6 +77,7 @@ interface BusinessProcess {
   remarks?: string;
   reviewDate?: string;
   linkedDocuments?: LinkedDocument[];
+  fileVersions?: FileVersion[];
   file_url?: string;
   file_name?: string;
   file_size?: number;
@@ -73,6 +92,7 @@ export default function BusinessProcessDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedFileVersion, setSelectedFileVersion] = useState<string>('current');
   const [notification, setNotification] = useState<{
     isOpen: boolean;
     type: 'success' | 'error';
@@ -222,25 +242,103 @@ export default function BusinessProcessDetailPage() {
     }
   };
 
-  const handleDownload = () => {
-    if (process?.file_url) {
-      const fileId = extractFileIdFromUrl(process.file_url);
+
+  const handleView = (fileUrl?: string) => {
+    const urlToUse = fileUrl || process?.file_url;
+    if (urlToUse) {
+      const fileId = extractFileIdFromUrl(urlToUse);
       if (fileId) {
-        window.open(`/api/files/${fileId}/download`, '_blank');
+        window.open(`/api/files/${fileId}/view`, '_blank');
       } else {
-        window.open(process.file_url, '_blank');
+        window.open(urlToUse, '_blank');
       }
     }
   };
 
-  const handleView = () => {
-    if (process?.file_url) {
-      const fileId = extractFileIdFromUrl(process.file_url);
+  const handleDownload = (fileUrl?: string) => {
+    const urlToUse = fileUrl || process?.file_url;
+    if (urlToUse) {
+      const fileId = extractFileIdFromUrl(urlToUse);
       if (fileId) {
-        window.open(`/api/files/${fileId}/view`, '_blank');
+        window.open(`/api/files/${fileId}/download`, '_blank');
       } else {
-        window.open(process.file_url, '_blank');
+        window.open(urlToUse, '_blank');
       }
+    }
+  };
+
+  // Get available versions for file dropdown
+  const getAvailableVersions = (): string[] => {
+    if (!process?.fileVersions || process.fileVersions.length === 0) {
+      return [];
+    }
+    const versions = process.fileVersions.map(fv => fv.process_version);
+    const uniqueVersions = Array.from(new Set(versions)).sort();
+    return uniqueVersions;
+  };
+
+  // Get files to display based on selected version
+  const getFilesToDisplay = (): Array<{ version: string; file: FileVersion | { file_url?: string; file_name?: string; file_size?: number; file_type?: string } }> => {
+    if (selectedFileVersion === 'all') {
+      const allFiles: Array<{ version: string; file: FileVersion | { file_url?: string; file_name?: string; file_size?: number; file_type?: string } }> = [];
+      
+      // Add current file if it exists (only if it's not already in versions)
+      if (process?.file_url && process?.file_name) {
+        const currentVersion = process.version || 'Current';
+        const isInVersions = process.fileVersions?.some(fv => 
+          fv.file_url === process.file_url && fv.process_version === currentVersion
+        );
+        
+        if (!isInVersions) {
+          allFiles.push({
+            version: currentVersion,
+            file: {
+              file_url: process.file_url,
+              file_name: process.file_name,
+              file_size: process.file_size,
+              file_type: process.file_type
+            }
+          });
+        }
+      }
+      
+      // Add versioned files
+      if (process?.fileVersions) {
+        process.fileVersions.forEach(fv => {
+          allFiles.push({
+            version: fv.process_version,
+            file: fv
+          });
+        });
+      }
+      
+      // Sort by version (newest first)
+      return allFiles.sort((a, b) => {
+        if (a.version === 'Current') return -1;
+        if (b.version === 'Current') return 1;
+        return b.version.localeCompare(a.version);
+      });
+    } else if (selectedFileVersion === 'current') {
+      // Show only current file
+      if (process?.file_url && process?.file_name) {
+        return [{
+          version: process.version || 'Current',
+          file: {
+            file_url: process.file_url,
+            file_name: process.file_name,
+            file_size: process.file_size,
+            file_type: process.file_type
+          }
+        }];
+      }
+      return [];
+    } else {
+      // Show files for specific version
+      const versionFiles = process?.fileVersions?.filter(fv => fv.process_version === selectedFileVersion) || [];
+      return versionFiles.map(fv => ({
+        version: fv.process_version,
+        file: fv
+      }));
     }
   };
 
@@ -502,43 +600,96 @@ export default function BusinessProcessDetailPage() {
           </div>
         )}
 
-        {/* Attached File */}
-        {process.file_name && (
+        {/* Attached Files with Version Filter */}
+        {(process.file_name || (process.fileVersions && process.fileVersions.length > 0)) && (
           <div className="mt-6">
-            <label className="block text-sm font-medium text-brand-gray3 mb-2">
-              Attached File
-            </label>
-            <div className="bg-brand-gray1 rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 text-brand-white">
-                    <FiFileText size={16} />
-                    <span className="text-sm">{process.file_name}</span>
-                  </div>
-                  {process.file_size && (
-                    <p className="text-xs text-brand-gray3 mt-1">
-                      {(process.file_size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleView}
-                    className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
-                    title="View document"
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-brand-gray3">
+                Attached Files
+              </label>
+              {(process.fileVersions && process.fileVersions.length > 0) && (
+                <div className="flex items-center gap-2">
+                  <label htmlFor="file-version-filter" className="text-xs text-brand-gray3 whitespace-nowrap">
+                    Filter by Version:
+                  </label>
+                  <select
+                    id="file-version-filter"
+                    value={selectedFileVersion}
+                    onChange={(e) => setSelectedFileVersion(e.target.value)}
+                    className="px-2 py-1 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white text-xs focus:outline-none focus:ring-2 focus:ring-brand-blue"
                   >
-                    <FiEye size={16} />
-                  </button>
-                  <button
-                    onClick={handleDownload}
-                    className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
-                    title="Download document"
-                  >
-                    <FiDownload size={16} />
-                  </button>
+                    <option value="current">Current ({process.version || 'N/A'})</option>
+                    <option value="all">All Versions</option>
+                    {getAvailableVersions().map(version => (
+                      <option key={version} value={version}>
+                        Version {version}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
+              )}
             </div>
+            
+            {getFilesToDisplay().length > 0 ? (
+              <div className="space-y-3">
+                {getFilesToDisplay().map((item, index) => {
+                  const file = item.file;
+                  const isFileVersion = 'id' in file;
+                  return (
+                    <div key={isFileVersion ? (file as FileVersion).id : `current-${index}`} className="bg-brand-gray1 rounded-lg p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 text-brand-white">
+                            <FiFileText size={16} />
+                            <span className="text-sm">{file.file_name}</span>
+                            {selectedFileVersion === 'all' && (
+                              <span className="text-xs text-brand-gray3 ml-2">(v{item.version})</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 mt-1">
+                            {file.file_size && (
+                              <p className="text-xs text-brand-gray3">
+                                {(file.file_size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            )}
+                            {isFileVersion && (file as FileVersion).uploadedBy && (
+                              <p className="text-xs text-brand-gray3">
+                                Uploaded by: {(file as FileVersion).uploadedBy?.username}
+                              </p>
+                            )}
+                            {isFileVersion && (file as FileVersion).uploaded_at && (
+                              <p className="text-xs text-brand-gray3">
+                                {new Date((file as FileVersion).uploaded_at).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleView(file.file_url)}
+                            className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                            title="View document"
+                          >
+                            <FiEye size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDownload(file.file_url)}
+                            className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                            title="Download document"
+                          >
+                            <FiDownload size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-brand-gray1 rounded-lg p-4">
+                <p className="text-brand-gray3 text-sm">No files found for selected version</p>
+              </div>
+            )}
           </div>
         )}
       </div>

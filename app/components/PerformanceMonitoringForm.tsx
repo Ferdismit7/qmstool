@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import FileUploadField from './FileUploadField';
+import { incrementVersion } from '@/lib/utils/versionIncrement';
 
 
 
@@ -38,6 +39,8 @@ type PerformanceMonitoringControl = {
   responsible_persons: string;
   /** Additional remarks or notes */
   remarks: string;
+  /** Version of the control document */
+  version?: string;
   /** File URL for uploaded document */
   file_url?: string;
   /** File name of uploaded document */
@@ -132,7 +135,8 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
       proof: '',
       frequency: '',
       responsible_persons: '',
-      remarks: ''
+      remarks: '',
+      version: ''
     }
   );
 
@@ -467,22 +471,52 @@ export default function PerformanceMonitoringForm({ mode, control }: Props) {
             className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white focus:outline-none focus:ring-2 focus:ring-brand-blue"
           />
         </div>
+
+        <div>
+          <label htmlFor="version" className="block text-sm font-medium text-brand-gray3 mb-2">
+            Version
+          </label>
+          <input
+            type="text"
+            id="version"
+            name="version"
+            value={formData.version || ''}
+            onChange={handleChange}
+            placeholder="Enter version (e.g., 1.0)"
+            className="w-full px-4 py-2 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white placeholder:text-brand-gray3 placeholder:italic focus:outline-none focus:ring-2 focus:ring-brand-blue focus:bg-brand-gray1"
+          />
+        </div>
       </div>
 
       {/* File Upload Section */}
       <div className="mt-6">
         <FileUploadField
           label="Upload Document"
-          value={{
-            file_url: formData.file_url,
-            file_name: formData.file_name,
-            file_size: formData.file_size,
-            file_type: formData.file_type,
-          }}
+          value={
+            // When editing, don't show the current file - it should be empty
+            // The current file is visible on the detail page with version filtering
+            mode === 'edit' ? {
+              file_url: undefined,
+              file_name: undefined,
+              file_size: undefined,
+              file_type: undefined,
+            } : {
+              file_url: formData.file_url,
+              file_name: formData.file_name,
+              file_size: formData.file_size,
+              file_type: formData.file_type,
+            }
+          }
           onChange={(fileData) => {
+            const hasNewFile = fileData.file_url && fileData.file_url !== formData.file_url;
+            
             setFormData(prev => ({
               ...prev,
               ...fileData,
+              // Auto-increment version if editing and new file uploaded
+              version: (mode === 'edit' && hasNewFile) 
+                ? incrementVersion(prev.version || '1.0')
+                : prev.version,
               uploaded_at: fileData.uploaded_at ? (typeof fileData.uploaded_at === 'string' ? fileData.uploaded_at : fileData.uploaded_at.toISOString()) : ''
             }));
           }}

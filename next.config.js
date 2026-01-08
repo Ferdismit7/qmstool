@@ -4,24 +4,14 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Fix for Next.js 15.3.5 webpack minification error
+  // Next.js 16: Use Turbopack by default (webpack config removed)
+  // Turbopack handles minification automatically and more efficiently
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  // Completely disable minification to avoid webpack error
-  webpack: (config, { isServer, dev }) => {
-    // Disable all minification
-    config.optimization.minimize = false;
-    
-    // Remove the problematic minify-webpack-plugin
-    if (config.plugins) {
-      config.plugins = config.plugins.filter(plugin => {
-        return !plugin.constructor.name.includes('MinifyPlugin');
-      });
-    }
-    
-    return config;
-  },
+  // Empty turbopack config to explicitly use Turbopack (Next.js 16 default)
+  // This silences the warning about webpack config with Turbopack
+  turbopack: {},
   async headers() {
     return [
       {

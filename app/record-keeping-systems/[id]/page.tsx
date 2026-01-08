@@ -8,6 +8,7 @@ import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
 import Notification from '@/app/components/Notification';
 import { useRouter } from 'next/navigation';
 import { clientTokenUtils } from '@/lib/auth';
+import { getAvailableVersions, getFilesToDisplay, FileVersion } from '@/lib/utils/fileVersioningUI';
 
 interface RecordKeepingSystem {
   id: number;
@@ -36,6 +37,8 @@ interface RecordKeepingSystem {
   file_size?: number;
   file_type?: string;
   uploaded_at?: string;
+  version?: string;
+  fileVersions?: FileVersion[];
 }
 
 export default function RecordKeepingSystemDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -44,6 +47,7 @@ export default function RecordKeepingSystemDetail({ params }: { params: Promise<
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedFileVersion, setSelectedFileVersion] = useState<string>('current');
   const [notification, setNotification] = useState<{
     isOpen: boolean;
     type: 'success' | 'error';
@@ -184,27 +188,46 @@ export default function RecordKeepingSystemDetail({ params }: { params: Promise<
     }
   };
 
-  const handleDownload = () => {
-    if (system?.file_url) {
-      const fileId = extractFileIdFromUrl(system.file_url);
+  const handleDownload = (fileUrl?: string) => {
+    const urlToUse = fileUrl || system?.file_url;
+    if (urlToUse) {
+      const fileId = extractFileIdFromUrl(urlToUse);
       if (fileId) {
         window.open(`/api/files/${fileId}/download`, '_blank');
       } else {
-        window.open(system.file_url, '_blank');
+        window.open(urlToUse, '_blank');
       }
     }
   };
 
-  const handleView = () => {
-    if (system?.file_url) {
-      const fileId = extractFileIdFromUrl(system.file_url);
+  const handleView = (fileUrl?: string) => {
+    const urlToUse = fileUrl || system?.file_url;
+    if (urlToUse) {
+      const fileId = extractFileIdFromUrl(urlToUse);
       if (fileId) {
         window.open(`/api/files/${fileId}/view`, '_blank');
       } else {
-        window.open(system.file_url, '_blank');
+        window.open(urlToUse, '_blank');
       }
     }
   };
+
+  // Get available versions for file dropdown
+  const availableVersions = getAvailableVersions(system?.fileVersions, 'rks_version');
+
+  // Get files to display based on selected version
+  const filesToDisplay = getFilesToDisplay(
+    selectedFileVersion,
+    system ? {
+      file_url: system.file_url,
+      file_name: system.file_name,
+      file_size: system.file_size,
+      file_type: system.file_type
+    } : null,
+    system?.version,
+    system?.fileVersions,
+    'rks_version'
+  );
 
   const handleDeleteConfirm = async () => {
     if (!system) return;
@@ -392,38 +415,96 @@ export default function RecordKeepingSystemDetail({ params }: { params: Promise<
                   })() : 'Not scheduled'}
                 </p>
               </div>
-              {system.file_name && (
+              {(system.file_name || (system.fileVersions && system.fileVersions.length > 0)) && (
                 <div>
-                  <label className="text-sm font-medium text-brand-gray3">Attached File</label>
-                  <div className="flex items-center gap-3 mt-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 text-brand-white">
-                        <FiFileText size={16} />
-                        <span className="text-sm">{system.file_name}</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-brand-gray3">Attached Files</label>
+                    {(system.fileVersions && system.fileVersions.length > 0) && (
+                      <div className="flex items-center gap-2">
+                        <label htmlFor="file-version-filter" className="text-xs text-brand-gray3 whitespace-nowrap">
+                          Filter by Version:
+                        </label>
+                        <select
+                          id="file-version-filter"
+                          value={selectedFileVersion}
+                          onChange={(e) => setSelectedFileVersion(e.target.value)}
+                          className="px-2 py-1 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white text-xs focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                        >
+                          <option value="current">Current ({system.version || 'N/A'})</option>
+                          <option value="all">All Versions</option>
+                          {availableVersions.map(version => (
+                            <option key={version} value={version}>
+                              Version {version}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                      {system.file_size && (
-                        <p className="text-xs text-brand-gray3 mt-1">
-                          {(system.file_size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleView}
-                        className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
-                        title="View document"
-                      >
-                        <FiEye size={16} />
-                      </button>
-                      <button
-                        onClick={handleDownload}
-                        className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
-                        title="Download document"
-                      >
-                        <FiDownload size={16} />
-                      </button>
-                    </div>
+                    )}
                   </div>
+                  
+                  {filesToDisplay.length > 0 ? (
+                    <div className="space-y-2 mt-2">
+                      {filesToDisplay.map((item, index) => {
+                        const file = item.file;
+                        const isFileVersion = 'id' in file && 'uploaded_at' in file;
+                        
+                        return (
+                          <div key={index} className="bg-brand-gray1 rounded-lg p-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 text-brand-white">
+                                  <FiFileText size={16} />
+                                  <span className="text-sm">{file.file_name}</span>
+                                  {item.version && (
+                                    <span className="text-xs text-brand-gray3">
+                                      (v{item.version})
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-4 mt-1">
+                                  {file.file_size && (
+                                    <p className="text-xs text-brand-gray3">
+                                      {(file.file_size / 1024 / 1024).toFixed(2)} MB
+                                    </p>
+                                  )}
+                                  {isFileVersion && (file as FileVersion).uploadedBy && (
+                                    <p className="text-xs text-brand-gray3">
+                                      Uploaded by: {(file as FileVersion).uploadedBy?.username}
+                                    </p>
+                                  )}
+                                  {isFileVersion && (file as FileVersion).uploaded_at && (
+                                    <p className="text-xs text-brand-gray3">
+                                      {new Date((file as FileVersion).uploaded_at).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleView(file.file_url)}
+                                  className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                                  title="View document"
+                                >
+                                  <FiEye size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleDownload(file.file_url)}
+                                  className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                                  title="Download document"
+                                >
+                                  <FiDownload size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="bg-brand-gray1 rounded-lg p-3 mt-2">
+                      <p className="text-sm text-brand-gray3">No files found for the selected version.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

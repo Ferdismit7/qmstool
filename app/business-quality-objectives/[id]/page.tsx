@@ -9,6 +9,7 @@ import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal';
 import Notification from '@/app/components/Notification';
 import { useRouter } from 'next/navigation';
 import { clientTokenUtils } from '@/lib/auth';
+import { getAvailableVersions, getFilesToDisplay, FileVersion } from '@/lib/utils/fileVersioningUI';
 
 interface BusinessQualityObjective {
   id: number;
@@ -32,6 +33,8 @@ interface BusinessQualityObjective {
   file_size?: number;
   file_type?: string;
   uploaded_at?: string;
+  version?: string;
+  fileVersions?: FileVersion[];
 }
 
 export default function BusinessQualityObjectiveDetailPage() {
@@ -40,6 +43,7 @@ export default function BusinessQualityObjectiveDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedFileVersion, setSelectedFileVersion] = useState<string>('current');
   const [notification, setNotification] = useState<{
     isOpen: boolean;
     type: 'success' | 'error';
@@ -174,27 +178,46 @@ export default function BusinessQualityObjectiveDetailPage() {
     }
   };
 
-  const handleDownload = () => {
-    if (objective?.file_url) {
-      const fileId = extractFileIdFromUrl(objective.file_url);
+  const handleDownload = (fileUrl?: string) => {
+    const urlToUse = fileUrl || objective?.file_url;
+    if (urlToUse) {
+      const fileId = extractFileIdFromUrl(urlToUse);
       if (fileId) {
         window.open(`/api/files/${fileId}/download`, '_blank');
       } else {
-        window.open(objective.file_url, '_blank');
+        window.open(urlToUse, '_blank');
       }
     }
   };
 
-  const handleView = () => {
-    if (objective?.file_url) {
-      const fileId = extractFileIdFromUrl(objective.file_url);
+  const handleView = (fileUrl?: string) => {
+    const urlToUse = fileUrl || objective?.file_url;
+    if (urlToUse) {
+      const fileId = extractFileIdFromUrl(urlToUse);
       if (fileId) {
         window.open(`/api/files/${fileId}/view`, '_blank');
       } else {
-        window.open(objective.file_url, '_blank');
+        window.open(urlToUse, '_blank');
       }
     }
   };
+
+  // Get available versions for file dropdown
+  const availableVersions = getAvailableVersions(objective?.fileVersions, 'objective_version');
+
+  // Get files to display based on selected version
+  const filesToDisplay = getFilesToDisplay(
+    selectedFileVersion,
+    objective ? {
+      file_url: objective.file_url,
+      file_name: objective.file_name,
+      file_size: objective.file_size,
+      file_type: objective.file_type
+    } : null,
+    objective?.version,
+    objective?.fileVersions,
+    'objective_version'
+  );
 
   const handleDeleteConfirm = async () => {
     if (!objective) return;
@@ -450,43 +473,99 @@ export default function BusinessQualityObjectiveDetailPage() {
           </div>
         </div>
 
-        {/* Attached File */}
-        {objective.file_name && (
+        {/* Attached Files with Version Filter */}
+        {(objective.file_name || (objective.fileVersions && objective.fileVersions.length > 0)) && (
           <div className="mt-6">
-            <label className="block text-sm font-medium text-brand-gray3 mb-2">
-              Attached File
-            </label>
-            <div className="bg-brand-gray1 rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 text-brand-white">
-                    <FiFileText size={16} />
-                    <span className="text-sm">{objective.file_name}</span>
-                  </div>
-                  {objective.file_size && (
-                    <p className="text-xs text-brand-gray3 mt-1">
-                      {(objective.file_size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleView}
-                    className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
-                    title="View document"
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-brand-gray3">
+                Attached Files
+              </label>
+              {(objective.fileVersions && objective.fileVersions.length > 0) && (
+                <div className="flex items-center gap-2">
+                  <label htmlFor="file-version-filter" className="text-xs text-brand-gray3 whitespace-nowrap">
+                    Filter by Version:
+                  </label>
+                  <select
+                    id="file-version-filter"
+                    value={selectedFileVersion}
+                    onChange={(e) => setSelectedFileVersion(e.target.value)}
+                    className="px-2 py-1 rounded-lg border border-brand-gray2 bg-brand-black1/30 text-brand-white text-xs focus:outline-none focus:ring-2 focus:ring-brand-blue"
                   >
-                    <FiEye size={16} />
-                  </button>
-                  <button
-                    onClick={handleDownload}
-                    className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
-                    title="Download document"
-                  >
-                    <FiDownload size={16} />
-                  </button>
+                    <option value="current">Current ({objective.version || 'N/A'})</option>
+                    <option value="all">All Versions</option>
+                    {availableVersions.map(version => (
+                      <option key={version} value={version}>
+                        Version {version}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
+              )}
             </div>
+            
+            {filesToDisplay.length > 0 ? (
+              <div className="space-y-2">
+                {filesToDisplay.map((item, index) => {
+                  const file = item.file;
+                  const isFileVersion = 'id' in file && 'uploaded_at' in file;
+                  
+                  return (
+                    <div key={index} className="bg-brand-gray1 rounded-lg p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 text-brand-white">
+                            <FiFileText size={16} />
+                            <span className="text-sm">{file.file_name}</span>
+                            {item.version && (
+                              <span className="text-xs text-brand-gray3">
+                                (v{item.version})
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 mt-1">
+                            {file.file_size && (
+                              <p className="text-xs text-brand-gray3">
+                                {(file.file_size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            )}
+                            {isFileVersion && (file as FileVersion).uploadedBy && (
+                              <p className="text-xs text-brand-gray3">
+                                Uploaded by: {(file as FileVersion).uploadedBy?.username}
+                              </p>
+                            )}
+                            {isFileVersion && (file as FileVersion).uploaded_at && (
+                              <p className="text-xs text-brand-gray3">
+                                {new Date((file as FileVersion).uploaded_at).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleView(file.file_url)}
+                            className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                            title="View document"
+                          >
+                            <FiEye size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDownload(file.file_url)}
+                            className="p-2 text-brand-gray3 hover:text-brand-white transition-colors"
+                            title="Download document"
+                          >
+                            <FiDownload size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-brand-gray1 rounded-lg p-4">
+                <p className="text-sm text-brand-gray3">No files found for the selected version.</p>
+              </div>
+            )}
           </div>
         )}
       </div>

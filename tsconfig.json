@@ -8,7 +8,7 @@
     // Module system
     "module": "esnext",
     // Allow JSX in .tsx files
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     // Output directory for compiled files (not used in Next.js)
     "outDir": "./dist",
     // Enable strict type checking
@@ -55,7 +55,8 @@
     "**/*.ts",
     "**/*.tsx",
     "next-env.d.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   // Files and directories to exclude from the project
   "exclude": [
