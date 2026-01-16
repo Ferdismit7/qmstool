@@ -11,23 +11,31 @@ export const prisma = new Proxy({} as PrismaClient, {
   get(target, prop) {
     if (!prismaInstance) {
       if (!process.env.DATABASE_URL) {
-        throw new Error('DATABASE_URL environment variable is required. Make sure to call initializeSecrets() first.');
+        const errorMessage = 'DATABASE_URL environment variable is required. Make sure to call initializeSecrets() first. ' +
+          'Check that LAMBDA_FUNCTION_URL or NEXT_PUBLIC_LAMBDA_FUNCTION_URL is set, or that all required environment variables are available.';
+        console.error(errorMessage);
+        throw new Error(errorMessage);
       }
       
-      prismaInstance = globalForPrisma.prisma ?? 
-        new PrismaClient({
-          log: process.env.NODE_ENV === 'development' 
-            ? ['query', 'error', 'warn'] 
-            : ['error'],
-          datasources: {
-            db: {
-              url: process.env.DATABASE_URL,
-            },
-          }
-        });
+      try {
+        prismaInstance = globalForPrisma.prisma ?? 
+          new PrismaClient({
+            log: process.env.NODE_ENV === 'development' 
+              ? ['query', 'error', 'warn'] 
+              : ['error'],
+            datasources: {
+              db: {
+                url: process.env.DATABASE_URL,
+              },
+            }
+          });
 
-      if (process.env.NODE_ENV !== 'production') {
-        globalForPrisma.prisma = prismaInstance;
+        if (process.env.NODE_ENV !== 'production') {
+          globalForPrisma.prisma = prismaInstance;
+        }
+      } catch (error) {
+        console.error('Failed to create Prisma client:', error);
+        throw error;
       }
     }
     

@@ -195,6 +195,18 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
     console.log('Request headers:', Object.fromEntries(request.headers.entries()));
     console.log('Request cookies:', request.cookies.getAll());
     
+    // Ensure secrets are initialized before using Prisma
+    await initializeSecrets();
+    
+    // Verify DATABASE_URL is set before accessing Prisma
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL not available after initializeSecrets()');
+      // Fall back to JWT business area
+      const user = await getUserFromToken(request);
+      if (user?.businessArea) return [user.businessArea];
+      return [];
+    }
+    
     const user = await getUserFromToken(request);
     console.log('User from token:', user);
     
@@ -236,13 +248,19 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
     return userBusinessAreas.map((row: unknown) => (row as { business_area: string }).business_area);
   } catch (error) {
     console.error('Error getting user business areas:', error);
+    // Log the full error details for debugging
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
     // Fall back to JWT business area if query fails
     try {
       const user = await getUserFromToken(request);
       if (user?.businessArea) return [user.businessArea];
-      console.log('Query failed and no JWT businessArea, returning all areas as last resort');
-      const allAreas = await prisma.businessAreas.findMany({ select: { business_area: true } });
-      return allAreas.map(a => a.business_area);
+      console.log('Query failed and no JWT businessArea, returning empty array');
+      return [];
     } catch (fallbackError) {
       console.error('Fallback getUserFromToken also failed:', fallbackError);
       return [];
