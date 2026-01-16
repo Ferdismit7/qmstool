@@ -196,7 +196,15 @@ export const getCurrentUserBusinessAreas = async (request: NextRequest): Promise
     console.log('Request cookies:', request.cookies.getAll());
     
     // Ensure secrets are initialized before using Prisma
-    await initializeSecrets();
+    try {
+      await initializeSecrets();
+    } catch (secretsError) {
+      console.error('Failed to initialize secrets:', secretsError);
+      // Fall back to JWT business area if secrets initialization fails
+      const user = await getUserFromToken(request);
+      if (user?.businessArea) return [user.businessArea];
+      return [];
+    }
     
     // Verify DATABASE_URL is set before accessing Prisma
     if (!process.env.DATABASE_URL) {

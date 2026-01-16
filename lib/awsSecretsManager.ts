@@ -117,6 +117,27 @@ export const getSecrets = async (): Promise<Secrets> => {
     console.log('Secrets found in environment variables');
     cachedSecrets = envSecrets;
     syncProcessEnv(envSecrets);
+    // Verify DATABASE_URL is actually accessible (Next.js 16 runtime check)
+    if (!process.env.DATABASE_URL) {
+      console.warn('DATABASE_URL was in envSecrets but not accessible in process.env after sync');
+      // Try fetching from Lambda as fallback
+      try {
+        console.log('Attempting to fetch from Lambda as fallback...');
+        const lambdaSecrets = await fetchSecretsFromLambda();
+        cachedSecrets = lambdaSecrets;
+        syncProcessEnv(lambdaSecrets);
+        console.log('Secrets successfully fetched from Lambda fallback');
+        return lambdaSecrets;
+      } catch (lambdaError) {
+        console.error('Lambda fallback also failed:', lambdaError);
+        // If we have envSecrets but DATABASE_URL isn't accessible, this is a Next.js 16 runtime issue
+        throw new Error(
+          'DATABASE_URL is configured but not accessible at runtime. ' +
+          'In Next.js 16, ensure environment variables are available at runtime, not just build time. ' +
+          'Check Amplify environment variable configuration.'
+        );
+      }
+    }
     return envSecrets;
   }
 
