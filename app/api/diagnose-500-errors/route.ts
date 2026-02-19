@@ -3,8 +3,17 @@ import { initializeSecrets } from '@/lib/awsSecretsManager';
 import { getCurrentUserBusinessAreas } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+type DiagnosticStep = Record<string, unknown>;
+
+interface Diagnostics {
+  timestamp: string;
+  steps: DiagnosticStep[];
+  success?: boolean;
+  finalError?: { message: string; type: string; stack?: string };
+}
+
 export async function GET() {
-  const diagnostics: Record<string, unknown> = {
+  const diagnostics: Diagnostics = {
     timestamp: new Date().toISOString(),
     steps: []
   };
